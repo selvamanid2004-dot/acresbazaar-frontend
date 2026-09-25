@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, ActivatedRoute, Router } from '@angular/router';
+import { RouterOutlet, ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../home/components/header/header.component';
 import { FooterComponent } from '../home/components/footer/footer.component';
 import { PropertyModalComponent } from '../../shared/components/property-modal/property-modal.component';
@@ -13,6 +13,8 @@ import { WishlistDrawerComponent } from '../../shared/components/wishlist-drawer
 import { PropertyService } from '../../core/services/property.service';
 import { NavStateService } from '../../core/services/nav-state.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { WishlistService } from '../../core/services/wishlist.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Property } from '../../core/models/property.model';
 import { AiChatbotComponent } from '../../shared/components/ai-chatbot/ai-chatbot.component';
 
@@ -22,6 +24,7 @@ import { AiChatbotComponent } from '../../shared/components/ai-chatbot/ai-chatbo
   imports: [
     CommonModule,
     RouterOutlet,
+    RouterModule,
     HeaderComponent,
     FooterComponent,
     AiChatbotComponent,
@@ -48,6 +51,53 @@ import { AiChatbotComponent } from '../../shared/components/ai-chatbot/ai-chatbo
 
       <!-- Footer -->
       <app-footer></app-footer>
+
+      <!-- Mobile Bottom Navigation Bar (Sticky for Phones) -->
+      <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <div class="mobile-bottom-nav-inner">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="mobile-nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+          </a>
+
+          <a routerLink="/all-residential" routerLinkActive="active" class="mobile-nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Explore</span>
+          </a>
+
+          <button type="button" class="mobile-nav-item center-action" (click)="openPostPropertyModal()" aria-label="Post Property">
+            <div class="nav-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+            <span style="font-weight: 700; color: #070D1E;">Post</span>
+          </button>
+
+          <button type="button" class="mobile-nav-item" (click)="wishlistService.toggleDrawer()" aria-label="Wishlist">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span *ngIf="wishlistService.wishlistCount() > 0" class="nav-badge-count">{{ wishlistService.wishlistCount() }}</span>
+            <span>Saved</span>
+          </button>
+
+          <a [routerLink]="getAccountRoute()" routerLinkActive="active" class="mobile-nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>{{ authService.isAuthenticated() || authService.isSellerAuthenticated() || authService.isDealerAuthenticated() ? 'Account' : 'Login' }}</span>
+          </a>
+        </div>
+      </nav>
 
       <!-- 24/7 AcresAI Assistant Chatbot Floating Widget -->
       <app-ai-chatbot></app-ai-chatbot>
@@ -106,6 +156,8 @@ export class PublicLayoutComponent implements OnInit {
   propertyService = inject(PropertyService);
   navStateService = inject(NavStateService);
   notificationService = inject(NotificationService);
+  wishlistService = inject(WishlistService);
+  authService = inject(AuthService);
   route = inject(ActivatedRoute);
   router = inject(Router);
 
@@ -125,6 +177,13 @@ export class PublicLayoutComponent implements OnInit {
         this.activeProperty = null;
       }
     });
+  }
+
+  getAccountRoute(): string {
+    if (this.authService.isSellerAuthenticated()) return '/seller/properties';
+    if (this.authService.isDealerAuthenticated()) return '/dealer/dashboard';
+    if (this.authService.isAuthenticated()) return '/buyers';
+    return '/login';
   }
 
   openDetailsModal(property: Property) {
