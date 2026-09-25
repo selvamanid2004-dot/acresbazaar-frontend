@@ -57,14 +57,31 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className="admin-app-layout">
+      {/* Mobile Backdrop Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={closeMobileMenu}
+          aria-label="Close Navigation"
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="brand-badge">A</div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div className="brand-title">ACRES BAZAAR</div>
             <div className="brand-sub">Admin Executive Portal</div>
           </div>
+          <button 
+            type="button" 
+            className="sidebar-close-btn"
+            onClick={closeMobileMenu}
+            aria-label="Close Sidebar"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="sidebar-nav">
@@ -269,13 +286,14 @@ export const AdminLayout: React.FC = () => {
       {/* Main Content Area */}
       <div className="main-wrapper">
         <header className="top-navbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button 
-              className="btn btn-secondary btn-icon" 
-              style={{ display: 'none' }}
+              type="button"
+              className="btn btn-secondary btn-icon mobile-menu-btn" 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle Navigation Menu"
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              <Menu size={20} />
             </button>
             <div className="page-title">
               <span>Executive Admin Control</span>
