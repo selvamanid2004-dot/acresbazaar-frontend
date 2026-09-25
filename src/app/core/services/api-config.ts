@@ -1,11 +1,13 @@
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
-    if ((window as any).__env?.API_URL) {
-      return (window as any).__env.API_URL.replace(/\/$/, '');
+    const customUrl = (window as any).__env?.API_URL;
+    if (customUrl && customUrl !== '/api') {
+      return customUrl.replace(/\/$/, '');
     }
-    // If not local host, use relative '/api' or window location
-    if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
-      return '/api';
+    const hostname = window.location.hostname;
+    // When running on cloud (Render / custom domain), use deployed backend
+    if (hostname.includes('onrender.com') || hostname.includes('acresbazaar') || (!hostname.includes('localhost') && !hostname.includes('127.0.0.1'))) {
+      return 'https://acresbazaar-backend.onrender.com/api';
     }
   }
   return 'http://localhost:5001/api';

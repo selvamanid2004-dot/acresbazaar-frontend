@@ -30,8 +30,13 @@ import {
   DEMO_CALENDAR_EVENTS
 } from './mockData';
 
-// Prefer relative /api for Vite proxy routing, with fallback to full URL
-const API_BASE = ((import.meta as any).env?.VITE_API_URL || '/api').replace(/\/$/, '');
+// Prefer configured VITE_API_URL or live Render cloud backend
+const API_BASE = (
+  (import.meta as any).env?.VITE_API_URL ||
+  (typeof window !== 'undefined' && (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'))
+    ? 'https://acresbazaar-backend.onrender.com/api'
+    : '/api')
+).replace(/\/$/, '');
 
 export function isDemoSession(): boolean {
   return localStorage.getItem('admin_is_demo') === 'true' || 
