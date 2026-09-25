@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-snap-property-login',
@@ -534,7 +535,7 @@ export class SnapPropertyLoginComponent implements OnInit {
 
     this.isSubmitting = true;
 
-    this.http.post<any>('http://localhost:5001/api/auth/login', {
+    this.http.post<any>(`${getApiBaseUrl()}/auth/login`, {
       email: this.email.trim().toLowerCase(),
       password: this.password
     }).subscribe({

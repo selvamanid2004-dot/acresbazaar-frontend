@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-snap-property-dashboard',
@@ -1185,7 +1186,7 @@ export class SnapPropertyDashboardComponent implements OnInit {
     const email = this.spotterUser?.email || '';
     const sellerId = this.spotterUser?.id || '';
 
-    this.http.get<any>(`http://localhost:5001/api/properties/seller/listings?email=${encodeURIComponent(email)}&sellerId=${encodeURIComponent(sellerId)}`)
+    this.http.get<any>(`${getApiBaseUrl()}/properties/seller/listings?email=${encodeURIComponent(email)}&sellerId=${encodeURIComponent(sellerId)}`)
       .subscribe({
         next: (res) => {
           this.snaps = res.properties || [];
@@ -1200,7 +1201,7 @@ export class SnapPropertyDashboardComponent implements OnInit {
     const email = this.spotterUser?.email;
     if (!email) return;
 
-    this.http.get<any>(`http://localhost:5001/api/rewards/my-claim?email=${encodeURIComponent(email)}`)
+    this.http.get<any>(`${getApiBaseUrl()}/rewards/my-claim?email=${encodeURIComponent(email)}`)
       .subscribe({
         next: (res) => {
           this.existingClaim = res.claim || null;
@@ -1238,7 +1239,7 @@ export class SnapPropertyDashboardComponent implements OnInit {
       upiId: this.bankData.upiId.trim()
     };
 
-    this.http.post<any>('http://localhost:5001/api/rewards/claim', payload).subscribe({
+    this.http.post<any>(`${getApiBaseUrl()}/rewards/claim`, payload).subscribe({
       next: (res) => {
         this.submittingClaim = false;
         this.existingClaim = res.claim || res.reward;

@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-snap-property-upload',
@@ -1110,7 +1111,7 @@ export class SnapPropertyUploadComponent implements OnInit {
       status: 'PENDING'
     };
 
-    this.http.post<any>('http://localhost:5001/api/properties', payload).subscribe({
+    this.http.post<any>(`${getApiBaseUrl()}/properties`, payload).subscribe({
       next: (res) => {
         this.isSubmitting = false;
         this.submittedSuccessfully = true;

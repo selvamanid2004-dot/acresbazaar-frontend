@@ -14,6 +14,7 @@ import {
 import { NavStateService } from './nav-state.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { WishlistService } from './wishlist.service';
+import { getApiBaseUrl } from './api-config';
 
 const BUYERS_DB_KEY = 'aura_buyers_db';
 const SELLERS_DB_KEY = 'aura_sellers_db';
@@ -271,7 +272,7 @@ export class AuthService {
     // Live sync to NestJS Backend User Database
     try {
       const userRole = (form.role || 'BUYER').toUpperCase();
-      await fetch('http://localhost:5001/api/auth/register', {
+      await fetch(`${getApiBaseUrl()}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -437,7 +438,7 @@ export class AuthService {
 
     // Live sync to NestJS Backend User Database
     try {
-      await fetch('http://localhost:5001/api/auth/register', {
+      await fetch(`${getApiBaseUrl()}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -588,7 +589,7 @@ export class AuthService {
 
     // Live sync to NestJS Backend User Database
     try {
-      await fetch('http://localhost:5001/api/auth/register', {
+      await fetch(`${getApiBaseUrl()}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

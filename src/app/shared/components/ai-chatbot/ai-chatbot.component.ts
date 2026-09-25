@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 interface ChatMessage {
   id: string;
@@ -803,7 +804,7 @@ export class AiChatbotComponent implements OnInit, AfterViewChecked {
       userEmail
     };
 
-    this.http.post<any>('http://localhost:5001/api/chats/ai-assistant', payload).subscribe({
+    this.http.post<any>(`${getApiBaseUrl()}/chats/ai-assistant`, payload).subscribe({
       next: (res) => {
         this.isThinking = false;
         if (res.chatId) {

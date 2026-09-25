@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NotificationService } from '../../shared/services/notification.service';
 import { NavStateService } from '../../core/services/nav-state.service';
+import { getApiBaseUrl } from '../../core/services/api-config';
 
 @Component({
   selector: 'app-contact',
@@ -440,7 +441,7 @@ export class ContactComponent implements OnInit {
   }
 
   loadContactSettings(): void {
-    fetch(`http://localhost:5001/api/settings/group/contact?_t=${Date.now()}`)
+    fetch(`${getApiBaseUrl()}/settings/group/contact?_t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.settings) {
@@ -469,7 +470,7 @@ export class ContactComponent implements OnInit {
     this.submitting.set(true);
 
     // Also notify support via chat API
-    fetch('http://localhost:5001/api/chats/start', {
+    fetch(`${getApiBaseUrl()}/chats/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

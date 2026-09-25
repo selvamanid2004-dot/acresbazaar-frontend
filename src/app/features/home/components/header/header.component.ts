@@ -5,6 +5,7 @@ import { NavStateService } from '../../../../core/services/nav-state.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { WishlistService } from '../../../../core/services/wishlist.service';
+import { getApiBaseUrl } from '../../../../core/services/api-config';
 
 @Component({
   selector: 'app-header',
@@ -1123,7 +1124,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
 
     // Add cache-bust timestamp so browser doesn't serve stale logo image
-    fetch(`http://localhost:5001/api/settings/group/logo?_t=${Date.now()}`)
+    fetch(`${getApiBaseUrl()}/settings/group/logo?_t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         const logo = data?.settings?.website_logo || data?.settings?.logo_url;

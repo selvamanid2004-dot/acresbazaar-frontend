@@ -5,6 +5,7 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { PropertyService } from '../../../core/services/property.service';
 import { Property, PropertySpecs } from '../../../core/models/property.model';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 interface CategoryOption {
   id: string;
@@ -1538,7 +1539,7 @@ export class PropertyPostComponent implements OnInit {
     const categoryName = this.getCategoryName(cat);
     const cleanPrice = parseFloat(String(this.formData.price).replace(/[^0-9.]/g, '')) || 0;
     try {
-      const res = await fetch('http://localhost:5001/api/properties', {
+      const res = await fetch(`${getApiBaseUrl()}/properties`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

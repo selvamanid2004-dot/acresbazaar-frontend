@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-snap-property-register',
@@ -656,7 +657,7 @@ export class SnapPropertyRegisterComponent implements OnInit {
         role: 'COMMON_PEOPLE'
       };
 
-      this.http.post<any>('http://localhost:5001/api/auth/register', payload).subscribe({
+      this.http.post<any>(`${getApiBaseUrl()}/auth/register`, payload).subscribe({
         next: (res) => {
           this.isSubmitting = false;
           this.successMessage = 'Spotter account created! Launching camera upload module...';

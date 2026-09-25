@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { PropertyService } from '../../../core/services/property.service';
 import { Property } from '../../../core/models/property.model';
 import { DealerAccount } from '../../../core/models/buyer.model';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 interface DealerBooking {
   id: string;
@@ -2888,7 +2889,7 @@ export class DealerDashboardComponent implements OnInit {
   async loadDealerBookings(email?: string, dealerId?: string): Promise<void> {
     try {
       const q = email ? `email=${encodeURIComponent(email)}` : `dealerId=${encodeURIComponent(dealerId || '')}`;
-      const res = await fetch(`http://localhost:5001/api/properties/bookings/my?${q}`);
+      const res = await fetch(`${getApiBaseUrl()}/properties/bookings/my?${q}`);
       if (res.ok) {
         const data = await res.json();
         if (data.bookings) {
@@ -2903,7 +2904,7 @@ export class DealerDashboardComponent implements OnInit {
   async loadMarketplaceProperties(): Promise<void> {
     this.isLoadingMarketplace.set(true);
     try {
-      const res = await fetch('http://localhost:5001/api/properties/public');
+      const res = await fetch(`${getApiBaseUrl()}/properties/public`);
       if (res.ok) {
         const data = await res.json();
         const rawProps = data.properties || [];
@@ -2933,7 +2934,7 @@ export class DealerDashboardComponent implements OnInit {
   async loadRewardsSummary(email: string): Promise<void> {
     if (!email) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/rewards/dealer-summary?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${getApiBaseUrl()}/rewards/dealer-summary?email=${encodeURIComponent(email)}`);
       if (res.ok) {
         const data = await res.json();
         this.rewardsSummary.set({
@@ -3022,7 +3023,7 @@ export class DealerDashboardComponent implements OnInit {
 
     this.isSubmittingBooking.set(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/properties/${prop.id}/book`, {
+      const res = await fetch(`${getApiBaseUrl()}/properties/${prop.id}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3076,7 +3077,7 @@ export class DealerDashboardComponent implements OnInit {
 
     this.isSubmittingClaim.set(true);
     try {
-      const res = await fetch('http://localhost:5001/api/rewards/claim', {
+      const res = await fetch(`${getApiBaseUrl()}/rewards/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

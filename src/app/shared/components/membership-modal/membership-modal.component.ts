@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavStateService } from '../../../core/services/nav-state.service';
 import { NotificationService } from '../../services/notification.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-membership-modal',
@@ -611,7 +612,7 @@ export class MembershipModalComponent implements OnInit {
   }
 
   loadPlans(): void {
-    fetch('http://localhost:5001/api/plans')
+    fetch(`${getApiBaseUrl()}/plans`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.plans && Array.isArray(data.plans)) {

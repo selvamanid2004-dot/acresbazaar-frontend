@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 interface ImageUploadItem {
   id: string;
@@ -1577,7 +1578,7 @@ export class SellerPropertyNewComponent implements OnInit {
 
       // 1. Live sync to NestJS REST API backend first
       try {
-        const response = await fetch('http://localhost:5001/api/properties', {
+        const response = await fetch(`${getApiBaseUrl()}/properties`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

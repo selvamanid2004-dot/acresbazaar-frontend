@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-platinum-plan',
@@ -363,7 +364,7 @@ export class PlatinumPlanComponent implements OnInit {
   }
 
   loadPlan(): void {
-    fetch('http://localhost:5001/api/plans/platinum')
+    fetch(`${getApiBaseUrl()}/plans/platinum`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data?.plan) {

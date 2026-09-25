@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 export interface SellerPropertyItem {
   property_id: string;
@@ -750,7 +751,7 @@ export class SellerPropertiesComponent implements OnInit {
       if (sellerPhone) query.set('phone', sellerPhone);
 
       const qs = query.toString() ? `?${query.toString()}` : '';
-      const res = await fetch(`http://localhost:5001/api/properties/seller/listings${qs}`);
+      const res = await fetch(`${getApiBaseUrl()}/properties/seller/listings${qs}`);
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.properties)) {

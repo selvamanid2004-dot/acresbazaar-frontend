@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { PropertyService } from '../../../core/services/property.service';
 import { Property } from '../../../core/models/property.model';
 import { SellerAccount } from '../../../core/models/buyer.model';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-seller-dashboard',
@@ -815,7 +816,7 @@ export class SellerDashboardComponent implements OnInit {
       if (ownerId) query.set('sellerId', ownerId);
       if (email) query.set('email', email);
       if (phone) query.set('phone', phone);
-      const res = await fetch(`http://localhost:5001/api/properties/seller/listings?${query.toString()}`);
+      const res = await fetch(`${getApiBaseUrl()}/properties/seller/listings?${query.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.properties)) {

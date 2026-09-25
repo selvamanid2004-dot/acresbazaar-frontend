@@ -13,6 +13,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Production API Base URL Environment Config -->
+  <script>
+    window.__env = window.__env || {};
+    // Configure production API URL here or inject via environment
+    window.__env.API_URL = window.__env.API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5001/api' : '/api');
+  </script>
 </head>
 <body>
   <app-root></app-root>

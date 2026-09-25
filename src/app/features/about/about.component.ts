@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavStateService } from '../../core/services/nav-state.service';
+import { getApiBaseUrl } from '../../core/services/api-config';
 
 @Component({
   selector: 'app-about',
@@ -477,7 +478,7 @@ export class AboutComponent implements OnInit {
   }
 
   loadAboutContent(): void {
-    fetch(`http://localhost:5001/api/settings/group/about?_t=${Date.now()}`)
+    fetch(`${getApiBaseUrl()}/settings/group/about?_t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.settings) {

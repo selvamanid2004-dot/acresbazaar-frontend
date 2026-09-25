@@ -1,5 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Category, HeroSlide, Property, ScoutStep, SearchFilter, WhyUsBenefit } from '../models/property.model';
+import { getApiBaseUrl } from './api-config';
 
 @Injectable({
   providedIn: 'root'
@@ -308,7 +309,7 @@ export class PropertyService {
 
   syncPlatinumFromBackend(): Promise<Property[]> {
     // Fetch live approved properties from NestJS REST API
-    return fetch('http://localhost:5001/api/properties/public')
+    return fetch(`${getApiBaseUrl()}/properties/public`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data && data.properties && Array.isArray(data.properties)) {
@@ -368,7 +369,7 @@ export class PropertyService {
 
   syncCategoriesFromBackend(): void {
     try {
-      fetch('http://localhost:5001/api/categories')
+      fetch(`${getApiBaseUrl()}/categories`)
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data && data.categories && Array.isArray(data.categories)) {
@@ -392,7 +393,7 @@ export class PropertyService {
 
   syncHomeSettingsFromBackend(): void {
     try {
-      fetch('http://localhost:5001/api/settings/group/home')
+      fetch(`${getApiBaseUrl()}/settings/group/home`)
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data && data.settings) {
@@ -455,7 +456,7 @@ export class PropertyService {
 
   syncPlansFromBackend(): void {
     try {
-      fetch('http://localhost:5001/api/plans')
+      fetch(`${getApiBaseUrl()}/plans`)
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data && data.plans && Array.isArray(data.plans)) {

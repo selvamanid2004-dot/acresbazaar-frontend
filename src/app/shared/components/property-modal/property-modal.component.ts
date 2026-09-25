@@ -5,6 +5,7 @@ import { Property } from '../../../core/models/property.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-property-modal',
@@ -952,7 +953,7 @@ export class PropertyModalComponent implements OnChanges {
     };
 
     try {
-      const response = await fetch(`http://localhost:5001/api/properties/${this.property.id}/book`, {
+      const response = await fetch(`${getApiBaseUrl()}/properties/${this.property.id}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

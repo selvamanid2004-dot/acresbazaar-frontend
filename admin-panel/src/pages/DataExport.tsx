@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, FileSpreadsheet, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || '/api').replace(/\/$/, '');
 
 export const DataExport: React.FC = () => {
   const [selectedEntity, setSelectedEntity] = useState('properties');
