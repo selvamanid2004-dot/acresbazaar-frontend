@@ -1,0 +1,77 @@
+`
+    <div class="plan-page-container">
+      <div class="plan-wrapper">
+        <!-- Back Button -->
+        <button type="button" class="back-nav-btn" (click)="goBack()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Back
+        </button>
+
+        <!-- Header -->
+        <div class="plan-header">
+          <span class="plan-badge">AcresBazaar MEMBERSHIP</span>
+          <h1 class="plan-title">{{ planData().name }}</h1>
+          <p class="plan-subtitle">
+            {{ planData().description }}
+          </p>
+        </div>
+
+        <!-- Plan Card -->
+        <div class="plan-card gold-border">
+          <div class="plan-pricing-banner">
+            <div class="pricing-info">
+              <span class="tier-pill">{{ planData().badge || 'VERIFIED BUYER ACCESS' }}</span>
+              <h2 class="tier-heading">{{ planData().name }}</h2>
+              <p class="tier-desc">Direct access to verified sellers and pricing transparency.</p>
+            </div>
+            <div class="price-display">
+              <span class="curr">₹</span>
+              <span class="amount">{{ planData().price }}</span>
+              <span class="period">/ {{ planData().billing_period }}</span>
+            </div>
+          </div>
+
+          <!-- Benefits List -->
+          <div class="benefits-section">
+            <h3>{{ planData().name }} Benefits & Privileges</h3>
+            <ul class="benefits-list">
+              <li *ngFor="let b of planData().benefits">
+                <div class="icon-check">✓</div>
+                <div>
+                  <span>{{ b.benefit_text || b }}</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Dynamic Promotional Banner if configured -->
+          <div *ngIf="planData().content" style="margin: 0 36px 24px; padding: 14px 18px; border-radius: 10px; background: rgba(212, 175, 55, 0.08); border: 1px dashed rgba(212, 175, 55, 0.3); color: #F1C40F; font-size: 0.92rem; line-height: 1.5; display: flex; align-items: center; gap: 8px;">
+            <span>✨</span>
+            <span>{{ planData().content }}</span>
+          </div>
+
+          <!-- Action Button -->
+          <div class="action-area">
+            <div *ngIf="isCurrentPlan()" class="current-plan-status">
+              <span class="active-dot"></span> You currently have an active Gold Plan
+            </div>
+
+            <button
+              *ngIf="!isCurrentPlan()"
+              type="button"
+              class="subscribe-btn"
+              [disabled]="isProcessing()"
+              (click)="subscribeGold()"
+            >
+              <span *ngIf="!isProcessing()">Activate {{ planData().name }} (₹{{ planData().price }}/{{ planData().billing_period }})</span>
+              <span *ngIf="isProcessing()">Activating Membership...</span>
+            </button>
+
+            <p class="terms-note">Cancel anytime. Instant activation upon confirmation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,

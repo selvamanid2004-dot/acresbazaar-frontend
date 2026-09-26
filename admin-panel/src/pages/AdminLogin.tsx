@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, ShieldAlert, ArrowRight, Building2, Server, RefreshCw, Sparkles, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { api } from '../services/api';
+import { api, exitDemoMode } from '../services/api';
 
 export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@acresbazaar.com');
+  const [password, setPassword] = useState('Admin@123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
@@ -34,9 +34,11 @@ export const AdminLogin: React.FC = () => {
     setLoading(true);
 
     try {
+      exitDemoMode();
       const res = await api.login(email.trim(), password);
       localStorage.setItem('admin_token', res.access_token);
       localStorage.setItem('admin_user', JSON.stringify(res.user));
+      localStorage.removeItem('admin_is_demo');
       navigate('/dashboard');
     } catch (err: any) {
       const msg = err.message || '';

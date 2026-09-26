@@ -1,0 +1,213 @@
+`
+    <div class="auth-page-wrapper">
+      
+      <!-- Top Navigation / Breadcrumbs -->
+      <section class="auth-nav-bar">
+        <div class="container">
+          <div class="nav-bar-inner">
+            <a routerLink="/" class="btn-back">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              <span>Back to Home</span>
+            </a>
+
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+              <ol class="breadcrumb-list">
+                <li><a routerLink="/" class="crumb-link">Home</a></li>
+                <li class="crumb-sep">/</li>
+                <li><span class="crumb-current">Seller Registration</span></li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+      </section>
+
+      <!-- Auth Form Card Section -->
+      <section class="auth-card-section">
+        <div class="container">
+          <div class="auth-card-container">
+            
+            <div class="auth-header">
+              <div class="role-badge">SELLER PORTAL</div>
+              <h1 class="auth-title">Create Seller Account</h1>
+              <p class="auth-sub">
+                List residential homes, land parcels, and commercial spaces directly to certified buyers.
+              </p>
+            </div>
+
+            <!-- Error Banner -->
+            <div class="alert-banner error-banner" *ngIf="errorMessage">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ errorMessage }}</span>
+            </div>
+
+            <!-- Success Banner -->
+            <div class="alert-banner success-banner" *ngIf="successMessage">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>{{ successMessage }}</span>
+            </div>
+
+            <!-- Seller Form -->
+            <form (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+              
+              <!-- 1. Full Name -->
+              <div class="form-group">
+                <label for="fullName" class="form-label">
+                  Full Name <span class="required">*</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <input 
+                    type="text" 
+                    id="fullName" 
+                    name="fullName" 
+                    [(ngModel)]="formData.fullName" 
+                    required 
+                    placeholder="Enter your full name" 
+                    class="form-control" />
+                </div>
+              </div>
+
+              <!-- 2. Mobile Number -->
+              <div class="form-group">
+                <label for="mobile" class="form-label">
+                  Mobile Number <span class="required">*</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <input 
+                    type="tel" 
+                    id="mobile" 
+                    name="mobile" 
+                    [(ngModel)]="formData.mobile" 
+                    required 
+                    maxlength="15"
+                    placeholder="Enter 10-digit mobile number" 
+                    class="form-control" />
+                </div>
+              </div>
+
+              <!-- 3. Email / Gmail -->
+              <div class="form-group">
+                <label for="email" class="form-label">
+                  Email / Gmail Address <span class="required">*</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                  </svg>
+                  <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    [(ngModel)]="formData.email" 
+                    required 
+                    placeholder="seller@gmail.com" 
+                    class="form-control" />
+                </div>
+              </div>
+
+              <!-- 4. Password -->
+              <div class="form-group">
+                <label for="password" class="form-label">
+                  Password (min. 6 characters) <span class="required">*</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <input 
+                    [type]="showPassword ? 'text' : 'password'" 
+                    id="password" 
+                    name="password" 
+                    [(ngModel)]="formData.password" 
+                    required 
+                    placeholder="Create a strong password" 
+                    class="form-control" />
+                  <button type="button" class="btn-toggle-eye" (click)="showPassword = !showPassword" aria-label="Toggle password">
+                    <svg *ngIf="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg *ngIf="showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                      <line x1="2" y1="2" x2="22" y2="22"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 5. Confirm Password -->
+              <div class="form-group">
+                <label for="confirmPassword" class="form-label">
+                  Confirm Password <span class="required">*</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  <input 
+                    [type]="showConfirmPassword ? 'text' : 'password'" 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    [(ngModel)]="formData.confirmPassword" 
+                    required 
+                    placeholder="Re-enter password" 
+                    class="form-control" />
+                  <button type="button" class="btn-toggle-eye" (click)="showConfirmPassword = !showConfirmPassword" aria-label="Toggle confirm password">
+                    <svg *ngIf="!showConfirmPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg *ngIf="showConfirmPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                      <line x1="2" y1="2" x2="22" y2="22"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Submit CTA -->
+              <button 
+                type="submit" 
+                class="btn btn-primary btn-block btn-submit"
+                [disabled]="isSubmitting">
+                <span *ngIf="!isSubmitting">Create Seller Account</span>
+                <span *ngIf="isSubmitting">Creating Seller Account...</span>
+              </button>
+
+            </form>
+
+            <!-- Card Footer -->
+            <div class="auth-card-footer">
+              <span>Already registered as a Seller?</span>
+              <a routerLink="/seller/login" class="auth-switch-link">
+                Seller Login →
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+  `,

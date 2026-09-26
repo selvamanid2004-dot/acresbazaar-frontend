@@ -1,0 +1,639 @@
+`
+    <div class="seller-post-page">
+      <!-- Top Seller Header -->
+      <div class="seller-top-bar">
+        <div class="container top-bar-inner">
+          <a routerLink="/seller/categories" class="back-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Change Category</span>
+          </a>
+
+          <div class="top-meta">
+            <span class="platinum-pill">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              AUTO-ASSIGNED TO PLATINUM PLAN
+            </span>
+            <a routerLink="/seller/properties" class="my-props-link">My Submitted Properties</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============================================================
+           CONFIRMATION SCREEN (AFTER SUCCESSFUL SUBMISSION)
+      ============================================================== -->
+      <div *ngIf="isSubmitted()" class="container confirmation-container">
+        <div class="confirmation-card">
+          <div class="success-icon-wrap">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+
+          <span class="pending-pill-large">
+            <span class="pulse-amber"></span>
+            Status: PENDING ADMIN APPROVAL
+          </span>
+
+          <h1>Property Submitted Successfully!</h1>
+          <p class="confirmation-desc">
+            Your property listing has been recorded and is currently waiting for Executive Admin verification. Once approved, it will be published live under the Platinum Plan directory.
+          </p>
+
+          <!-- Property Summary Box -->
+          <div class="submitted-summary-box">
+            <div class="summary-header">
+              <span class="summary-title">{{ submittedData?.title }}</span>
+              <span class="summary-price">{{ submittedData?.price }}</span>
+            </div>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="item-label">Category</span>
+                <span class="item-value">{{ submittedData?.categoryName }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="item-label">Plan Tier</span>
+                <span class="item-value platinum-val">PLATINUM</span>
+              </div>
+              <div class="summary-item">
+                <span class="item-label">Location</span>
+                <span class="item-value">{{ submittedData?.location }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="item-label">Submission Date</span>
+                <span class="item-value">{{ submittedData?.submissionDate }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="item-label">Review Status</span>
+                <span class="item-value pending-val">PENDING</span>
+              </div>
+              <div class="summary-item">
+                <span class="item-label">Photos Uploaded</span>
+                <span class="item-value">{{ uploadedImages().length }} Photos</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="confirmation-actions">
+            <a routerLink="/seller/properties" class="btn-primary-action">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+              </svg>
+              View My Submitted Properties
+            </a>
+            <button type="button" (click)="resetAndSubmitAnother()" class="btn-secondary-action">
+              + Post Another Property
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============================================================
+           MAIN SUBMISSION FORM
+      ============================================================== -->
+      <div *ngIf="!isSubmitted()" class="container form-main-container">
+        <div class="form-header-box">
+          <div class="selected-cat-badge">
+            <span class="cat-pill">Selected Category: <strong>{{ categoryName() }}</strong></span>
+            <a routerLink="/seller/categories" class="btn-change">Change Category</a>
+          </div>
+          <h1>{{ categoryName() }} Property Form</h1>
+          <p class="form-intro">
+            Complete the property specifications, upload 4 to 5 photos, and submit for Platinum Admin review.
+          </p>
+        </div>
+
+        <!-- Global Error Banner -->
+        <div *ngIf="errorMessage()" class="alert-banner error">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+
+        <form (ngSubmit)="handleSubmit()" class="submission-form" novalidate>
+          <!-- -----------------------------------------------------------
+               SECTION 1: PHOTO UPLOAD (4 to 5 IMAGES REQUIRED)
+          ------------------------------------------------------------ -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <div class="section-badge">1</div>
+              <div>
+                <h2>Upload Property Photos <span class="req">*</span></h2>
+                <p class="section-hint">Upload <strong>1 to 5 photos</strong>. First photo will be used as the primary cover.</p>
+              </div>
+              <div class="photo-counter" [class.valid]="uploadedImages().length >= 1">
+                {{ uploadedImages().length }} / 5 Photos
+                <span class="counter-status" *ngIf="uploadedImages().length < 1">(Min 1 required)</span>
+                <span class="counter-status ready" *ngIf="uploadedImages().length >= 1">✓ Ready</span>
+              </div>
+            </div>
+
+            <!-- Upload Dropzone (if < 5 photos) -->
+            <div *ngIf="uploadedImages().length < 5" class="dropzone" (click)="fileInput.click()">
+              <input
+                #fileInput
+                type="file"
+                multiple
+                accept="image/*"
+                (change)="onFilesSelected($event)"
+                style="display: none;"
+              />
+              <div class="dropzone-icon">📷</div>
+              <h3>Click or drag to upload property photos</h3>
+              <p>Supports JPG, PNG, WEBP. Minimum 1 photo required (up to 5 photos).</p>
+              <button type="button" class="btn-browse">Select Photos from Device</button>
+            </div>
+
+            <!-- Preset / Sample Images Helper for Convenience -->
+            <div class="sample-btn-wrap" style="margin: 12px 0;">
+              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 5" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; background: rgba(212,175,55,0.15); border: 1px solid #D4AF37; color: #D4AF37; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                + Load Curated Luxury Photos
+              </button>
+            </div>
+
+            <!-- Image Previews Grid -->
+            <div *ngIf="uploadedImages().length > 0" class="previews-grid">
+              <div
+                *ngFor="let img of uploadedImages(); let i = index"
+                class="preview-card"
+              >
+                <div class="preview-img-wrap">
+                  <img [src]="img.dataUrl" [alt]="img.name" class="preview-img" />
+                  <span class="index-pill" [class.cover]="i === 0">
+                    {{ i === 0 ? 'Cover Photo' : 'Photo ' + (i + 1) }}
+                  </span>
+                  <button
+                    type="button"
+                    (click)="removeImage(i)"
+                    class="btn-remove-img"
+                    title="Remove Photo"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div class="img-meta">
+                  <span class="img-name">{{ img.name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- -----------------------------------------------------------
+               SECTION 2: BASIC / COMMON PROPERTY INFORMATION
+          ------------------------------------------------------------ -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <div class="section-badge">2</div>
+              <div>
+                <h2>Common Property Information <span class="req">*</span></h2>
+                <p class="section-hint">General property identification, price, and overall sizing.</p>
+              </div>
+            </div>
+
+            <div class="fields-grid">
+              <!-- Title -->
+              <div class="form-group span-2">
+                <label for="propTitle">Property Title <span class="req">*</span></label>
+                <input
+                  id="propTitle"
+                  type="text"
+                  [(ngModel)]="formData.title"
+                  name="title"
+                  required
+                  placeholder="e.g. Luxury Corner Plot in Gated Community / 4 BHK Modern Villa"
+                  class="form-control"
+                />
+              </div>
+
+              <!-- Price -->
+              <div class="form-group">
+                <label for="propPrice">Total Price (with units) <span class="req">*</span></label>
+                <input
+                  id="propPrice"
+                  type="text"
+                  [(ngModel)]="formData.price"
+                  name="price"
+                  required
+                  placeholder="e.g. ₹ 85 Lakhs / ₹ 2.4 Crores"
+                  class="form-control"
+                />
+              </div>
+
+              <!-- Property Size -->
+              <div class="form-group">
+                <label for="propSize">Property Size / Area <span class="req">*</span></label>
+                <input
+                  id="propSize"
+                  type="text"
+                  [(ngModel)]="formData.propertySize"
+                  name="propertySize"
+                  required
+                  placeholder="e.g. 2400 sq ft / 30x40 / 3 Acres"
+                  class="form-control"
+                />
+              </div>
+
+              <!-- Property Type -->
+              <div class="form-group">
+                <label for="propType">Property Type</label>
+                <select id="propType" [(ngModel)]="formData.propertyType" name="propertyType" class="form-control">
+                  <option value="Residential">Residential</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Agricultural">Agricultural</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Mixed Use">Mixed Use</option>
+                </select>
+              </div>
+
+              <!-- Availability -->
+              <div class="form-group">
+                <label for="propAvail">Availability Status</label>
+                <select id="propAvail" [(ngModel)]="formData.availability" name="availability" class="form-control">
+                  <option value="Ready to Move / Register">Ready to Move / Register</option>
+                  <option value="Under Construction">Under Construction</option>
+                  <option value="Immediate Possession">Immediate Possession</option>
+                  <option value="Resale Property">Resale Property</option>
+                </select>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group span-2">
+                <label for="propDesc">Detailed Description <span class="req">*</span></label>
+                <textarea
+                  id="propDesc"
+                  [(ngModel)]="formData.description"
+                  name="description"
+                  rows="4"
+                  required
+                  placeholder="Highlight key advantages, documentation approvals, nearby landmarks, road accessibility, and community amenities..."
+                  class="form-control"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- -----------------------------------------------------------
+               SECTION 3: LOCATION & ADDRESS DETAILS
+          ------------------------------------------------------------ -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <div class="section-badge">3</div>
+              <div>
+                <h2>Location & Address</h2>
+                <p class="section-hint">Precise geographical details for certified buyer verification.</p>
+              </div>
+            </div>
+
+            <div class="fields-grid">
+              <!-- Locality / Area -->
+              <div class="form-group">
+                <label for="propLocation">Area / Locality <span class="req">*</span></label>
+                <input
+                  id="propLocation"
+                  type="text"
+                  [(ngModel)]="formData.location"
+                  name="location"
+                  required
+                  placeholder="e.g. Whitefield / Sarjapur Road / Devanahalli"
+                  class="form-control"
+                />
+              </div>
+
+              <!-- City -->
+              <div class="form-group">
+                <label for="propCity">City</label>
+                <input
+                  id="propCity"
+                  type="text"
+                  [(ngModel)]="formData.city"
+                  name="city"
+                  placeholder="e.g. Bangalore"
+                  class="form-control"
+                />
+              </div>
+
+              <!-- Full Address -->
+              <div class="form-group span-2">
+                <label for="propAddress">Full Address / Survey Number</label>
+                <input
+                  id="propAddress"
+                  type="text"
+                  [(ngModel)]="formData.fullAddress"
+                  name="fullAddress"
+                  placeholder="e.g. Sy No. 42/2, Chikka Tirupathi Main Road"
+                  class="form-control"
+                />
+              </div>
+
+              <!-- Road Access -->
+              <div class="form-group">
+                <label for="propRoad">Road Access Width</label>
+                <input
+                  id="propRoad"
+                  type="text"
+                  [(ngModel)]="formData.roadAccess"
+                  name="roadAccess"
+                  placeholder="e.g. 40 Feet Tar Road / 60 Feet Main Road"
+                  class="form-control"
+                />
+              </div>
+
+              <!-- Facing -->
+              <div class="form-group">
+                <label for="propFacing">Property Facing</label>
+                <select id="propFacing" [(ngModel)]="formData.facing" name="facing" class="form-control">
+                  <option value="East">East</option>
+                  <option value="North">North</option>
+                  <option value="North-East">North-East (Ishan)</option>
+                  <option value="West">West</option>
+                  <option value="South">South</option>
+                  <option value="South-East">South-East</option>
+                </select>
+              </div>
+
+              <!-- Landmark -->
+              <div class="form-group span-2">
+                <label for="propLandmark">Prominent Landmark</label>
+                <input
+                  id="propLandmark"
+                  type="text"
+                  [(ngModel)]="formData.landmark"
+                  name="landmark"
+                  placeholder="e.g. Behind Prestige Tech Cloud / 500m from Metro Station"
+                  class="form-control"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- -----------------------------------------------------------
+               SECTION 4: CATEGORY-SPECIFIC SPECIFICATIONS (DYNAMIC)
+          ------------------------------------------------------------ -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <div class="section-badge">4</div>
+              <div>
+                <h2>{{ categoryName() }} Specifications</h2>
+                <p class="section-hint">Technical details tailored specifically for {{ categoryName() }}.</p>
+              </div>
+            </div>
+
+            <!-- PLOTS & LAND SPECIFIC FIELDS -->
+            <div *ngIf="isPlotCategory()" class="fields-grid">
+              <div class="form-group">
+                <label>Plot Dimensions</label>
+                <input type="text" [(ngModel)]="plotSpecs.dimensions" name="dimensions" placeholder="e.g. 30x40, 30x50, 40x60" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Approval Authority</label>
+                <select [(ngModel)]="plotSpecs.approvalAuthority" name="approvalAuthority" class="form-control">
+                  <option value="BMRDA Approved">BMRDA Approved</option>
+                  <option value="BDA Approved">BDA Approved</option>
+                  <option value="DTCP Approved">DTCP Approved</option>
+                  <option value="RERA Registered">RERA Registered</option>
+                  <option value="Gram Panchayat DC Converted">Gram Panchayat DC Converted</option>
+                  <option value="A-Katha">A-Katha</option>
+                  <option value="B-Katha">B-Katha</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Corner Plot?</label>
+                <select [(ngModel)]="plotSpecs.isCornerPlot" name="isCornerPlot" class="form-control">
+                  <option value="Yes">Yes (Corner Site)</option>
+                  <option value="No">No (Standard Plot)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Gated Layout / Community?</label>
+                <select [(ngModel)]="plotSpecs.isGatedCommunity" name="isGatedCommunity" class="form-control">
+                  <option value="Yes">Yes (Gated Layout)</option>
+                  <option value="No">No (Standalone Site)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Boundary Wall Constructed?</label>
+                <select [(ngModel)]="plotSpecs.boundaryWall" name="boundaryWall" class="form-control">
+                  <option value="Constructed">Constructed</option>
+                  <option value="Open">Open Boundary</option>
+                  <option value="Fenced">Fenced</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Water & Underground Drainage?</label>
+                <select [(ngModel)]="plotSpecs.utilities" name="utilities" class="form-control">
+                  <option value="Fully Available (Cauvery + Borewell)">Fully Available (Cauvery + Borewell)</option>
+                  <option value="Borewell + UGD Available">Borewell + UGD Available</option>
+                  <option value="Borewell Only">Borewell Only</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- VILLAS & ESTATES SPECIFIC FIELDS -->
+            <div *ngIf="isVillaCategory()" class="fields-grid">
+              <div class="form-group">
+                <label>Bedrooms (BHK)</label>
+                <select [(ngModel)]="villaSpecs.bedrooms" name="v_bhk" class="form-control">
+                  <option value="3 BHK">3 BHK</option>
+                  <option value="4 BHK">4 BHK</option>
+                  <option value="5 BHK">5 BHK</option>
+                  <option value="6+ BHK">6+ BHK Luxury Mansion</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Bathrooms</label>
+                <input type="text" [(ngModel)]="villaSpecs.bathrooms" name="v_baths" placeholder="e.g. 4 En-suite Bathrooms" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Built-up Area (sq ft)</label>
+                <input type="text" [(ngModel)]="villaSpecs.builtUpArea" name="v_builtUp" placeholder="e.g. 3600 sq ft" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Plot Area (sq ft)</label>
+                <input type="text" [(ngModel)]="villaSpecs.plotArea" name="v_plotArea" placeholder="e.g. 2400 sq ft" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Floors / Levels</label>
+                <select [(ngModel)]="villaSpecs.floors" name="v_floors" class="form-control">
+                  <option value="Ground + 1 Floor (G+1)">Ground + 1 Floor (G+1)</option>
+                  <option value="Ground + 2 Floors (G+2)">Ground + 2 Floors (G+2)</option>
+                  <option value="Single Floor Luxury Bungalow">Single Floor Luxury Bungalow</option>
+                  <option value="G+3 with Rooftop Terrace">G+3 with Rooftop Terrace</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Furnishing Status</label>
+                <select [(ngModel)]="villaSpecs.furnishing" name="v_furnish" class="form-control">
+                  <option value="Semi-Furnished (Wardrobes & Modular Kitchen)">Semi-Furnished</option>
+                  <option value="Fully Furnished (Luxury Interiors)">Fully Furnished</option>
+                  <option value="Unfurnished / Raw Shell">Unfurnished</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Car Parking Spaces</label>
+                <input type="text" [(ngModel)]="villaSpecs.parking" name="v_parking" placeholder="e.g. 2 Covered Car Parks" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Private Garden / Pool</label>
+                <input type="text" [(ngModel)]="villaSpecs.gardenPool" name="v_pool" placeholder="e.g. Private Landscaped Garden + Plunge Pool" class="form-control" />
+              </div>
+            </div>
+
+            <!-- APARTMENTS SPECIFIC FIELDS -->
+            <div *ngIf="isApartmentCategory()" class="fields-grid">
+              <div class="form-group">
+                <label>Configuration</label>
+                <select [(ngModel)]="aptSpecs.bedrooms" name="a_bhk" class="form-control">
+                  <option value="1 BHK">1 BHK</option>
+                  <option value="2 BHK">2 BHK</option>
+                  <option value="2.5 BHK">2.5 BHK</option>
+                  <option value="3 BHK">3 BHK</option>
+                  <option value="4 BHK">4 BHK Luxury Penthouse</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Super Built-up Area</label>
+                <input type="text" [(ngModel)]="aptSpecs.builtUpArea" name="a_built" placeholder="e.g. 1850 sq ft" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Carpet Area</label>
+                <input type="text" [(ngModel)]="aptSpecs.carpetArea" name="a_carpet" placeholder="e.g. 1450 sq ft" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Floor Number</label>
+                <input type="text" [(ngModel)]="aptSpecs.floorNumber" name="a_floor" placeholder="e.g. 12th Floor of 24 Floors" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Society / Project Name</label>
+                <input type="text" [(ngModel)]="aptSpecs.projectName" name="a_project" placeholder="e.g. Sobha Windsor / Prestige Lakeside" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Monthly Maintenance</label>
+                <input type="text" [(ngModel)]="aptSpecs.maintenance" name="a_maint" placeholder="e.g. ₹ 4,500 / month" class="form-control" />
+              </div>
+            </div>
+
+            <!-- COMMERCIAL SPECIFIC FIELDS -->
+            <div *ngIf="isCommercialCategory()" class="fields-grid">
+              <div class="form-group">
+                <label>Suitable For</label>
+                <select [(ngModel)]="commercialSpecs.suitableFor" name="c_suitable" class="form-control">
+                  <option value="Corporate IT Office">Corporate IT Office</option>
+                  <option value="Retail Store / Showroom">Retail Store / Showroom</option>
+                  <option value="Clinic / Diagnostic Center">Clinic / Diagnostic Center</option>
+                  <option value="Restaurant / Cafe Space">Restaurant / Cafe Space</option>
+                  <option value="Warehouse / Logistics">Warehouse / Logistics</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Power Backup Capacity</label>
+                <input type="text" [(ngModel)]="commercialSpecs.powerBackup" name="c_power" placeholder="e.g. 100% DG Power Backup" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Washrooms Available</label>
+                <input type="text" [(ngModel)]="commercialSpecs.washrooms" name="c_wash" placeholder="e.g. 2 Private + Common Restrooms" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Parking Capacity</label>
+                <input type="text" [(ngModel)]="commercialSpecs.parking" name="c_park" placeholder="e.g. 6 Dedicated Car Slots + Visitor" class="form-control" />
+              </div>
+            </div>
+
+            <!-- FARM LAND SPECIFIC FIELDS -->
+            <div *ngIf="isFarmLandCategory()" class="fields-grid">
+              <div class="form-group">
+                <label>Total Land Acreage</label>
+                <input type="text" [(ngModel)]="farmSpecs.acreage" name="f_acre" placeholder="e.g. 2.5 Acres (100 Guntas)" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Water Source</label>
+                <input type="text" [(ngModel)]="farmSpecs.waterSource" name="f_water" placeholder="e.g. 2 High-Yield Borewells + Canal Touch" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Soil Type</label>
+                <select [(ngModel)]="farmSpecs.soilType" name="f_soil" class="form-control">
+                  <option value="Fertile Red Soil">Fertile Red Soil</option>
+                  <option value="Black Cotton Soil">Black Cotton Soil</option>
+                  <option value="Alluvial Soil">Alluvial Soil</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Fencing & Security</label>
+                <select [(ngModel)]="farmSpecs.fencing" name="f_fence" class="form-control">
+                  <option value="Fully Solar Fenced">Fully Solar Fenced</option>
+                  <option value="Barbed Wire Fenced">Barbed Wire Fenced</option>
+                  <option value="Open Boundary">Open Boundary</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- GENERIC / FALLBACK FOR OTHER CATEGORIES -->
+            <div *ngIf="!isPlotCategory() && !isVillaCategory() && !isApartmentCategory() && !isCommercialCategory() && !isFarmLandCategory()" class="fields-grid">
+              <div class="form-group">
+                <label>Key Highlight 1</label>
+                <input type="text" [(ngModel)]="genericSpecs.h1" name="g_h1" placeholder="e.g. Premium Clear Title Deed" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Key Highlight 2</label>
+                <input type="text" [(ngModel)]="genericSpecs.h2" name="g_h2" placeholder="e.g. Immediate Registration" class="form-control" />
+              </div>
+            </div>
+          </div>
+
+          <!-- -----------------------------------------------------------
+               SECTION 5: SELLER CONTACT INFORMATION
+          ------------------------------------------------------------ -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <div class="section-badge">5</div>
+              <div>
+                <h2>Seller Contact Details</h2>
+                <p class="section-hint">Used by Admin compliance officers and verified Platinum buyers.</p>
+              </div>
+            </div>
+
+            <div class="fields-grid">
+              <div class="form-group">
+                <label for="sName">Seller Name</label>
+                <input id="sName" type="text" [(ngModel)]="formData.sellerName" name="sellerName" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label for="sPhone">Seller Mobile Number</label>
+                <input id="sPhone" type="tel" [(ngModel)]="formData.sellerPhone" name="sellerPhone" class="form-control" />
+              </div>
+              <div class="form-group span-2">
+                <label for="sEmail">Seller Email / Gmail</label>
+                <input id="sEmail" type="email" [(ngModel)]="formData.sellerEmail" name="sellerEmail" class="form-control" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button & Disclaimer -->
+          <div class="submit-action-area">
+            <button
+              type="submit"
+              [disabled]="isSubmitting() || uploadedImages().length < 4"
+              class="btn-submit-platinum"
+            >
+              <span *ngIf="!isSubmitting()">
+                Submit Property for Admin Approval (PENDING)
+              </span>
+              <span *ngIf="isSubmitting()" class="submitting-label">
+                <span class="spinner-sm"></span> Submitting Property & Photos...
+              </span>
+            </button>
+            <p class="submit-note">
+              By submitting, your listing is assigned <strong>status = PENDING</strong> and submitted to the Executive Admin Panel. It will not be shown publicly until verified and approved.
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+  `,

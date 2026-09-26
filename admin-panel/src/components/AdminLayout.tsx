@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -19,13 +19,36 @@ import {
   ChevronRight,
   Menu,
   X,
-  Bell
+  Bell,
+  Database,
+  RefreshCw,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
+import { api, exitDemoMode, isDemoSession } from '../services/api';
 
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [switchingToLive, setSwitchingToLive] = useState(false);
+
+  const checkBackend = async () => {
+    try {
+      const res = await api.checkBackendHealth();
+      setBackendOnline(res.ok);
+    } catch {
+      setBackendOnline(false);
+    }
+  };
+
+  useEffect(() => {
+    checkBackend();
+    const interval = setInterval(checkBackend, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Submenu states
   const isCustomersActive = location.pathname.startsWith('/customers');
@@ -44,7 +67,25 @@ export const AdminLayout: React.FC = () => {
     // fallback safely
   }
 
-  const isDemo = localStorage.getItem('admin_is_demo') === 'true';
+  const isDemo = isDemoSession();
+
+  const handleSwitchToLive = async () => {
+    setSwitchingToLive(true);
+    try {
+      const res = await api.switchToLiveMode();
+      if (res.success) {
+        window.location.reload();
+      } else {
+        exitDemoMode();
+        navigate('/login');
+      }
+    } catch {
+      exitDemoMode();
+      navigate('/login');
+    } finally {
+      setSwitchingToLive(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
@@ -109,12 +150,13 @@ export const AdminLayout: React.FC = () => {
             </button>
             {customersOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
-                <NavLink to="/customers?tab=all" className={({ isActive }) => `nav-link nav-link-sub ${isActive && location.search.includes('tab=all') ? 'active' : ''}`} onClick={closeMobileMenu}>All Customers</NavLink>
+                <NavLink to="/customers?tab=all" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=all') || (isActive && !location.search.includes('tab=')) ? 'active' : ''}`} onClick={closeMobileMenu}>All Users & Registrations</NavLink>
+                <NavLink to="/customers?tab=admins" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=admins') ? 'active' : ''}`} onClick={closeMobileMenu}>Administrators & Staff</NavLink>
                 <NavLink to="/customers?tab=new" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=new') ? 'active' : ''}`} onClick={closeMobileMenu}>New Customers</NavLink>
                 <NavLink to="/customers?tab=buyers" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=buyers') ? 'active' : ''}`} onClick={closeMobileMenu}>Buyers</NavLink>
                 <NavLink to="/customers?tab=sellers" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=sellers') ? 'active' : ''}`} onClick={closeMobileMenu}>Sellers</NavLink>
                 <NavLink to="/customers?tab=dealers" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=dealers') ? 'active' : ''}`} onClick={closeMobileMenu}>Dealers</NavLink>
-                <NavLink to="/customers?tab=common" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=common') ? 'active' : ''}`} onClick={closeMobileMenu}>Common People</NavLink>
+                <NavLink to="/customers?tab=common" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=common') ? 'active' : ''}`} onClick={closeMobileMenu}>Common People / Spotters</NavLink>
               </div>
             )}
           </div>
@@ -122,7 +164,7 @@ export const AdminLayout: React.FC = () => {
           {/* Properties Group */}
           <div>
             <button 
-              type="button"
+              type="button" 
               className={`nav-link ${isPropertiesActive ? 'active' : ''}`}
               onClick={() => setPropertiesOpen(!propertiesOpen)}
             >
@@ -132,6 +174,7 @@ export const AdminLayout: React.FC = () => {
             </button>
             {propertiesOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
+                <NavLink to="/properties?status=ALL" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('ALL') || (isActive && !location.search.includes('PENDING') && !location.search.includes('APPROVED') && !location.search.includes('HOLD') && !location.search.includes('POSTED') && !location.search.includes('REJECTED')) ? 'active' : ''}`} onClick={closeMobileMenu}>All Properties (91)</NavLink>
                 <NavLink to="/properties?status=PENDING" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('PENDING') ? 'active' : ''}`} onClick={closeMobileMenu}>New Properties</NavLink>
                 <NavLink to="/properties?status=APPROVED" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('APPROVED') ? 'active' : ''}`} onClick={closeMobileMenu}>Approved Properties</NavLink>
                 <NavLink to="/properties?status=HOLD" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('HOLD') ? 'active' : ''}`} onClick={closeMobileMenu}>Hold Properties</NavLink>
@@ -300,20 +343,43 @@ export const AdminLayout: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             {isDemo ? (
-              <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
-                ⚡ Demo Mode (Offline Preview)
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
+                  ⚡ Demo Mode (Sample Data)
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  style={{ fontSize: '11px', padding: '4px 10px', background: 'linear-gradient(135deg, #059669, #10b981)' }}
+                  onClick={handleSwitchToLive}
+                  disabled={switchingToLive}
+                  title="Switch to Live Database (91 Properties, 87 Users)"
+                >
+                  <Database size={13} />
+                  <span>{switchingToLive ? 'Connecting...' : 'Connect to Live Database'}</span>
+                </button>
+              </div>
+            ) : backendOnline === false ? (
+              <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
+                ⚠️ Backend Offline (Port 5001)
               </span>
             ) : (
-              <span className="badge badge-gold">Authorized Session</span>
+              <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '4px 10px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399' }} />
+                <span>Live Database Connected</span>
+              </span>
             )}
+
             <button 
               className="btn btn-secondary btn-icon"
-              title="Notifications"
+              title="Re-check Backend Connection"
+              onClick={checkBackend}
             >
-              <Bell size={18} />
+              <RefreshCw size={15} />
             </button>
+
             <button 
               className="btn btn-danger btn-sm"
               onClick={handleLogout}
@@ -323,6 +389,72 @@ export const AdminLayout: React.FC = () => {
             </button>
           </div>
         </header>
+
+        {/* Global Alert Bar for Demo Mode */}
+        {isDemo && (
+          <div style={{
+            background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.12))',
+            borderBottom: '1px solid rgba(245, 158, 11, 0.35)',
+            padding: '10px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            fontSize: '12.5px',
+            color: '#fef3c7'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <AlertTriangle size={18} color="#fbbf24" style={{ flexShrink: 0 }} />
+              <div>
+                <strong>Notice:</strong> You are currently viewing <strong>Demo / Sample Preview Data</strong> (6 mock items).
+                Your live database contains <strong>91 Real Properties</strong>, <strong>87 Users</strong>, and <strong>46 Bookings</strong>.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              style={{ padding: '6px 14px', fontSize: '12px', background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none' }}
+              onClick={handleSwitchToLive}
+              disabled={switchingToLive}
+            >
+              <Database size={14} />
+              <span>{switchingToLive ? 'Switching...' : 'Switch to Live Database Mode'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Global Alert Bar for Offline Backend */}
+        {!isDemo && backendOnline === false && (
+          <div style={{
+            background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.18), rgba(220, 38, 38, 0.12))',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.35)',
+            padding: '10px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            fontSize: '12.5px',
+            color: '#fee2e2'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <AlertTriangle size={18} color="#ef4444" style={{ flexShrink: 0 }} />
+              <div>
+                <strong>Backend Server Disconnected (Port 5001):</strong> Live database queries cannot be fulfilled. Please start the backend using <code>run-backend.bat</code> or <code>run-all.bat</code>.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              style={{ padding: '6px 14px', fontSize: '12px' }}
+              onClick={checkBackend}
+            >
+              <RefreshCw size={14} />
+              <span>Retry Connection</span>
+            </button>
+          </div>
+        )}
 
         <main className="content-body">
           <Outlet />

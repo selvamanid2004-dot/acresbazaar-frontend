@@ -29,13 +29,21 @@ import { api } from '../services/api';
 
 export const Properties: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const statusParam = searchParams.get('status') || 'PENDING';
+  const statusParam = searchParams.get('status') || 'ALL';
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [counts, setCounts] = useState({
+    all: 0,
+    pending: 0,
+    approved: 0,
+    hold: 0,
+    posted: 0,
+    rejected: 0,
+  });
 
   // Modals
   const [viewProperty, setViewProperty] = useState<Property | null>(null);
@@ -68,10 +76,27 @@ export const Properties: React.FC = () => {
         setViewProperty(null);
       }
       fetchProperties();
+      refreshCounts();
     } catch (err: any) {
       alert(err.message || 'Approval failed');
     } finally {
       setApproving(false);
+    }
+  };
+
+  const refreshCounts = async () => {
+    try {
+      const allData = await api.getProperties({ status: 'ALL' });
+      setCounts({
+        all: allData.length,
+        pending: allData.filter(p => p.status === 'PENDING').length,
+        approved: allData.filter(p => p.status === 'APPROVED').length,
+        hold: allData.filter(p => p.status === 'HOLD').length,
+        posted: allData.filter(p => p.isPublished || p.status === 'APPROVED').length,
+        rejected: allData.filter(p => p.status === 'REJECTED').length,
+      });
+    } catch (err) {
+      console.error('Failed to calculate property counts', err);
     }
   };
 
@@ -80,7 +105,6 @@ export const Properties: React.FC = () => {
     try {
       let statusQuery = statusParam;
       if (statusParam === 'POSTED') {
-        // Posted means approved + published
         statusQuery = 'APPROVED';
       }
 
@@ -104,6 +128,7 @@ export const Properties: React.FC = () => {
 
   useEffect(() => {
     api.getCategories().then(setCategories).catch(console.error);
+    refreshCounts();
   }, []);
 
   useEffect(() => {
@@ -207,28 +232,40 @@ export const Properties: React.FC = () => {
       {/* Status Sub-Navigation Tabs */}
       <div className="tab-list">
         <button
+          className={`tab-btn ${statusParam === 'ALL' ? 'active' : ''}`}
+          onClick={() => setSearchParams({ status: 'ALL' })}
+        >
+          All Properties {counts.all > 0 && <span style={{ opacity: 0.8, fontSize: '11px', marginLeft: '4px' }}>({counts.all})</span>}
+        </button>
+        <button
           className={`tab-btn ${statusParam === 'PENDING' ? 'active' : ''}`}
           onClick={() => setSearchParams({ status: 'PENDING' })}
         >
-          New Properties (Pending Review)
+          New / Pending {counts.pending > 0 && <span style={{ opacity: 0.8, fontSize: '11px', marginLeft: '4px' }}>({counts.pending})</span>}
         </button>
         <button
           className={`tab-btn ${statusParam === 'APPROVED' ? 'active' : ''}`}
           onClick={() => setSearchParams({ status: 'APPROVED' })}
         >
-          Approved Properties
+          Approved {counts.approved > 0 && <span style={{ opacity: 0.8, fontSize: '11px', marginLeft: '4px' }}>({counts.approved})</span>}
         </button>
         <button
           className={`tab-btn ${statusParam === 'HOLD' ? 'active' : ''}`}
           onClick={() => setSearchParams({ status: 'HOLD' })}
         >
-          Hold Properties
+          Hold {counts.hold > 0 && <span style={{ opacity: 0.8, fontSize: '11px', marginLeft: '4px' }}>({counts.hold})</span>}
         </button>
         <button
           className={`tab-btn ${statusParam === 'POSTED' ? 'active' : ''}`}
           onClick={() => setSearchParams({ status: 'POSTED' })}
         >
-          Posted Properties (Live on Web)
+          Posted (Live) {counts.posted > 0 && <span style={{ opacity: 0.8, fontSize: '11px', marginLeft: '4px' }}>({counts.posted})</span>}
+        </button>
+        <button
+          className={`tab-btn ${statusParam === 'REJECTED' ? 'active' : ''}`}
+          onClick={() => setSearchParams({ status: 'REJECTED' })}
+        >
+          Rejected {counts.rejected > 0 && <span style={{ opacity: 0.8, fontSize: '11px', marginLeft: '4px' }}>({counts.rejected})</span>}
         </button>
       </div>
 

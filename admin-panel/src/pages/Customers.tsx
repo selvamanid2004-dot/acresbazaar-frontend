@@ -33,6 +33,7 @@ export const Customers: React.FC = () => {
 
   const [counts, setCounts] = useState({
     all: 0,
+    admins: 0,
     buyers: 0,
     sellers: 0,
     dealers: 0,
@@ -48,6 +49,7 @@ export const Customers: React.FC = () => {
 
       setCounts({
         all: all.length,
+        admins: all.filter(c => c.role === 'ADMIN' || c.role === 'SUPER_ADMIN').length,
         buyers: all.filter(c => c.role === 'BUYER').length,
         sellers: all.filter(c => c.role === 'SELLER').length,
         dealers: all.filter(c => c.role === 'DEALER').length,
@@ -66,6 +68,7 @@ export const Customers: React.FC = () => {
       let isNew: boolean | undefined;
 
       if (currentTab === 'new') isNew = true;
+      if (currentTab === 'admins') role = 'ADMIN';
       if (currentTab === 'buyers') role = 'BUYER';
       if (currentTab === 'sellers') role = 'SELLER';
       if (currentTab === 'dealers') role = 'DEALER';
@@ -137,6 +140,14 @@ export const Customers: React.FC = () => {
 
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
+      case 'SUPER_ADMIN':
+      case 'ADMIN':
+        return {
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(245, 158, 11, 0.25))',
+          color: '#fbbf24',
+          border: '1px solid rgba(245, 158, 11, 0.6)',
+          fontWeight: 700
+        };
       case 'BUYER':
         return {
           background: 'rgba(59, 130, 246, 0.15)',
@@ -177,6 +188,8 @@ export const Customers: React.FC = () => {
 
   const formatRoleName = (role: string) => {
     switch (role) {
+      case 'SUPER_ADMIN': return 'Super Admin';
+      case 'ADMIN': return 'Administrator';
       case 'BUYER': return 'Buyer';
       case 'SELLER': return 'Seller';
       case 'DEALER': return 'Dealer';
@@ -209,7 +222,7 @@ export const Customers: React.FC = () => {
       </div>
 
       {/* Role Metric Cards */}
-      <div className="dash-metric-grid" style={{ marginBottom: '24px' }}>
+      <div className="dash-metric-grid" style={{ marginBottom: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
         {/* Total */}
         <div 
           className={`dash-card ${currentTab === 'all' ? 'active-card' : ''}`}
@@ -222,6 +235,21 @@ export const Customers: React.FC = () => {
           </div>
           <div className="dash-card-icon" style={{ backgroundColor: 'rgba(2, 132, 199, 0.12)', color: '#38bdf8' }}>
             <Users size={22} />
+          </div>
+        </div>
+
+        {/* Administrators */}
+        <div 
+          className={`dash-card ${currentTab === 'admins' ? 'active-card' : ''}`}
+          style={{ cursor: 'pointer', border: currentTab === 'admins' ? '1px solid #fbbf24' : undefined }}
+          onClick={() => handleTabChange('admins')}
+        >
+          <div className="dash-card-info">
+            <h3>Administrators</h3>
+            <div className="metric-num">{counts.admins}</div>
+          </div>
+          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24' }}>
+            <Shield size={22} />
           </div>
         </div>
 
@@ -280,7 +308,7 @@ export const Customers: React.FC = () => {
             <h3>Common People</h3>
             <div className="metric-num">{counts.common}</div>
           </div>
-          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#34d399' }}>
+          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(168, 85, 247, 0.12)', color: '#34d399' }}>
             <HeartHandshake size={22} />
           </div>
         </div>
@@ -293,6 +321,12 @@ export const Customers: React.FC = () => {
           onClick={() => handleTabChange('all')}
         >
           All Registrations <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8, padding: '2px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px' }}>{counts.all}</span>
+        </button>
+        <button
+          className={`tab-btn ${currentTab === 'admins' ? 'active' : ''}`}
+          onClick={() => handleTabChange('admins')}
+        >
+          Administrators <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8, padding: '2px 6px', background: 'rgba(245,158,11,0.2)', color: '#fbbf24', borderRadius: '10px' }}>{counts.admins}</span>
         </button>
         <button
           className={`tab-btn ${currentTab === 'buyers' ? 'active' : ''}`}

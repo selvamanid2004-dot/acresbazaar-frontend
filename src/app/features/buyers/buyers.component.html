@@ -1,0 +1,243 @@
+`
+    <div class="buyers-page-wrapper">
+      
+      <!-- Top Navigation & Breadcrumbs Bar -->
+      <section class="buyer-top-nav">
+        <div class="container">
+          <div class="nav-bar-inner">
+            <button type="button" class="btn-back" (click)="onBackToHome()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              <span>Back to Home</span>
+            </button>
+
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+              <ol class="breadcrumb-list">
+                <li><a routerLink="/" class="crumb-link">Home</a></li>
+                <li class="crumb-sep">/</li>
+                <li><span class="crumb-current">For Buyers</span></li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+      </section>
+
+      <!-- Buyers Hero Banner -->
+      <section class="buyers-hero">
+        <div class="container">
+          <div class="buyers-hero-inner">
+            <span class="buyers-tag">FOR PROPERTY BUYERS</span>
+            <h1 class="buyers-main-title">Find Your Ideal Property with Confidence</h1>
+            <p class="buyers-hero-sub">
+              Access verified residential apartments, private villas, plots, independent houses, commercial spaces, and farm lands with dedicated Gold and Platinum membership tiers.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Key Services Available for Buyers -->
+      <section class="buyer-services-section">
+        <div class="container">
+          <div class="services-header">
+            <span class="sub-label">BUYER SERVICES & ADVANTAGES</span>
+            <h2 class="sec-title">What We Provide for Buyers</h2>
+          </div>
+
+          <div class="buyer-advantages-grid">
+            <div class="advantage-card">
+              <div class="advantage-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="m9 12 2 2 4-4"></path>
+                </svg>
+              </div>
+              <h3 class="advantage-title">100% Verified Titles</h3>
+              <p class="advantage-desc">
+                Every listed property undergoes legal document verification, land boundary checks, and local zoning clearances.
+              </p>
+            </div>
+
+            <div class="advantage-card">
+              <div class="advantage-icon gold-bg">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </div>
+              <h3 class="advantage-title">0% Brokerage Options</h3>
+              <p class="advantage-desc">
+                Direct connections with authorized developers and verified property owners with zero middleman commissions.
+              </p>
+            </div>
+
+            <div class="advantage-card">
+              <div class="advantage-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                  <rect width="15" height="14" x="1" y="5" rx="2" ry="2"></rect>
+                </svg>
+              </div>
+              <h3 class="advantage-title">Assisted Site Visits</h3>
+              <p class="advantage-desc">
+                Schedule personal escorted site visits or access high-definition drone video walkthroughs with neighborhood dossiers.
+              </p>
+            </div>
+
+            <div class="advantage-card">
+              <div class="advantage-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+              </div>
+              <h3 class="advantage-title">Institutional Legal Support</h3>
+              <p class="advantage-desc">
+                Full downloadable title reports, encumbrance certificates, and deed verification dossiers for complete peace of mind.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ALL 7 PROPERTY CATEGORIES FOR BUYERS                         -->
+      <!-- ============================================================ -->
+      <section class="buyer-categories-section">
+        <div class="container">
+          
+          <div class="section-head-center">
+            <span class="sub-label">EXPLORE BY CATEGORY</span>
+            <h2 class="sec-title">Property Categories for Buyers</h2>
+            <p class="sec-sub">
+              Every category contains dedicated <strong>Gold Plan</strong> and <strong>Platinum VIP Plan</strong> property listings.
+            </p>
+          </div>
+
+          <div class="categories-card-grid">
+            <div class="buyer-cat-card" *ngFor="let cat of buyerCategories">
+              
+              <div class="cat-img-wrap" (click)="onOpenCategory(cat.slug)">
+                <img [src]="cat.imageUrl" [alt]="cat.name" loading="lazy" />
+                <div class="cat-img-gradient"></div>
+                <span class="cat-pill-count">{{ cat.count }}</span>
+              </div>
+
+              <div class="cat-card-details">
+                <h3 class="cat-card-title" (click)="onOpenCategory(cat.slug)">{{ cat.name }}</h3>
+                <p class="cat-card-desc">{{ cat.description }}</p>
+
+                <!-- Dedicated Two Plan Buttons -->
+                <div class="plan-sub-links">
+                  <button 
+                    type="button" 
+                    class="btn-plan-link gold-link" 
+                    (click)="onOpenCategoryPlan(cat.slug, 'gold')">
+                    <span class="dot gold-dot"></span>
+                    <span>Gold Plan</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn-plan-link plat-link" 
+                    (click)="onOpenCategoryPlan(cat.slug, 'platinum')">
+                    <span class="dot plat-dot"></span>
+                    <span>Platinum Plan</span>
+                  </button>
+                </div>
+
+                <button type="button" class="btn btn-outline-dark btn-block mt-3" (click)="onOpenCategory(cat.slug)">
+                  Explore {{ cat.name }} →
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- FEATURED LOCKED BUYER INVENTORY PREVIEW                     -->
+      <!-- ============================================================ -->
+      <section class="locked-preview-section">
+        <div class="container">
+          
+          <div class="section-head-center">
+            <span class="sub-label">EXCLUSIVE BUYER INVENTORY</span>
+            <h2 class="sec-title">Featured Property Discovery</h2>
+            <p class="sec-sub">
+              Property images are publicly previewed below. Specific details, verified pricing, exact addresses, and owner contacts are protected and unlocked via membership.
+            </p>
+          </div>
+
+          <div class="preview-properties-grid">
+            <div class="preview-prop-card" *ngFor="let prop of previewProperties">
+              
+              <!-- Property Image Prominently Visible -->
+              <div class="preview-img-box">
+                <img [src]="prop.imageUrl" alt="Property preview" loading="lazy" />
+                <span class="preview-badge" [class.gold-badge]="prop.tier === 'gold'" [class.plat-badge]="prop.tier !== 'gold'">
+                  {{ prop.tier === 'gold' ? 'Gold Property' : 'Platinum Property' }}
+                </span>
+              </div>
+
+              <!-- Strictly Locked Card Body: NO title, NO price, NO address exposed -->
+              <div class="preview-locked-body">
+                <div class="lock-icon" [class.gold-icon]="prop.tier === 'gold'" [class.plat-icon]="prop.tier !== 'gold'">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                
+                <h4 class="locked-title">Property Details Locked</h4>
+                <p class="locked-sub">
+                  Unlock full property information with a membership plan.
+                </p>
+
+                <button 
+                  type="button" 
+                  class="btn btn-unlock-preview" 
+                  [class.btn-gold]="prop.tier === 'gold'"
+                  [class.btn-plat]="prop.tier !== 'gold'"
+                  (click)="onUnlockProperty(prop)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                  </svg>
+                  <span>Unlock Property Details</span>
+                </button>
+
+                <span class="plan-price-hint">
+                  {{ prop.tier === 'gold' ? (propertyService.goldPlan().name + ' • ₹' + propertyService.goldPlan().price + '/' + propertyService.goldPlan().period) : (propertyService.platinumPlan().name + ' • ₹' + propertyService.platinumPlan().price + '/' + propertyService.platinumPlan().period) }}
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Bottom Buyer Advisory CTA -->
+      <section class="buyer-cta-section">
+        <div class="container">
+          <div class="cta-inner-card">
+            <h2 class="cta-title">Need Personalized Help Finding a Property?</h2>
+            <p class="cta-text">
+              Our professional buyer advisors will shortlist properties that match your budget, preferred metropolitan corridor, and investment timeline.
+            </p>
+            <div class="cta-actions">
+              <button type="button" class="btn btn-gold btn-lg" (click)="onRequestAdvisor()">
+                Request Free Buyer Advisory
+              </button>
+              <button type="button" class="btn btn-outline-white btn-lg" (click)="onBackToHome()">
+                Explore Marketplace Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  `,

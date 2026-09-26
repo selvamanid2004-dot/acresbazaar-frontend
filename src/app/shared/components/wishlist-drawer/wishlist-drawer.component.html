@@ -1,0 +1,108 @@
+`
+    <!-- Backdrop -->
+    <div 
+      class="wishlist-backdrop" 
+      *ngIf="wishlistService.isLoggedIn && wishlistService.isDrawerOpen()" 
+      (click)="close()"
+    ></div>
+
+    <!-- Slide-out Drawer Panel (Flipkart Style) -->
+    <aside 
+      class="wishlist-drawer" 
+      [class.open]="wishlistService.isLoggedIn && wishlistService.isDrawerOpen()"
+      aria-label="Wishlist Drawer"
+    >
+      <!-- Drawer Header -->
+      <div class="drawer-header">
+        <div class="header-left">
+          <div class="wishlist-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="drawer-title">My Wishlist</h3>
+            <span class="drawer-subtitle">{{ wishlistService.wishlistCount() }} Saved {{ wishlistService.wishlistCount() === 1 ? 'Property' : 'Properties' }}</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn-close-drawer" (click)="close()" aria-label="Close wishlist drawer">
+          ✕
+        </button>
+      </div>
+
+      <!-- Drawer Body -->
+      <div class="drawer-body">
+        
+        <!-- EMPTY STATE -->
+        <div *ngIf="wishlistService.wishlistCount() === 0" class="empty-state">
+          <div class="empty-icon-wrapper">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </div>
+          <h4>Your Wishlist is Empty</h4>
+          <p>
+            Explore our curated residential plots, luxury villas, and high-yield commercial assets, then tap "Add to Wishlist" to save them here.
+          </p>
+          <button type="button" class="btn btn-gold btn-explore" (click)="exploreProperties()">
+            Explore Properties
+          </button>
+        </div>
+
+        <!-- LIST OF WISHLIST ITEMS -->
+        <div *ngIf="wishlistService.wishlistCount() > 0" class="wishlist-items-list">
+          <div 
+            *ngFor="let item of wishlistService.getWishlistProperties()" 
+            class="wishlist-item-card"
+          >
+            <!-- Thumbnail Image -->
+            <div class="item-img-box" (click)="viewDetails(item)">
+              <img [src]="item.imageUrl" [alt]="item.title" class="item-img" />
+              <span class="tier-pill" [class.tier-gold]="item.tier === 'gold'" [class.tier-plat]="item.tier === 'platinum'">
+                {{ item.tier | uppercase }}
+              </span>
+            </div>
+
+            <!-- Details -->
+            <div class="item-info">
+              <h5 class="item-title" (click)="viewDetails(item)">{{ item.title }}</h5>
+              <div class="item-location">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span>{{ item.location }}</span>
+              </div>
+              <div class="item-price">{{ item.priceDisplay }}</div>
+
+              <div class="item-actions">
+                <button type="button" class="btn-view-details" (click)="viewDetails(item)">
+                  View Details
+                </button>
+                <button type="button" class="btn-remove-item" (click)="removeItem(item.id)" title="Remove from Wishlist">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  <span>Remove</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="drawer-footer" *ngIf="wishlistService.wishlistCount() > 0">
+        <button type="button" class="btn-clear-all" (click)="clearAll()">
+          Clear Wishlist
+        </button>
+        <button type="button" class="btn btn-gold btn-close-bottom" (click)="close()">
+          Continue Browsing
+        </button>
+      </div>
+
+    </aside>
+  `,

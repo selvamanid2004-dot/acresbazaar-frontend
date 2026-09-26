@@ -10,7 +10,7 @@ export interface Customer {
   name: string;
   email: string;
   mobile: string;
-  role: 'BUYER' | 'SELLER' | 'DEALER' | 'COMMON_PEOPLE';
+  role: 'BUYER' | 'SELLER' | 'DEALER' | 'COMMON_PEOPLE' | 'ADMIN' | 'SUPER_ADMIN';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   planType: 'STANDARD' | 'GOLD' | 'PLATINUM';
   agencyName?: string | null;

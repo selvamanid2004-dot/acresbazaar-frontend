@@ -1,0 +1,188 @@
+`
+    <div class="seller-props-page">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <div class="container top-bar-inner">
+          <div class="brand-line">
+            <span class="seller-pill">
+              <span class="dot"></span>
+              SELLER PROPERTIES
+            </span>
+            <span class="seller-greeting">Account: <strong>{{ sellerName() }}</strong></span>
+          </div>
+
+          <div class="top-cta-group">
+            <button (click)="loadProperties()" class="btn-refresh" title="Refresh Listings" [disabled]="loading()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>{{ loading() ? 'Syncing...' : 'Refresh' }}</span>
+            </button>
+            <a routerLink="/seller/categories" class="btn-post-new">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>+ Post New Property</span>
+            </a>
+            <button (click)="logout()" class="btn-logout" title="Logout">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="container main-content">
+        <!-- Page Title & Filter Row -->
+        <div class="page-heading-row">
+          <div>
+            <h1>My Submitted Properties</h1>
+            <p class="heading-sub">Track real-time review status, verification updates, and Platinum listings.</p>
+          </div>
+
+          <!-- Status Filters -->
+          <div class="status-filters">
+            <button
+              type="button"
+              class="filter-pill"
+              [class.active]="selectedFilter() === 'ALL'"
+              (click)="setFilter('ALL')"
+            >
+              All ({{ properties().length }})
+            </button>
+            <button
+              type="button"
+              class="filter-pill amber"
+              [class.active]="selectedFilter() === 'PENDING'"
+              (click)="setFilter('PENDING')"
+            >
+              Pending ({{ countStatus('PENDING') }})
+            </button>
+            <button
+              type="button"
+              class="filter-pill green"
+              [class.active]="selectedFilter() === 'APPROVED'"
+              (click)="setFilter('APPROVED')"
+            >
+              Approved ({{ countStatus('APPROVED') }})
+            </button>
+            <button
+              type="button"
+              class="filter-pill red"
+              [class.active]="selectedFilter() === 'REJECTED'"
+              (click)="setFilter('REJECTED')"
+            >
+              Rejected ({{ countStatus('REJECTED') }})
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading()" class="loading-box">
+          <div class="spinner"></div>
+          <p>Loading your properties from database...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading() && filteredProperties().length === 0" class="empty-state-box">
+          <div class="empty-icon">📁</div>
+          <h2>No properties found</h2>
+          <p *ngIf="properties().length === 0">
+            You have not submitted any properties yet. Choose a category to submit your first Platinum property listing.
+          </p>
+          <p *ngIf="properties().length > 0">
+            No properties found matching status "{{ selectedFilter() }}".
+          </p>
+          <a routerLink="/seller/categories" class="btn-cta-empty">
+            + Choose Category & Submit Property
+          </a>
+        </div>
+
+        <!-- Properties List -->
+        <div *ngIf="!loading() && filteredProperties().length > 0" class="properties-list">
+          <div *ngFor="let prop of filteredProperties()" class="prop-card">
+            <!-- Property Thumbnail -->
+            <div class="prop-img-box">
+              <img
+                [src]="getThumbnail(prop)"
+                [alt]="prop.title"
+                class="prop-img"
+              />
+              <span class="plan-pill">PLATINUM</span>
+            </div>
+
+            <!-- Property Details -->
+            <div class="prop-info-box">
+              <div class="meta-top">
+                <span class="cat-tag">{{ formatCategory(prop.category) }}</span>
+                <span class="dot">•</span>
+                <span class="submitted-date">Submitted: {{ formatDate(prop.created_at) }}</span>
+              </div>
+
+              <h3 class="prop-title">{{ prop.title }}</h3>
+
+              <div class="location-line">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span>{{ prop.location }}{{ prop.city ? ', ' + prop.city : '' }}</span>
+              </div>
+
+              <div class="specs-chips">
+                <span class="spec-chip" *ngIf="prop.property_size">{{ prop.property_size }}</span>
+                <ng-container *ngIf="prop.category_specs as specs">
+                  <span class="spec-chip" *ngIf="specs['bedrooms']">{{ specs['bedrooms'] }}</span>
+                  <span class="spec-chip" *ngIf="specs['dimensions']">{{ specs['dimensions'] }}</span>
+                  <span class="spec-chip" *ngIf="specs['approvalAuthority']">{{ specs['approvalAuthority'] }}</span>
+                  <span class="spec-chip" *ngIf="specs['suitableFor']">{{ specs['suitableFor'] }}</span>
+                </ng-container>
+              </div>
+            </div>
+
+            <!-- Price & Status Area -->
+            <div class="prop-status-box">
+              <div class="price-display">{{ prop.price }}</div>
+
+              <!-- Status Badge -->
+              <div class="status-badge" [ngClass]="getStatusClass(prop.status)">
+                <span class="status-bullet"></span>
+                <span class="status-text">{{ getStatusLabel(prop.status) }}</span>
+              </div>
+
+              <!-- Status Helper Explanation -->
+              <div class="status-explanation">
+                <span *ngIf="prop.status === 'PENDING'" class="hint-amber">
+                  ⏳ Waiting for Admin review. Hidden from public website.
+                </span>
+                <span *ngIf="prop.status === 'APPROVED'" class="hint-green">
+                  ✓ Verified & Live under Platinum {{ formatCategory(prop.category) }}.
+                </span>
+                <span *ngIf="prop.status === 'REJECTED'" class="hint-red">
+                  ✕ Application rejected by Admin. Hidden from public.
+                </span>
+              </div>
+
+              <!-- View Live Link (Only if Approved) -->
+              <a
+                *ngIf="prop.status === 'APPROVED'"
+                [routerLink]="['/category', prop.category]"
+                class="btn-view-live"
+                target="_blank"
+              >
+                View Live on Website →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,

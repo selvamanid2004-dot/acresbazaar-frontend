@@ -43,6 +43,15 @@ export function isDemoSession(): boolean {
          localStorage.getItem('admin_token')?.startsWith('demo_') === true;
 }
 
+export function exitDemoMode(): void {
+  localStorage.removeItem('admin_is_demo');
+  const token = localStorage.getItem('admin_token');
+  if (token?.startsWith('demo_')) {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+  }
+}
+
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('admin_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -107,7 +116,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const api = {
   // Check live connection to backend server
-  async checkBackendHealth(): Promise<{ ok: boolean; message?: string }> {
+  async checkBackendHealth(): Promise<{ ok: boolean; message?: string; totalProperties?: number; totalCustomers?: number }> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
@@ -119,9 +128,32 @@ export const api = {
       });
 
       clearTimeout(timeoutId);
-      return { ok: res.ok || res.status === 401 || res.status === 200 };
+      const ok = res.ok || res.status === 401 || res.status === 200;
+      return { ok };
     } catch (err: any) {
       return { ok: false, message: err.message };
+    }
+  },
+
+  // Switch to live admin mode with default admin credentials
+  async switchToLiveMode(email = 'admin@acresbazaar.com', password = 'Admin@123'): Promise<{ success: boolean; user?: AdminUser; error?: string }> {
+    try {
+      localStorage.removeItem('admin_is_demo');
+      const res: any = await request('/auth/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      const token = res.token || res.access_token;
+      const user = res.admin || res.user;
+      if (token && user) {
+        localStorage.setItem('admin_token', token);
+        localStorage.setItem('admin_user', JSON.stringify(user));
+        localStorage.removeItem('admin_is_demo');
+        return { success: true, user };
+      }
+      return { success: false, error: 'Login credentials rejected' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to connect to live backend' };
     }
   },
 
@@ -358,8 +390,9 @@ export const api = {
   async getProperties(params?: { status?: string; category?: string; planType?: string; search?: string }): Promise<Property[]> {
     if (isDemoSession()) {
       let list = [...DEMO_PROPERTIES];
-      if (params?.status) list = list.filter(p => p.status === params.status);
-      if (params?.category) list = list.filter(p => p.category === params.category);
+      if (params?.status && params.status !== 'ALL') list = list.filter(p => p.status === params.status);
+      if (params?.category && params.category !== 'ALL') list = list.filter(p => p.category === params.category);
+      if (params?.planType && params.planType !== 'ALL') list = list.filter(p => (p.planType || 'PLATINUM').toUpperCase() === params.planType!.toUpperCase());
       if (params?.search) {
         const q = params.search.toLowerCase();
         list = list.filter(p => p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q));
@@ -368,8 +401,9 @@ export const api = {
     }
     try {
       const query = new URLSearchParams();
-      if (params?.status) query.set('status', params.status);
-      if (params?.category) query.set('category', params.category);
+      if (params?.status && params.status !== 'ALL') query.set('status', params.status);
+      if (params?.category && params.category !== 'ALL') query.set('category', params.category);
+      if (params?.planType && params.planType !== 'ALL') query.set('planType', params.planType);
       if (params?.search) query.set('search', params.search);
       const qs = query.toString() ? `?${query.toString()}` : '';
       const res: any = await request(`/properties/admin/all${qs}`);

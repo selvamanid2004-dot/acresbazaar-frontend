@@ -1,0 +1,173 @@
+`
+    <div class="modal-backdrop" *ngIf="isOpen" (click)="close()">
+      <div class="modal-dialog" [class.gold-dialog]="effectivePlan === 'gold'" [class.plat-dialog]="effectivePlan === 'platinum'" (click)="$event.stopPropagation()">
+        
+        <!-- Header: Strictly Single Plan (Gold OR Platinum) -->
+        <div class="modal-header">
+          <div class="header-left">
+            <span class="modal-badge" *ngIf="effectivePlan === 'gold'">AcresBazaar MEMBERSHIP • {{ goldPlan().name | uppercase }}</span>
+            <span class="modal-badge" *ngIf="effectivePlan === 'platinum'">AcresBazaar MEMBERSHIP • {{ platPlan().name | uppercase }}</span>
+            
+            <h2 class="modal-title" *ngIf="effectivePlan === 'gold'">{{ goldPlan().name }} Membership</h2>
+            <h2 class="modal-title" *ngIf="effectivePlan === 'platinum'">{{ platPlan().name }} Membership</h2>
+
+            <p class="modal-subtitle" *ngIf="effectivePlan === 'gold'">
+              {{ goldPlan().description }}
+            </p>
+            <p class="modal-subtitle" *ngIf="effectivePlan === 'platinum'">
+              {{ platPlan().description }}
+            </p>
+          </div>
+
+          <button type="button" class="close-btn" (click)="close()" aria-label="Close modal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Body: Dedicated Single Plan Content ONLY -->
+        <div class="modal-body">
+          
+          <!-- SINGLE PLAN PRESENTATION: GOLD ONLY -->
+          <div class="single-plan-view gold-single" *ngIf="effectivePlan === 'gold'">
+            
+            <!-- Plan Price & Tag Card -->
+            <div class="plan-hero-box gold-hero-box">
+              <div class="hero-box-left">
+                <div class="tier-pill-label gold-pill-label">{{ goldPlan().badge || 'VERIFIED BUYER ACCESS' }}</div>
+                <h3 class="tier-name">{{ goldPlan().name }}</h3>
+                <p class="tier-summary">{{ goldPlan().content || goldPlan().description }}</p>
+              </div>
+              <div class="hero-box-price">
+                <span class="currency">₹</span>
+                <span class="price-digit">{{ goldPlan().price }}</span>
+                <span class="price-period">/ {{ goldPlan().period || 'month' }}</span>
+              </div>
+            </div>
+
+            <!-- Benefits & Access Details List -->
+            <div class="benefits-container">
+              <h4 class="benefits-title">{{ goldPlan().name }} Benefits & Access Details</h4>
+              <ul class="benefits-list">
+                <li *ngFor="let benefit of goldPlan().benefits">
+                  <div class="check-box gold-check-box">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div class="benefit-desc">
+                    <span>{{ benefit }}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Activation / Subscription Form -->
+            <form class="checkout-form" (ngSubmit)="onCompleteActivation('gold')">
+              <h4 class="form-heading">Activate {{ goldPlan().name }} Access</h4>
+              <p class="form-subheading">Enter your details to instantly activate your {{ goldPlan().name }} membership.</p>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Full Name *</label>
+                  <input type="text" class="form-input" placeholder="e.g. David Vance" [(ngModel)]="userData.name" name="name" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address *</label>
+                  <input type="email" class="form-input" placeholder="name@domain.com" [(ngModel)]="userData.email" name="email" required />
+                </div>
+                <div class="form-group form-group-full">
+                  <label class="form-label">Phone / WhatsApp *</label>
+                  <input type="tel" class="form-input" placeholder="+1 (555) 234-5678" [(ngModel)]="userData.phone" name="phone" required />
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" (click)="close()">Cancel</button>
+                <button type="submit" class="btn btn-gold btn-cta">
+                  <span>Choose {{ goldPlan().name }} (₹{{ goldPlan().price }}/{{ goldPlan().period || 'mo' }})</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </form>
+
+          </div>
+
+          <!-- SINGLE PLAN PRESENTATION: PLATINUM ONLY -->
+          <div class="single-plan-view platinum-single" *ngIf="effectivePlan === 'platinum'">
+            
+            <!-- Plan Price & Tag Card -->
+            <div class="plan-hero-box plat-hero-box">
+              <div class="hero-box-left">
+                <div class="tier-pill-label plat-pill-label">{{ platPlan().badge || 'VIP ALL-ACCESS • UNLIMITED' }}</div>
+                <h3 class="tier-name plat-tier-name">{{ platPlan().name }}</h3>
+                <p class="tier-summary plat-tier-sub">{{ platPlan().content || platPlan().description }}</p>
+              </div>
+              <div class="hero-box-price plat-hero-price">
+                <span class="currency">₹</span>
+                <span class="price-digit">{{ platPlan().price }}</span>
+                <span class="price-period">/ {{ platPlan().period || 'year' }}</span>
+              </div>
+            </div>
+
+            <!-- Benefits & Access Details List -->
+            <div class="benefits-container">
+              <h4 class="benefits-title">{{ platPlan().name }} Benefits & Access Details</h4>
+              <ul class="benefits-list">
+                <li *ngFor="let benefit of platPlan().benefits">
+                  <div class="check-box plat-check-box">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div class="benefit-desc">
+                    <span>{{ benefit }}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Activation / Subscription Form -->
+            <form class="checkout-form" (ngSubmit)="onCompleteActivation('platinum')">
+              <h4 class="form-heading">Activate {{ platPlan().name }} Access</h4>
+              <p class="form-subheading">Enter your details to instantly activate your {{ platPlan().name }} membership.</p>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Full Name *</label>
+                  <input type="text" class="form-input" placeholder="e.g. Eleanor Vance" [(ngModel)]="userData.name" name="name" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address *</label>
+                  <input type="email" class="form-input" placeholder="name@domain.com" [(ngModel)]="userData.email" name="email" required />
+                </div>
+                <div class="form-group form-group-full">
+                  <label class="form-label">Phone / WhatsApp *</label>
+                  <input type="tel" class="form-input" placeholder="+1 (555) 345-6789" [(ngModel)]="userData.phone" name="phone" required />
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" (click)="close()">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-cta plat-btn-cta">
+                  <span>Choose {{ platPlan().name }} (₹{{ platPlan().price }}/{{ platPlan().period || 'yr' }})</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  `,
