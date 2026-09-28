@@ -39,7 +39,7 @@ import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-co
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
               </svg>
             </div>
-            <img *ngIf="websiteLogo()" [src]="websiteLogo()" alt="Logo" class="custom-brand-logo" />
+            <img *ngIf="websiteLogo()" [src]="websiteLogo()" (error)="onLogoError()" alt="Logo" class="custom-brand-logo" />
             <div class="brand-text">
               <span class="brand-name">{{ brandName() }}</span>
               <span class="brand-sub">PREMIUM PROPERTIES</span>
@@ -1149,6 +1149,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .catch(() => {
         // Backend offline — keep cached value if any
       });
+  }
+
+  onLogoError(): void {
+    this.websiteLogo.set(null);
+    localStorage.removeItem('aura_website_logo');
   }
 
   get activeNav(): string {

@@ -20,7 +20,7 @@ import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-co
           <!-- Column 1: Brand -->
           <div class="brand-col">
             <div class="brand-line" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <img *ngIf="websiteLogo()" [src]="websiteLogo()" alt="Logo" style="max-height: 34px; max-width: 140px; object-fit: contain;" />
+              <img *ngIf="websiteLogo()" [src]="websiteLogo()" (error)="websiteLogo.set(null)" alt="Logo" style="max-height: 34px; max-width: 140px; object-fit: contain;" />
               <span class="footer-logo">{{ brandName() }}</span>
               <span class="footer-tagline">{{ brandSub() }}</span>
             </div>
