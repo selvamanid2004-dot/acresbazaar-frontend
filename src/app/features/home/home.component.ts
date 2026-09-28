@@ -12,12 +12,13 @@ import { GoldPremiumComponent } from './components/gold-premium/gold-premium.com
 import { PropertyScoutComponent } from './components/property-scout/property-scout.component';
 import { WhyChooseUsComponent } from './components/why-choose-us/why-choose-us.component';
 import { CtaBannerComponent } from './components/cta-banner/cta-banner.component';
+import { AdCarouselComponent } from '../../shared/components/ad-carousel/ad-carousel.component';
 
-import { Category, Property, SearchFilter } from '../../core/models/property.model';
+import { Property, SearchFilter } from '../../core/models/property.model';
 import { NotificationService } from '../../shared/services/notification.service';
 import { NavStateService } from '../../core/services/nav-state.service';
-
 import { PropertyService } from '../../core/services/property.service';
+import { ActivityService } from '../../core/services/activity.service';
 
 @Component({
   selector: 'app-home',
@@ -33,7 +34,8 @@ import { PropertyService } from '../../core/services/property.service';
     GoldPremiumComponent,
     PropertyScoutComponent,
     WhyChooseUsComponent,
-    CtaBannerComponent
+    CtaBannerComponent,
+    AdCarouselComponent
   ],
   template: `
     <div class="marketplace-home-wrapper">
@@ -44,33 +46,38 @@ import { PropertyService } from '../../core/services/property.service';
         (viewPropertiesClicked)="scrollTo('new-launches')">
       </app-hero-slider>
 
-      <!-- 2. Large Property Search Box (only Gold Plan & Platinum Plan options) -->
+      <!-- 2. Large Property Search Box -->
       <app-property-search
         (searchSubmitted)="onSearchFilter($event)">
       </app-property-search>
 
-      <!-- 3. Quick Property Categories (All Residential, Plots, Villas, Apartments, Houses, Commercial, Farm Lands) -->
+      <!-- 3. Quick Property Categories -->
       <app-property-categories></app-property-categories>
 
       <!-- 4. Continue Browsing -->
       <app-continue-browsing></app-continue-browsing>
 
-      <!-- 5. New Launch (4 cards, View All link) -->
+      <!-- 5. Promotional Ad & Carousel Presentation Section -->
+      <div class="container mx-auto px-4 max-w-7xl">
+        <app-ad-carousel></app-ad-carousel>
+      </div>
+
+      <!-- 6. New Launch (4 cards, View All link) -->
       <app-new-launch-section (propertySelected)="openDetailsModal($event)"></app-new-launch-section>
 
-      <!-- 6, 7, 8. Featured Sections: Platinum Plots, Platinum Villas, New Apartments -->
+      <!-- 7. Featured Sections: Platinum Plots, Platinum Villas, New Apartments -->
       <app-featured-sections (propertySelected)="openDetailsModal($event)"></app-featured-sections>
 
-      <!-- 9. Gold & Premium Properties (Two-column layout) -->
+      <!-- 8. Gold & Premium Properties -->
       <app-gold-premium (tierChosen)="onTierSelect($event)"></app-gold-premium>
 
-      <!-- 10. Property Scout Banner -->
+      <!-- 9. Property Scout Banner -->
       <app-property-scout (becomeScoutRequested)="onBecomeScout()"></app-property-scout>
 
-      <!-- 11. Why Choose AcresBazaar (4 items) -->
+      <!-- 10. Why Choose AcresBazaar -->
       <app-why-choose-us></app-why-choose-us>
 
-      <!-- 12. Final CTA -->
+      <!-- 11. Final CTA -->
       <app-cta-banner
         (exploreRequested)="scrollTo('search-section')">
       </app-cta-banner>
@@ -87,6 +94,7 @@ export class HomeComponent {
   navStateService = inject(NavStateService);
   notificationService = inject(NotificationService);
   propertyService = inject(PropertyService);
+  activityService = inject(ActivityService);
   router = inject(Router);
 
   constructor() {
@@ -94,6 +102,12 @@ export class HomeComponent {
   }
 
   openDetailsModal(property: Property) {
+    this.activityService.track('VIEW_PROPERTY', property.id, {
+      title: property.title,
+      price: property.price,
+      location: property.location
+    });
+
     this.router.navigate([], {
       queryParams: { property: property.id },
       queryParamsHandling: 'merge'
@@ -105,6 +119,7 @@ export class HomeComponent {
   }
 
   onSearchFilter(filter: SearchFilter) {
+    this.activityService.track('SEARCH', undefined, filter);
     this.scrollTo('new-launches');
   }
 
