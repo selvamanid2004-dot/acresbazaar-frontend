@@ -5,7 +5,7 @@ import { NavStateService } from '../../../../core/services/nav-state.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PropertyService } from '../../../../core/services/property.service';
-import { getApiBaseUrl } from '../../../../core/services/api-config';
+import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-config';
 
 @Component({
   selector: 'app-footer',
@@ -323,7 +323,7 @@ export class FooterComponent {
       .then(data => {
         const logo = data?.settings?.website_logo || data?.settings?.logo_url;
         if (logo && logo.trim()) {
-          this.websiteLogo.set(logo.trim());
+          this.websiteLogo.set(resolveImageUrl(logo.trim()));
         }
         const name = data?.settings?.brand_name || data?.settings?.website_name;
         if (name && name.trim()) {

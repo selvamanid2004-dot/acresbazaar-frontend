@@ -5,7 +5,7 @@ import { NavStateService } from '../../../../core/services/nav-state.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { WishlistService } from '../../../../core/services/wishlist.service';
-import { getApiBaseUrl } from '../../../../core/services/api-config';
+import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-config';
 
 @Component({
   selector: 'app-header',
@@ -1127,14 +1127,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
     fetch(`${getApiBaseUrl()}/settings/group/logo?_t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        const logo = data?.settings?.website_logo || data?.settings?.logo_url;
-        if (logo && logo.trim()) {
+        const rawLogo = data?.settings?.website_logo || data?.settings?.logo_url;
+        if (rawLogo && rawLogo.trim()) {
+          const resolvedLogo = resolveImageUrl(rawLogo);
           // Add cache-busting param to the image URL itself so <img> always reloads after change
           const bustParam = `?_v=${Date.now()}`;
-          const logoWithBust = logo.trim().includes('?') ? logo.trim() : logo.trim() + bustParam;
+          const logoWithBust = resolvedLogo.includes('?') ? resolvedLogo : resolvedLogo + bustParam;
           this.websiteLogo.set(logoWithBust);
           // Store clean URL (without bust) in localStorage
-          localStorage.setItem('aura_website_logo', logo.trim());
+          localStorage.setItem('aura_website_logo', resolvedLogo);
         } else if (data?.settings && (data.settings.website_logo === '' || data.settings.logo_url === '')) {
           // Logo was explicitly removed from CMS
           this.websiteLogo.set(null);

@@ -14,3 +14,28 @@ export function getApiBaseUrl(): string {
 }
 
 export const API_BASE = getApiBaseUrl();
+
+/**
+ * Normalizes and resolves image & logo URLs so localhost paths automatically
+ * point to the active backend (local or deployed Render cloud backend).
+ */
+export function resolveImageUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return '';
+  }
+  const trimmed = url.trim();
+  const backendBase = getApiBaseUrl().replace(/\/api$/, '');
+
+  // If relative uploads path
+  if (trimmed.startsWith('/uploads/')) {
+    return `${backendBase}${trimmed}`;
+  }
+
+  // If hardcoded localhost URL but running against remote/different origin
+  if (trimmed.includes('localhost:5001/uploads/')) {
+    const uploadPath = trimmed.substring(trimmed.indexOf('/uploads/'));
+    return `${backendBase}${uploadPath}`;
+  }
+
+  return trimmed;
+}

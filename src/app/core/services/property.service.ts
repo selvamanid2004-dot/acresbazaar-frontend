@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Category, HeroSlide, Property, ScoutStep, SearchFilter, WhyUsBenefit } from '../models/property.model';
-import { getApiBaseUrl } from './api-config';
+import { getApiBaseUrl, resolveImageUrl } from './api-config';
 
 @Injectable({
   providedIn: 'root'
@@ -325,8 +325,8 @@ export class PropertyService {
             type: p.category,
             category: p.category,
             tier: ((p.tier || p.planType || '').toLowerCase() === 'gold' ? 'gold' : 'platinum') as 'gold' | 'platinum',
-            imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-            galleryImages: p.galleryImages || [],
+            imageUrl: resolveImageUrl(p.imageUrl) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+            galleryImages: (p.galleryImages || []).map((img: string) => resolveImageUrl(img)),
             specs: p.specs || {},
             description: p.description,
             shortDescription: p.description || '',
