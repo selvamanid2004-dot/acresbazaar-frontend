@@ -504,6 +504,10 @@ import { PropertyService } from '../../../../core/services/property.service';
     }
 
     @media (max-width: 520px) {
+      .search-panel-card {
+        padding: 1rem 0.75rem;
+      }
+
       .plans-buttons-wrap {
         flex-direction: column;
       }
@@ -511,6 +515,7 @@ import { PropertyService } from '../../../../core/services/property.service';
       .plan-card-btn {
         width: 100%;
         min-width: 100%;
+        box-sizing: border-box;
       }
 
       .plan-title {

@@ -495,8 +495,15 @@ ul, ol {
   }
 
   .container {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .section-py {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
   }
 
   .btn-auth {
@@ -509,9 +516,20 @@ ul, ol {
     padding: 0.2rem 0.45rem;
   }
 
-  h1 { font-size: 1.75rem; }
-  h2 { font-size: 1.45rem; }
-  h3 { font-size: 1.2rem; }
+  h1 { font-size: 1.65rem; }
+  h2 { font-size: 1.35rem; }
+  h3 { font-size: 1.15rem; }
+
+  /* Ensure cards and grids occupy full cell width */
+  .listing-card,
+  .tier-box,
+  .feature-item,
+  .diff-card,
+  .service-card,
+  .compact-cat-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
 }
 
 @media (max-width: 360px) {
@@ -520,7 +538,7 @@ ul, ol {
   }
 
   .container {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
   }
 }
