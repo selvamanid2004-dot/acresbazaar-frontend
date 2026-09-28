@@ -58,7 +58,7 @@ import { ActivityService } from '../../core/services/activity.service';
       <app-continue-browsing></app-continue-browsing>
 
       <!-- 5. Promotional Ad & Carousel Presentation Section -->
-      <div class="container mx-auto px-4 max-w-7xl">
+      <div class="container">
         <app-ad-carousel></app-ad-carousel>
       </div>
 

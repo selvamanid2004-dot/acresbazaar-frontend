@@ -288,6 +288,13 @@ import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-co
         gap: 0.65rem;
       }
     }
+
+    @media (max-width: 440px) {
+      .footer-columns-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
   `]
 })
 export class FooterComponent {
