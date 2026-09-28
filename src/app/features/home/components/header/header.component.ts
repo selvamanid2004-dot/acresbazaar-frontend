@@ -1062,9 +1062,42 @@ import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-co
     }
 
     @media (max-width: 768px) {
+      .marketplace-header {
+        height: 64px;
+      }
       .header-inner {
-        padding-left: 0.85rem !important;
-        padding-right: 0.85rem !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        gap: 0.5rem;
+      }
+      .brand-icon {
+        width: 38px;
+        height: 38px;
+      }
+      .brand-name {
+        font-size: 1.25rem;
+      }
+      .custom-brand-logo {
+        height: 38px;
+        max-width: 140px;
+      }
+      .brand-sub {
+        display: none;
+      }
+      .post-property-btn {
+        padding: 0 0.65rem;
+        font-size: 0.78rem;
+        height: 34px;
+      }
+      .register-btn {
+        height: 34px;
+        padding: 0 0.75rem;
+        font-size: 0.78rem;
+      }
+      .btn-auth {
+        height: 34px;
+        padding: 0 0.4rem;
+        font-size: 0.82rem;
       }
     }
 
@@ -1074,9 +1107,69 @@ import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-co
       }
       .left-menu-bar {
         padding: 0 5px;
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
         justify-content: center;
+      }
+      .header-brand-wrap {
+        gap: 0.5rem;
+      }
+      .brand-block {
+        gap: 0.5rem;
+      }
+      .brand-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+      }
+      .brand-name {
+        font-size: 1.15rem;
+      }
+      .custom-brand-logo {
+        height: 34px;
+        max-width: 110px;
+      }
+      .right-actions {
+        gap: 0.35rem;
+      }
+      .post-property-btn span:not(.free-badge) {
+        display: none;
+      }
+      .post-property-btn {
+        padding: 0 0.5rem;
+        gap: 0.25rem;
+        height: 32px;
+      }
+      .register-btn {
+        display: none; /* Accessible in drawer and mobile bottom nav */
+      }
+      .user-profile-badge {
+        padding: 2px 6px;
+      }
+      .user-name {
+        max-width: 60px;
+      }
+      .user-tier-tag {
+        display: none;
+      }
+      .btn-logout span {
+        display: none;
+      }
+      .btn-logout {
+        padding: 5px 6px;
+      }
+      .top-wishlist-btn {
+        width: 34px;
+        height: 34px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .brand-name {
+        font-size: 1.05rem;
+      }
+      .post-property-btn {
+        display: none; /* Visible in center sticky mobile bottom bar */
       }
     }
   `]

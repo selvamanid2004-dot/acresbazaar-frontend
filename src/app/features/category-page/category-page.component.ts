@@ -1487,8 +1487,24 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     @media (max-width: 768px) {
+      .category-hero {
+        padding: 2.25rem 0 2rem 0;
+      }
+      .category-title {
+        font-size: clamp(1.6rem, 5.5vw, 2.2rem);
+      }
+      .category-desc {
+        font-size: 0.92rem;
+      }
+      .plan-showcase-section {
+        padding: 2rem 0 2.5rem 0;
+      }
       .callout-grid-split {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+      .callout-plan-card {
+        padding: 1.75rem 1.25rem;
       }
       .properties-grid {
         grid-template-columns: 1fr;
@@ -1496,6 +1512,14 @@ import { AuthService } from '../../core/services/auth.service';
       .nav-bar-inner {
         flex-direction: column;
         align-items: flex-start;
+        gap: 0.5rem;
+      }
+      .plan-price-callout {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .btn-gold-header, .btn-plat-header {
+        width: 100%;
       }
     }
   `]

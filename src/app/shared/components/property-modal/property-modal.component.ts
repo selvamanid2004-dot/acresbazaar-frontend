@@ -493,26 +493,54 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
     }
 
     @media (max-width: 640px) {
+      .modal-backdrop {
+        padding: 0.5rem;
+      }
+
       .modal-dialog {
-        max-height: 95vh;
+        max-height: 94vh;
+        border-radius: var(--radius-lg);
+      }
+
+      .modal-media-header {
+        height: 200px;
+      }
+
+      .price-big {
+        font-size: 1.55rem;
+      }
+
+      .modal-title {
+        font-size: 1.3rem;
       }
 
       .modal-body-scroll {
-        padding: 1.5rem;
+        padding: 1.25rem 1rem;
       }
 
       .modal-specs-grid {
         grid-template-columns: 1fr;
+        gap: 0.6rem;
       }
 
       .contact-agent-card {
         flex-direction: column;
         align-items: stretch;
         text-align: center;
+        padding: 1.25rem 1rem;
       }
 
       .agent-avatar {
         margin: 0 auto;
+      }
+
+      .direct-contact-buttons {
+        flex-direction: column;
+      }
+
+      .btn-direct-action {
+        width: 100%;
+        justify-content: center;
       }
     }
 

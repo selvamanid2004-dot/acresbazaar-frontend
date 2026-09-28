@@ -386,8 +386,9 @@ ul, ol {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(7, 13, 30, 0.7);
-  backdrop-filter: blur(5px);
+  background: rgba(7, 13, 30, 0.8);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 1050;
   display: flex;
   align-items: center;
@@ -440,33 +441,33 @@ ul, ol {
   }
 
   body {
-    padding-bottom: 64px; /* Space for sticky bottom navigation */
+    padding-bottom: 68px; /* Space for sticky bottom navigation */
   }
 
   .container {
-    padding-left: 0.9rem;
-    padding-right: 0.9rem;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
   }
 
   .section-py {
-    padding-top: 2.25rem;
-    padding-bottom: 2.25rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 
   .btn {
-    min-height: 40px;
-    padding: 0.55rem 1.1rem;
+    min-height: 38px;
+    padding: 0.5rem 1rem;
     font-size: 0.875rem;
   }
 
   .btn-lg {
     min-height: 44px;
-    padding: 0.7rem 1.4rem;
-    font-size: 0.9375rem;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.92rem;
   }
 
   .modal-overlay {
-    padding: 0;
+    padding: 0.5rem;
     align-items: flex-end; /* Slide-up bottom sheet on mobile */
   }
 
@@ -481,11 +482,21 @@ ul, ol {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+
+  /* Forms on Mobile */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
+  }
 }
 
 @media (max-width: 480px) {
   html {
     font-size: 14px;
+  }
+
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   .btn-auth {
@@ -495,6 +506,21 @@ ul, ol {
 
   .badge {
     font-size: 0.65rem;
-    padding: 0.2rem 0.5rem;
+    padding: 0.2rem 0.45rem;
+  }
+
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.45rem; }
+  h3 { font-size: 1.2rem; }
+}
+
+@media (max-width: 360px) {
+  html {
+    font-size: 13.5px;
+  }
+
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
 }

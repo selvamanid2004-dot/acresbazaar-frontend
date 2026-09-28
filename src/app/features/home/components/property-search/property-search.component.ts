@@ -457,13 +457,19 @@ import { PropertyService } from '../../../../core/services/property.service';
 
     @media (max-width: 980px) {
       .floating-search-section {
-        margin-top: -30px;
+        margin-top: -24px;
+        padding-bottom: 1.5rem;
+      }
+
+      .search-panel-card {
+        padding: 1.25rem 1rem;
+        border-radius: var(--radius-md);
       }
 
       .plans-toggle-row {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 0.85rem;
       }
 
       .plans-buttons-wrap {
@@ -472,12 +478,13 @@ import { PropertyService } from '../../../../core/services/property.service';
 
       .plan-card-btn {
         flex: 1;
-        min-width: 160px;
+        min-width: 140px;
+        padding: 0.5rem 0.85rem;
       }
 
       .search-controls-row {
         grid-template-columns: 1fr;
-        gap: 0.85rem;
+        gap: 0.75rem;
       }
 
       .control-divider {
@@ -486,12 +493,13 @@ import { PropertyService } from '../../../../core/services/property.service';
 
       .control-group {
         border-bottom: 1px solid var(--slate-100);
-        padding-bottom: 0.5rem;
+        padding-bottom: 0.4rem;
       }
 
       .btn-search {
         width: 100%;
-        margin-top: 0.5rem;
+        margin-top: 0.4rem;
+        height: 44px;
       }
     }
 
@@ -502,6 +510,15 @@ import { PropertyService } from '../../../../core/services/property.service';
 
       .plan-card-btn {
         width: 100%;
+        min-width: 100%;
+      }
+
+      .plan-title {
+        font-size: 0.88rem;
+      }
+
+      .plan-price {
+        font-size: 1.1rem;
       }
     }
   `]

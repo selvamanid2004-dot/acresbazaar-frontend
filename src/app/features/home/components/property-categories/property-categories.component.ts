@@ -156,10 +156,21 @@ import { NavStateService } from '../../../../core/services/nav-state.service';
     @media (max-width: 768px) {
       .categories-scroll-track {
         grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+      }
+      .compact-cat-card {
+        padding: 0.5rem 0.6rem;
+      }
+      .cat-icon-frame {
+        width: 34px;
+        height: 34px;
+      }
+      .cat-name {
+        font-size: 0.78rem;
       }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 380px) {
       .categories-scroll-track {
         grid-template-columns: 1fr;
       }

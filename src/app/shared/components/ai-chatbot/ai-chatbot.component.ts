@@ -669,13 +669,56 @@ interface ChatMessage {
       40% { opacity: 1; transform: scale(1.1); }
     }
 
+    @media (max-width: 768px) {
+      .ai-launcher-wrapper {
+        bottom: 72px; /* Floats above mobile bottom navigation */
+        right: 14px;
+        gap: 8px;
+      }
+
+      .ai-trigger-btn {
+        width: 52px;
+        height: 52px;
+      }
+
+      .launcher-bubble {
+        max-width: 250px;
+        padding: 8px 12px;
+      }
+
+      .bubble-text {
+        font-size: 0.78rem;
+      }
+
+      .ai-chat-window {
+        bottom: 70px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-width: calc(100vw - 20px);
+        height: 78vh;
+        max-height: calc(100vh - 110px);
+        border-radius: 16px;
+      }
+    }
+
     @media (max-width: 480px) {
       .ai-chat-window {
-        bottom: 84px;
-        right: 12px;
-        left: 12px;
-        width: auto;
+        bottom: 68px;
+        right: 6px;
+        left: 6px;
+        max-width: calc(100vw - 12px);
         height: 80vh;
+      }
+      .chat-header {
+        padding: 0.75rem 0.9rem;
+      }
+      .bot-avatar-frame {
+        width: 36px;
+        height: 36px;
+      }
+      .bot-name {
+        font-size: 0.88rem;
       }
     }
   `]

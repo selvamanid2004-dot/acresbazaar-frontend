@@ -342,8 +342,8 @@ import { NotificationService } from '../../../../shared/services/notification.se
     @media (max-width: 900px) {
       .hero-banner-section {
         height: auto;
-        min-height: 420px;
-        padding-top: 2rem;
+        min-height: 460px;
+        padding-top: 1.5rem;
         padding-bottom: 3.5rem;
       }
 
@@ -357,6 +357,48 @@ import { NotificationService } from '../../../../shared/services/notification.se
 
       .hero-gradient-overlay {
         background: rgba(7, 13, 30, 0.82);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero-banner-section {
+        min-height: 480px;
+        padding-top: 1rem;
+        padding-bottom: 3rem;
+      }
+
+      .hero-container {
+        padding-bottom: 2rem;
+      }
+
+      .hero-heading {
+        font-size: clamp(1.45rem, 5.5vw, 1.85rem);
+        margin-bottom: 0.5rem;
+      }
+
+      .hero-subtext {
+        font-size: 0.88rem;
+        line-height: 1.45;
+        margin-bottom: 1rem;
+      }
+
+      .slider-arrow {
+        display: none; /* Swipe & dots used on mobile */
+      }
+
+      .slider-dots-container {
+        bottom: 2.5rem;
+      }
+
+      .hero-buttons-row {
+        gap: 0.5rem;
+      }
+
+      .hero-buttons-row .btn {
+        flex: 1;
+        min-width: 130px;
+        font-size: 0.84rem;
+        padding: 0.55rem 0.85rem;
       }
     }
   `]

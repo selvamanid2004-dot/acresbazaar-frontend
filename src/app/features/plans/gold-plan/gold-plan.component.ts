@@ -332,6 +332,30 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       font-size: 0.84rem;
       margin-top: 14px;
     }
+
+    @media (max-width: 640px) {
+      .plan-page-container {
+        padding: 20px 12px 60px;
+      }
+      .plan-pricing-banner {
+        padding: 20px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .amount {
+        font-size: 2.5rem;
+      }
+      .benefits-section {
+        padding: 20px 16px;
+      }
+      .action-area {
+        padding: 0 16px 24px;
+      }
+      .plan-title {
+        font-size: 1.75rem;
+      }
+    }
   `]
 })
 export class GoldPlanComponent implements OnInit {
