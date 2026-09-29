@@ -5,7 +5,7 @@ import { NavStateService } from '../../../../core/services/nav-state.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { WishlistService } from '../../../../core/services/wishlist.service';
-import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-config';
+import { getApiBaseUrl, resolveImageUrl, fetchWithTimeout } from '../../../../core/services/api-config';
 
 @Component({
   selector: 'app-header',
@@ -1217,7 +1217,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
 
     // Add cache-bust timestamp so browser doesn't serve stale logo image
-    fetch(`${getApiBaseUrl()}/settings/group/logo?_t=${Date.now()}`)
+    fetchWithTimeout(`${getApiBaseUrl()}/settings/group/logo?_t=${Date.now()}`, {}, 2500)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         const rawLogo = data?.settings?.website_logo || data?.settings?.logo_url;

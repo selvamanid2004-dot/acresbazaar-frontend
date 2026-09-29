@@ -1,48 +1,14 @@
 import { Routes } from '@angular/router';
-
-// Public Layout & Pages
 import { PublicLayoutComponent } from './features/public-layout/public-layout.component';
 import { HomeComponent } from './features/home/home.component';
 import { CategoryPageComponent } from './features/category-page/category-page.component';
-import { AboutComponent } from './features/about/about.component';
-import { ServicesComponent } from './features/services/services.component';
-import { ContactComponent } from './features/contact/contact.component';
-import { BuyersComponent } from './features/buyers/buyers.component';
-import { BuyerCategoryComponent } from './features/buyers/buyer-category.component';
-import { BuyerRegisterComponent } from './features/auth/buyer-register/buyer-register.component';
-import { BuyerLoginComponent } from './features/auth/buyer-login/buyer-login.component';
-import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
-import { GoldPlanComponent } from './features/plans/gold-plan/gold-plan.component';
-import { PlatinumPlanComponent } from './features/plans/platinum-plan/platinum-plan.component';
 import { authGuard } from './core/guards/auth.guard';
-
-// Seller Components & Guard
-import { SellerRegisterComponent } from './features/seller/seller-register/seller-register.component';
-import { SellerLoginComponent } from './features/seller/seller-login/seller-login.component';
-import { SellerCategoriesComponent } from './features/seller/seller-categories/seller-categories.component';
-import { SellerPropertyNewComponent } from './features/seller/seller-property-new/seller-property-new.component';
-import { SellerPropertiesComponent } from './features/seller/seller-properties/seller-properties.component';
 import { sellerGuard } from './core/guards/seller.guard';
-
-// Dealer Components & Guard
-import { DealerRegisterComponent } from './features/dealer/dealer-register/dealer-register.component';
-import { DealerLoginComponent } from './features/dealer/dealer-login/dealer-login.component';
-import { DealerDashboardComponent } from './features/dealer/dealer-dashboard/dealer-dashboard.component';
 import { dealerGuard } from './core/guards/dealer.guard';
-
-// Shared Property Post & My Properties Components
-import { PropertyPostComponent } from './shared/components/property-post/property-post.component';
-import { MyPropertiesComponent } from './shared/components/my-properties/my-properties.component';
-
-// Snap Property Module (Common People Spotters)
-import { SnapPropertyRegisterComponent } from './features/snap-property/snap-property-register/snap-property-register.component';
-import { SnapPropertyLoginComponent } from './features/snap-property/snap-property-login/snap-property-login.component';
-import { SnapPropertyUploadComponent } from './features/snap-property/snap-property-upload/snap-property-upload.component';
-import { SnapPropertyDashboardComponent } from './features/snap-property/snap-property-dashboard/snap-property-dashboard.component';
 
 export const routes: Routes = [
   // =========================================================================
-  // PUBLIC WEBSITE ROUTE TREE (HAS PUBLIC HEADER, FOOTER & MODALS)
+  // PUBLIC WEBSITE ROUTE TREE (WITH LAZY CODE SPLITTING FOR ULTRA-FAST LOAD)
   // =========================================================================
   {
     path: '',
@@ -52,42 +18,115 @@ export const routes: Routes = [
 
       // Snap Property Module (Common People)
       { path: 'snap-property', redirectTo: 'snap-property/dashboard', pathMatch: 'full' },
-      { path: 'snap-property/register', component: SnapPropertyRegisterComponent },
-      { path: 'snap-property/login', component: SnapPropertyLoginComponent },
-      { path: 'snap-property/dashboard', component: SnapPropertyDashboardComponent },
-      { path: 'snap-property/upload', component: SnapPropertyUploadComponent },
+      { 
+        path: 'snap-property/register', 
+        loadComponent: () => import('./features/snap-property/snap-property-register/snap-property-register.component').then(m => m.SnapPropertyRegisterComponent) 
+      },
+      { 
+        path: 'snap-property/login', 
+        loadComponent: () => import('./features/snap-property/snap-property-login/snap-property-login.component').then(m => m.SnapPropertyLoginComponent) 
+      },
+      { 
+        path: 'snap-property/dashboard', 
+        loadComponent: () => import('./features/snap-property/snap-property-dashboard/snap-property-dashboard.component').then(m => m.SnapPropertyDashboardComponent) 
+      },
+      { 
+        path: 'snap-property/upload', 
+        loadComponent: () => import('./features/snap-property/snap-property-upload/snap-property-upload.component').then(m => m.SnapPropertyUploadComponent) 
+      },
 
       // Buyer & Community Authentication Routes
-      { path: 'login', component: BuyerLoginComponent },
+      { 
+        path: 'login', 
+        loadComponent: () => import('./features/auth/buyer-login/buyer-login.component').then(m => m.BuyerLoginComponent) 
+      },
       { path: 'register', redirectTo: 'register/buyer', pathMatch: 'full' },
-      { path: 'register/buyer', component: BuyerRegisterComponent },
-      { path: 'register/common', component: SnapPropertyRegisterComponent, data: { role: 'COMMON_PEOPLE' } },
+      { 
+        path: 'register/buyer', 
+        loadComponent: () => import('./features/auth/buyer-register/buyer-register.component').then(m => m.BuyerRegisterComponent) 
+      },
+      { 
+        path: 'register/common', 
+        loadComponent: () => import('./features/snap-property/snap-property-register/snap-property-register.component').then(m => m.SnapPropertyRegisterComponent), 
+        data: { role: 'COMMON_PEOPLE' } 
+      },
       { path: 'register/seller', redirectTo: 'seller/register', pathMatch: 'full' },
       { path: 'register/dealer', redirectTo: 'dealer/register', pathMatch: 'full' },
-      { path: 'forgot-password', component: ForgotPasswordComponent },
+      { 
+        path: 'forgot-password', 
+        loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent) 
+      },
 
       // Seller Routes
       { path: 'seller', redirectTo: 'seller/categories', pathMatch: 'full' },
-      { path: 'seller/register', component: SellerRegisterComponent },
-      { path: 'seller/login', component: SellerLoginComponent },
-      { path: 'seller/categories', component: SellerCategoriesComponent, canActivate: [sellerGuard] },
-      { path: 'seller/property/new', component: SellerPropertyNewComponent, canActivate: [sellerGuard] },
-      { path: 'seller/properties', component: SellerPropertiesComponent, canActivate: [sellerGuard] },
+      { 
+        path: 'seller/register', 
+        loadComponent: () => import('./features/seller/seller-register/seller-register.component').then(m => m.SellerRegisterComponent) 
+      },
+      { 
+        path: 'seller/login', 
+        loadComponent: () => import('./features/seller/seller-login/seller-login.component').then(m => m.SellerLoginComponent) 
+      },
+      { 
+        path: 'seller/categories', 
+        loadComponent: () => import('./features/seller/seller-categories/seller-categories.component').then(m => m.SellerCategoriesComponent), 
+        canActivate: [sellerGuard] 
+      },
+      { 
+        path: 'seller/property/new', 
+        loadComponent: () => import('./features/seller/seller-property-new/seller-property-new.component').then(m => m.SellerPropertyNewComponent), 
+        canActivate: [sellerGuard] 
+      },
+      { 
+        path: 'seller/properties', 
+        loadComponent: () => import('./features/seller/seller-properties/seller-properties.component').then(m => m.SellerPropertiesComponent), 
+        canActivate: [sellerGuard] 
+      },
       { path: 'seller/dashboard', redirectTo: 'seller/categories', pathMatch: 'full' },
       { path: 'seller/add-property', redirectTo: 'seller/categories', pathMatch: 'full' },
       { path: 'seller/my-properties', redirectTo: 'seller/properties', pathMatch: 'full' },
-      { path: 'seller/property/:id/edit', component: MyPropertiesComponent, canActivate: [sellerGuard] },
+      { 
+        path: 'seller/property/:id/edit', 
+        loadComponent: () => import('./shared/components/my-properties/my-properties.component').then(m => m.MyPropertiesComponent), 
+        canActivate: [sellerGuard] 
+      },
 
       // Dealer Routes
-      { path: 'dealer/register', component: DealerRegisterComponent },
-      { path: 'dealer/login', component: DealerLoginComponent },
-      { path: 'dealer/dashboard', component: DealerDashboardComponent, canActivate: [dealerGuard] },
-      { path: 'dealer/add-property', component: PropertyPostComponent, canActivate: [dealerGuard] },
-      { path: 'dealer/my-properties', component: MyPropertiesComponent, canActivate: [dealerGuard] },
+      { 
+        path: 'dealer/register', 
+        loadComponent: () => import('./features/dealer/dealer-register/dealer-register.component').then(m => m.DealerRegisterComponent) 
+      },
+      { 
+        path: 'dealer/login', 
+        loadComponent: () => import('./features/dealer/dealer-login/dealer-login.component').then(m => m.DealerLoginComponent) 
+      },
+      { 
+        path: 'dealer/dashboard', 
+        loadComponent: () => import('./features/dealer/dealer-dashboard/dealer-dashboard.component').then(m => m.DealerDashboardComponent), 
+        canActivate: [dealerGuard] 
+      },
+      { 
+        path: 'dealer/add-property', 
+        loadComponent: () => import('./shared/components/property-post/property-post.component').then(m => m.PropertyPostComponent), 
+        canActivate: [dealerGuard] 
+      },
+      { 
+        path: 'dealer/my-properties', 
+        loadComponent: () => import('./shared/components/my-properties/my-properties.component').then(m => m.MyPropertiesComponent), 
+        canActivate: [dealerGuard] 
+      },
 
       // Membership Plan Routes
-      { path: 'plans/gold', component: GoldPlanComponent, canActivate: [authGuard] },
-      { path: 'plans/platinum', component: PlatinumPlanComponent, canActivate: [authGuard] },
+      { 
+        path: 'plans/gold', 
+        loadComponent: () => import('./features/plans/gold-plan/gold-plan.component').then(m => m.GoldPlanComponent), 
+        canActivate: [authGuard] 
+      },
+      { 
+        path: 'plans/platinum', 
+        loadComponent: () => import('./features/plans/platinum-plan/platinum-plan.component').then(m => m.PlatinumPlanComponent), 
+        canActivate: [authGuard] 
+      },
 
       // Standard Category Routes
       { path: 'all-residential', component: CategoryPageComponent, data: { category: 'all-residential' } },
@@ -103,14 +142,32 @@ export const routes: Routes = [
       { path: 'category/:category', component: CategoryPageComponent },
 
       // Static Content Routes
-      { path: 'about', component: AboutComponent },
-      { path: 'services', component: ServicesComponent },
-      { path: 'contact', component: ContactComponent },
+      { 
+        path: 'about', 
+        loadComponent: () => import('./features/about/about.component').then(m => m.AboutComponent) 
+      },
+      { 
+        path: 'services', 
+        loadComponent: () => import('./features/services/services.component').then(m => m.ServicesComponent) 
+      },
+      { 
+        path: 'contact', 
+        loadComponent: () => import('./features/contact/contact.component').then(m => m.ContactComponent) 
+      },
 
       // Buyer Dedicated Routes
-      { path: 'buyers', component: BuyersComponent },
-      { path: 'buyers/:category', component: BuyerCategoryComponent },
-      { path: 'buyers/:category/:tier', component: BuyerCategoryComponent }
+      { 
+        path: 'buyers', 
+        loadComponent: () => import('./features/buyers/buyers.component').then(m => m.BuyersComponent) 
+      },
+      { 
+        path: 'buyers/:category', 
+        loadComponent: () => import('./features/buyers/buyer-category.component').then(m => m.BuyerCategoryComponent) 
+      },
+      { 
+        path: 'buyers/:category/:tier', 
+        loadComponent: () => import('./features/buyers/buyer-category.component').then(m => m.BuyerCategoryComponent) 
+      }
     ]
   },
 

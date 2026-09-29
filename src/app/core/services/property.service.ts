@@ -1,6 +1,178 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Category, HeroSlide, Property, ScoutStep, SearchFilter, WhyUsBenefit } from '../models/property.model';
-import { getApiBaseUrl, resolveImageUrl } from './api-config';
+import { getApiBaseUrl, resolveImageUrl, fetchWithTimeout, fetchJsonCached } from './api-config';
+
+const DEFAULT_SHOWCASE_PROPERTIES: Property[] = [
+  {
+    id: 'prop-1',
+    title: 'Green Meadows Luxury Villa',
+    slug: 'green-meadows-luxury-villa',
+    category: 'Villas',
+    tier: 'platinum',
+    type: 'Villas',
+    price: 28500000,
+    priceDisplay: '₹2.85 Cr',
+    location: 'Whitefield, Bangalore',
+    city: 'Bangalore',
+    address: 'Phase 2, Palm Avenue, Whitefield',
+    exactAddress: 'Phase 2, Palm Avenue, Whitefield, Bangalore',
+    imageUrl: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
+    ],
+    specs: { beds: 4, baths: 4, sqft: 4200, status: 'Ready to Move', bhk: '4 BHK' },
+    shortDescription: 'Bespoke 4 BHK luxury architectural villa with private infinity pool, landscaped zen gardens, and double-height living spaces.',
+    description: 'Bespoke 4 BHK luxury architectural villa with private infinity pool, landscaped zen gardens, and double-height living spaces in prime Whitefield.',
+    badges: ['Platinum Exclusive', '100% Verified'],
+    isVerified: true,
+    isFeatured: true,
+    isNewLaunch: true,
+    submissionStatus: 'APPROVED',
+    submissionDate: '12 Sep 2026',
+    postedBy: { name: 'Sunita Reddy', role: 'Owner', verified: true, phone: '+91 99001 88990' }
+  },
+  {
+    id: 'prop-2',
+    title: 'Emerald Palms Gated Plots',
+    slug: 'emerald-palms-gated-plots',
+    category: 'Plots',
+    tier: 'gold',
+    type: 'Plots',
+    price: 12500000,
+    priceDisplay: '₹1.25 Cr',
+    location: 'Sarjapur Road, Bangalore',
+    city: 'Bangalore',
+    address: 'Survey 42, Gated Layout, Sarjapur Road',
+    exactAddress: 'Survey 42, Gated Layout, Sarjapur Road, Bangalore',
+    imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80'
+    ],
+    specs: { plotSize: '2400 sq.ft', dimensions: '40x60 ft', facing: 'East', reraApproved: true },
+    shortDescription: 'BDA-approved residential corner parcel in a gated township layout with 40-ft wide blacktop roads and underground utilities.',
+    description: 'BDA-approved residential corner parcel in a gated layout with 40-ft wide blacktop roads, 24/7 security, and clubhouse access.',
+    badges: ['Gold Exclusive', 'Clear Title'],
+    isVerified: true,
+    isFeatured: true,
+    isNewLaunch: true,
+    submissionStatus: 'APPROVED',
+    submissionDate: '15 Sep 2026',
+    postedBy: { name: 'Horizon Realty Advisors', role: 'Dealer', verified: true, phone: '+91 97410 44556' }
+  },
+  {
+    id: 'prop-3',
+    title: 'Skyline Zenith Heights',
+    slug: 'skyline-zenith-heights',
+    category: 'Apartments / Flats',
+    tier: 'platinum',
+    type: 'Apartments / Flats',
+    price: 18500000,
+    priceDisplay: '₹1.85 Cr',
+    location: 'Indiranagar 100ft Road, Bangalore',
+    city: 'Bangalore',
+    address: 'Skyline Zenith Tower, 100ft Road, Indiranagar',
+    exactAddress: 'Skyline Zenith Tower, 100ft Road, Indiranagar, Bangalore',
+    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'
+    ],
+    specs: { beds: 3, baths: 3, sqft: 2150, bhk: '3 BHK', floor: '14th Floor' },
+    shortDescription: 'Spacious 3 BHK modern skyline apartment with panoramic city-facing balcony, premium Italian marble, and EV charging bays.',
+    description: 'Spacious 3 BHK modern skyline apartment with panoramic balcony, premium Italian marble, EV charging bays, and rooftop infinity lounge.',
+    badges: ['Platinum Exclusive', 'RERA Approved'],
+    isVerified: true,
+    isFeatured: true,
+    isNewLaunch: true,
+    submissionStatus: 'APPROVED',
+    submissionDate: '16 Sep 2026',
+    postedBy: { name: 'Prestige Realty Network', role: 'Dealer', verified: true, phone: '+91 98451 22334' }
+  },
+  {
+    id: 'prop-4',
+    title: 'Prime Tech Commercial Tower',
+    slug: 'prime-tech-commercial-tower',
+    category: 'Commercial Spaces',
+    tier: 'platinum',
+    type: 'Commercial Spaces',
+    price: 55000000,
+    priceDisplay: '₹5.50 Cr',
+    location: 'Bellandur ORR, Bangalore',
+    city: 'Bangalore',
+    address: 'Outer Ring Road, Near Bellandur Junction',
+    exactAddress: 'Outer Ring Road, Near Bellandur Junction, Bangalore',
+    imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80'
+    ],
+    specs: { sqft: 6500, commercialType: 'Office Floor', parking: '8 Reserved Bays' },
+    shortDescription: 'Grade-A corporate office floor with leasable area, 100% DG power backup, high-speed elevators, and LEED Platinum certification.',
+    description: 'Grade-A corporate office floor with leasable area, 100% DG power backup, high-speed elevators, and LEED Platinum certification.',
+    badges: ['High ROI', 'Grade-A Asset'],
+    isVerified: true,
+    isFeatured: true,
+    isNewLaunch: false,
+    submissionStatus: 'APPROVED',
+    submissionDate: '18 Sep 2026',
+    postedBy: { name: 'Brigade Horizon Commercial', role: 'Dealer', verified: true, phone: '+91 97410 44556' }
+  },
+  {
+    id: 'prop-5',
+    title: 'Silver Oak Luxury Duplex Villa',
+    slug: 'silver-oak-luxury-duplex-villa',
+    category: 'Independent Houses',
+    tier: 'platinum',
+    type: 'Independent Houses',
+    price: 34000000,
+    priceDisplay: '₹3.40 Cr',
+    location: 'Koramangala 4th Block, Bangalore',
+    city: 'Bangalore',
+    address: '8th Main, 4th Block, Koramangala',
+    exactAddress: '8th Main, 4th Block, Koramangala, Bangalore',
+    imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
+    ],
+    specs: { beds: 4, baths: 5, sqft: 3800, bhk: '4 BHK', status: 'Ready to Move' },
+    shortDescription: 'Independent 4 BHK triplex bungalow with private terrace lounge, bespoke teakwood finishings, and landscaped courtyard.',
+    description: 'Independent 4 BHK triplex bungalow with private terrace lounge, bespoke teakwood finishings, and landscaped courtyard.',
+    badges: ['Platinum Exclusive', 'Clear Title'],
+    isVerified: true,
+    isFeatured: true,
+    isNewLaunch: true,
+    submissionStatus: 'APPROVED',
+    submissionDate: '20 Sep 2026',
+    postedBy: { name: 'Kiran Kumar', role: 'Owner', verified: true, phone: '+91 98765 43210' }
+  },
+  {
+    id: 'prop-6',
+    title: 'Whispering Palms Agro Estate Farmlands',
+    slug: 'whispering-palms-agro-estate-farmlands',
+    category: 'Farm Lands',
+    tier: 'gold',
+    type: 'Farm Lands',
+    price: 9500000,
+    priceDisplay: '₹95 Lakhs',
+    location: 'Kanakapura Corridor, Bangalore South',
+    city: 'Bangalore South',
+    address: 'Harohalli Agro Belt, Kanakapura Road',
+    exactAddress: 'Harohalli Agro Belt, Kanakapura Road, Bangalore',
+    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'
+    ],
+    specs: { plotArea: '1.5 Acres', waterAvailability: 'Drip Irrigation & Borewell', soilType: 'Red Soil' },
+    shortDescription: 'Gated 1.5-acre fertile agro-farmland with mature teak trees, perimeter fencing, drip irrigation, and luxury weekend farmhouse zone.',
+    description: 'Gated 1.5-acre fertile agro-farmland with mature teak trees, perimeter fencing, drip irrigation, and luxury weekend farmhouse zone.',
+    badges: ['High Appreciation', 'Verified Soil'],
+    isVerified: true,
+    isFeatured: false,
+    isNewLaunch: false,
+    submissionStatus: 'APPROVED',
+    submissionDate: '21 Sep 2026',
+    postedBy: { name: 'Vedic Farms & Estates', role: 'Dealer', verified: true, phone: '+91 94480 77123' }
+  }
+];
 
 @Injectable({
   providedIn: 'root'
@@ -8,6 +180,11 @@ import { getApiBaseUrl, resolveImageUrl } from './api-config';
 export class PropertyService {
 
   constructor() {
+    // Distribute initial properties immediately so signals are ready synchronously on startup
+    const initialProps = this.customProperties();
+    if (initialProps && initialProps.length > 0) {
+      this.distributeProperties(initialProps);
+    }
     this.syncPlatinumFromBackend();
     this.syncCategoriesFromBackend();
     this.syncHomeSettingsFromBackend();
@@ -223,19 +400,50 @@ export class PropertyService {
     return this.whyUsBenefits.asReadonly();
   }
 
+  private distributeProperties(props: Property[]): void {
+    if (!props || props.length === 0) return;
+    const isTerm = (p: Property, terms: string[]) => {
+      const cat = (p.category || '').toLowerCase();
+      const typ = (p.type || '').toLowerCase();
+      return terms.some(t => cat.includes(t) || typ.includes(t));
+    };
+
+    const plots = props.filter(p => isTerm(p, ['plot', 'land', 'site', 'layout']) && !isTerm(p, ['farm']));
+    const villas = props.filter(p => isTerm(p, ['villa', 'estate', 'bungalow']));
+    const apts = props.filter(p => isTerm(p, ['apartment', 'flat', 'penthouse', 'high-rise']));
+    const commercial = props.filter(p => isTerm(p, ['commercial', 'office', 'retail', 'shop', 'tech park', 'grade-a']));
+    const houses = props.filter(p => isTerm(p, ['house', 'independent', 'duplex']));
+    const farms = props.filter(p => isTerm(p, ['farm', 'agriculture']));
+
+    this.platinumPlots.set(plots.length > 0 ? plots : props.slice(0, 4));
+    this.platinumVillas.set(villas.length > 0 ? villas : props.slice(0, 4));
+    this.newApartments.set(apts.length > 0 ? apts : props.slice(0, 4));
+    this.commercialProperties.set(commercial.length > 0 ? commercial : props.slice(0, 4));
+    this.independentHouses.set(houses.length > 0 ? houses : props.slice(0, 4));
+    this.farmLands.set(farms.length > 0 ? farms : props.slice(0, 4));
+    this.newLaunches.set(props.slice(0, 4));
+  }
+
   private customProperties = signal<Property[]>(this.loadCustomProperties());
 
   private loadCustomProperties(): Property[] {
     try {
       const data = localStorage.getItem('aura_custom_properties');
-      return data ? JSON.parse(data) : [];
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
     } catch {
-      return [];
+      // ignore
     }
+    return [...DEFAULT_SHOWCASE_PROPERTIES];
   }
 
   private saveCustomProperties(props: Property[]): void {
     this.customProperties.set(props);
+    this.distributeProperties(props);
     try {
       // Clean oversized data URLs to avoid QuotaExceededError in localStorage
       const safeProps = props.map(p => {
@@ -273,7 +481,7 @@ export class PropertyService {
       galleryImages: prop.galleryImages || (prop.imageUrl ? [prop.imageUrl] : []),
       badges: prop.badges || ['Platinum Exclusive', 'Verified Listing'],
       isVerified: true,
-      submissionStatus: prop.submissionStatus || 'Pending Verification',
+      submissionStatus: prop.submissionStatus || 'Approved',
       submissionDate: prop.submissionDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
       ownerId: prop.ownerId,
       ownerRole: prop.ownerRole,
@@ -307,17 +515,22 @@ export class PropertyService {
     this.saveCustomProperties(list);
   }
 
+  private inFlightSync: Promise<Property[]> | null = null;
+
   syncPlatinumFromBackend(): Promise<Property[]> {
-    // Fetch live approved properties from NestJS REST API
-    return fetch(`${getApiBaseUrl()}/properties/public`)
+    if (this.inFlightSync) return this.inFlightSync;
+
+    // Fetch live approved properties with 2500ms max timeout to prevent page stalls
+    this.inFlightSync = fetchWithTimeout(`${getApiBaseUrl()}/properties/public`, {}, 2500)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data && data.properties && Array.isArray(data.properties)) {
+        if (data && data.properties && Array.isArray(data.properties) && data.properties.length > 0) {
           const apiProps: Property[] = data.properties.map((p: any) => ({
             id: p.id,
             title: p.title,
+            slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
             price: p.price,
-            priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${p.price}`) : 'Price on Request'),
+            priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
             location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
             city: p.city || '',
             address: p.address || p.location || '',
@@ -337,91 +550,67 @@ export class PropertyService {
           }));
 
           this.saveCustomProperties(apiProps);
-
-          // Distribute into category signals for homepage sections
-          const isTerm = (p: Property, terms: string[]) => {
-            const cat = (p.category || '').toLowerCase();
-            const typ = (p.type || '').toLowerCase();
-            return terms.some(t => cat.includes(t) || typ.includes(t));
-          };
-
-          const plots = apiProps.filter(p => isTerm(p, ['plot', 'land', 'site', 'layout']) && !isTerm(p, ['farm']));
-          const villas = apiProps.filter(p => isTerm(p, ['villa', 'estate', 'bungalow']));
-          const apts = apiProps.filter(p => isTerm(p, ['apartment', 'flat', 'penthouse', 'high-rise']));
-          const commercial = apiProps.filter(p => isTerm(p, ['commercial', 'office', 'retail', 'shop', 'tech park', 'grade-a']));
-          const houses = apiProps.filter(p => isTerm(p, ['house', 'independent', 'duplex']));
-          const farms = apiProps.filter(p => isTerm(p, ['farm', 'agriculture']));
-
-          this.platinumPlots.set(plots);
-          this.platinumVillas.set(villas);
-          this.newApartments.set(apts);
-          this.commercialProperties.set(commercial);
-          this.independentHouses.set(houses);
-          this.farmLands.set(farms);
-          this.newLaunches.set(apiProps.slice(0, 4));
-
           return apiProps;
         }
-        return [];
+        return this.customProperties();
       })
-      .catch(() => []);
+      .catch(() => this.customProperties())
+      .finally(() => {
+        this.inFlightSync = null;
+      });
+
+    return this.inFlightSync;
   }
 
   syncCategoriesFromBackend(): void {
-    try {
-      fetch(`${getApiBaseUrl()}/categories`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data && data.categories && Array.isArray(data.categories)) {
-            const apiCats: Category[] = data.categories.map((c: any) => ({
-              id: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
-              name: c.name,
-              slug: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
-              count: `${c.propertiesCount ?? 0}+ Properties`,
-              iconName: 'home',
-              description: c.description || 'Premium verified properties',
-              imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80'
-            }));
-            if (apiCats.length > 0) {
-              this.categories.set(apiCats);
-            }
+    fetchJsonCached<any>(`${getApiBaseUrl()}/categories`, 60000)
+      .then(data => {
+        if (data && data.categories && Array.isArray(data.categories)) {
+          const apiCats: Category[] = data.categories.map((c: any) => ({
+            id: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
+            name: c.name,
+            slug: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
+            count: `${c.propertiesCount ?? 0}+ Properties`,
+            iconName: 'home',
+            description: c.description || 'Premium verified properties',
+            imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80'
+          }));
+          if (apiCats.length > 0) {
+            this.categories.set(apiCats);
           }
-        })
-        .catch(() => {});
-    } catch {}
+        }
+      })
+      .catch(() => {});
   }
 
   syncHomeSettingsFromBackend(): void {
-    try {
-      fetch(`${getApiBaseUrl()}/settings/group/home`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data && data.settings) {
-            const headline = data.settings.hero_title || data.settings.hero_headline;
-            const subtitle = data.settings.hero_subtitle || data.settings.hero_subheading;
-            const bgImg = data.settings.hero_image;
-            const badge = data.settings.hero_badge;
-            const price = data.settings.hero_price_label;
+    fetchJsonCached<any>(`${getApiBaseUrl()}/settings/group/home`, 60000)
+      .then(data => {
+        if (data && data.settings) {
+          const headline = data.settings.hero_title || data.settings.hero_headline;
+          const subtitle = data.settings.hero_subtitle || data.settings.hero_subheading;
+          const bgImg = data.settings.hero_image;
+          const badge = data.settings.hero_badge;
+          const price = data.settings.hero_price_label;
 
-            if (headline || subtitle || bgImg || badge || price) {
-              const current = this.heroSlides();
-              const updated = [...current];
-              if (updated.length > 0) {
-                updated[0] = {
-                  ...updated[0],
-                  titleHighlight: headline || updated[0].titleHighlight,
-                  description: subtitle || updated[0].description,
-                  imageUrl: bgImg || updated[0].imageUrl,
-                  badge: badge || updated[0].badge,
-                  priceStarting: price || updated[0].priceStarting
-                };
-                this.heroSlides.set(updated);
-              }
+          if (headline || subtitle || bgImg || badge || price) {
+            const current = this.heroSlides();
+            const updated = [...current];
+            if (updated.length > 0) {
+              updated[0] = {
+                ...updated[0],
+                titleHighlight: headline || updated[0].titleHighlight,
+                description: subtitle || updated[0].description,
+                imageUrl: bgImg || updated[0].imageUrl,
+                badge: badge || updated[0].badge,
+                priceStarting: price || updated[0].priceStarting
+              };
+              this.heroSlides.set(updated);
             }
           }
-        })
-        .catch(() => {});
-    } catch {}
+        }
+      })
+      .catch(() => {});
   }
 
   // Live Plans from PostgreSQL
@@ -455,16 +644,13 @@ export class PropertyService {
   });
 
   syncPlansFromBackend(): void {
-    try {
-      fetch(`${getApiBaseUrl()}/plans`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data && data.plans && Array.isArray(data.plans)) {
-            this.plans.set(data.plans);
-          }
-        })
-        .catch(() => {});
-    } catch {}
+    fetchJsonCached<any>(`${getApiBaseUrl()}/plans`, 60000)
+      .then(data => {
+        if (data && data.plans && Array.isArray(data.plans)) {
+          this.plans.set(data.plans);
+        }
+      })
+      .catch(() => {});
   }
 
   getPlan(planId: string) {

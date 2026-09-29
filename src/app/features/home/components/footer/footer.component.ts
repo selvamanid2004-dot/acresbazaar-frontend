@@ -5,7 +5,7 @@ import { NavStateService } from '../../../../core/services/nav-state.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PropertyService } from '../../../../core/services/property.service';
-import { getApiBaseUrl, resolveImageUrl } from '../../../../core/services/api-config';
+import { getApiBaseUrl, resolveImageUrl, fetchJsonCached } from '../../../../core/services/api-config';
 
 @Component({
   selector: 'app-footer',
@@ -311,8 +311,7 @@ export class FooterComponent {
 
   constructor() {
     // Load contact info
-    fetch(`${getApiBaseUrl()}/settings/group/contact`)
-      .then(r => r.ok ? r.json() : null)
+    fetchJsonCached<any>(`${getApiBaseUrl()}/settings/group/contact`, 60000)
       .then(data => {
         if (data?.settings) {
           this.contactInfo.set({
@@ -325,8 +324,7 @@ export class FooterComponent {
       .catch(() => {});
 
     // Load logo & branding
-    fetch(`${getApiBaseUrl()}/settings/group/logo`)
-      .then(r => r.ok ? r.json() : null)
+    fetchJsonCached<any>(`${getApiBaseUrl()}/settings/group/logo`, 60000)
       .then(data => {
         const logo = data?.settings?.website_logo || data?.settings?.logo_url;
         if (logo && logo.trim()) {

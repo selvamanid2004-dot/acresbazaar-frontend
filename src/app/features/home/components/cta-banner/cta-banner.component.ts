@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { getApiBaseUrl } from '../../../../core/services/api-config';
+import { getApiBaseUrl, fetchJsonCached } from '../../../../core/services/api-config';
 
 @Component({
   selector: 'app-cta-banner',
@@ -97,8 +97,7 @@ export class CtaBannerComponent implements OnInit {
   ctaBtnText = signal<string>('Explore Properties');
 
   ngOnInit(): void {
-    fetch(`${getApiBaseUrl()}/settings/group/home`)
-      .then(r => r.ok ? r.json() : null)
+    fetchJsonCached<any>(`${getApiBaseUrl()}/settings/group/home`, 60000)
       .then(data => {
         if (data?.settings) {
           if (data.settings.cta_heading) this.ctaHeading.set(data.settings.cta_heading);
