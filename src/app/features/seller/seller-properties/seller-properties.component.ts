@@ -725,30 +725,38 @@ export class SellerPropertiesComponent implements OnInit {
     this.loading.set(true);
     const seller = this.authService.currentSeller();
     const sellerId = (seller as any)?.seller_id || seller?.id || '';
-    const sellerEmail = seller?.email || '';
-    const sellerPhone = seller?.mobile || '';
+    const sellerEmail = seller?.email?.trim().toLowerCase() || '';
+    const sellerPhone = seller?.mobile?.trim() || '';
 
-    // 1. Immediate load from local storage
+    if (!sellerId && !sellerEmail) {
+      this.properties.set([]);
+      this.loading.set(false);
+      return;
+    }
+
+    // 1. Immediate load from local storage (Strictly for this exact seller)
     let localList: any[] = [];
     try {
       const stored = localStorage.getItem('aura_seller_properties');
       if (stored) {
         const parsed = JSON.parse(stored);
-        localList = sellerId
-          ? parsed.filter((p: any) => p.seller_id === sellerId || p.seller_email === sellerEmail || !p.seller_id)
-          : parsed;
+        localList = parsed.filter((p: any) => 
+          (sellerId && p.seller_id === sellerId) || 
+          (sellerEmail && p.seller_email && p.seller_email.toLowerCase() === sellerEmail)
+        );
         this.properties.set(localList);
       }
     } catch {
       localList = [];
     }
 
-    // 2. Fetch live status from backend PostgreSQL
+    // 2. Fetch live status from backend (Strictly isolated)
     try {
       const query = new URLSearchParams();
       if (sellerId) query.set('sellerId', sellerId);
       if (sellerEmail) query.set('email', sellerEmail);
       if (sellerPhone) query.set('phone', sellerPhone);
+      query.set('role', 'SELLER');
 
       const qs = query.toString() ? `?${query.toString()}` : '';
       const res = await fetch(`${getApiBaseUrl()}/properties/seller/listings${qs}`);

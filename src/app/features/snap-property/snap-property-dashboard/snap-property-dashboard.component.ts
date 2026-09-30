@@ -1183,10 +1183,15 @@ export class SnapPropertyDashboardComponent implements OnInit {
   }
 
   loadMySnaps() {
-    const email = this.spotterUser?.email || '';
+    const email = this.spotterUser?.email?.trim().toLowerCase() || '';
     const sellerId = this.spotterUser?.id || '';
 
-    this.http.get<any>(`${getApiBaseUrl()}/properties/seller/listings?email=${encodeURIComponent(email)}&sellerId=${encodeURIComponent(sellerId)}`)
+    if (!email && !sellerId) {
+      this.snaps = [];
+      return;
+    }
+
+    this.http.get<any>(`${getApiBaseUrl()}/properties/seller/listings?email=${encodeURIComponent(email)}&sellerId=${encodeURIComponent(sellerId)}&role=COMMON_PEOPLE`)
       .subscribe({
         next: (res) => {
           this.snaps = res.properties || [];
@@ -1198,7 +1203,7 @@ export class SnapPropertyDashboardComponent implements OnInit {
   }
 
   loadMyClaim() {
-    const email = this.spotterUser?.email;
+    const email = this.spotterUser?.email?.trim().toLowerCase();
     if (!email) return;
 
     this.http.get<any>(`${getApiBaseUrl()}/rewards/my-claim?email=${encodeURIComponent(email)}`)

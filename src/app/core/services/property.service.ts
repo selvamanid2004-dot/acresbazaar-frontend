@@ -658,7 +658,8 @@ export class PropertyService {
   }
 
   getPropertiesByOwner(ownerId: string): Property[] {
-    return this.loadCustomProperties().filter(p => p.ownerId === ownerId);
+    if (!ownerId || !ownerId.trim()) return [];
+    return this.loadCustomProperties().filter(p => Boolean(p.ownerId && p.ownerId.trim() === ownerId.trim()));
   }
 
   getAllProperties(): Property[] {

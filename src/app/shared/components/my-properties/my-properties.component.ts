@@ -5,6 +5,7 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { PropertyService } from '../../../core/services/property.service';
 import { Property } from '../../../core/models/property.model';
+import { getApiBaseUrl } from '../../../core/services/api-config';
 
 @Component({
   selector: 'app-my-properties',
@@ -851,7 +852,72 @@ export class MyPropertiesComponent implements OnInit {
   }
 
   async loadProperties(): Promise<void> {
-    let list = this.propertyService.getPropertiesByOwner(this.ownerId());
+    const ownerId = this.ownerId();
+    if (!ownerId) {
+      this.properties.set([]);
+      return;
+    }
+
+    const isDealer = this.isDealer();
+    const dealer = this.authService.currentDealer();
+    const seller = this.authService.currentSeller();
+    const email = isDealer ? (dealer?.email?.trim().toLowerCase() || '') : (seller?.email?.trim().toLowerCase() || '');
+    const phone = isDealer ? (dealer?.mobile || (dealer as any)?.phone || '') : (seller?.mobile || '');
+
+    // 1. Local properties strictly for this owner
+    let list = this.propertyService.getPropertiesByOwner(ownerId);
+
+    // 2. Fetch live properties from backend
+    try {
+      const query = new URLSearchParams();
+      if (ownerId) query.set('sellerId', ownerId);
+      if (email) query.set('email', email);
+      if (phone) query.set('phone', phone);
+      query.set('role', isDealer ? 'DEALER' : 'SELLER');
+
+      const res = await fetch(`${getApiBaseUrl()}/properties/seller/listings?${query.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.properties)) {
+          const combinedMap = new Map<string, Property>();
+          for (const bp of data.properties) {
+            const id = bp.id || bp.property_id;
+            combinedMap.set(id, {
+              id,
+              title: bp.title,
+              slug: bp.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              price: bp.price,
+              priceDisplay: bp.priceDisplay || bp.price,
+              location: bp.location,
+              city: bp.city,
+              address: bp.location,
+              exactAddress: bp.location,
+              type: bp.category,
+              category: bp.category,
+              tier: (bp.plan || bp.planType || 'PLATINUM').toLowerCase() as any,
+              imageUrl: (bp.image_urls && bp.image_urls[0]) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+              galleryImages: bp.image_urls || [],
+              specs: bp.category_specs || {},
+              description: bp.description || '',
+              shortDescription: bp.description || '',
+              submissionDate: bp.created_at ? new Date(bp.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
+              submissionStatus: bp.status || 'PENDING',
+              ownerId: bp.seller_id || ownerId,
+              ownerRole: isDealer ? 'dealer' : 'seller'
+            });
+          }
+          for (const lp of list) {
+            if (!combinedMap.has(lp.id)) {
+              combinedMap.set(lp.id, lp);
+            }
+          }
+          list = Array.from(combinedMap.values());
+        }
+      }
+    } catch (err) {
+      console.warn('Backend sync warning in my-properties:', err);
+    }
+
     this.properties.set(list);
   }
 

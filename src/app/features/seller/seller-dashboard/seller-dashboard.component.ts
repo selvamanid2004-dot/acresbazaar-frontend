@@ -773,18 +773,34 @@ export class SellerDashboardComponent implements OnInit {
 
   async loadProperties(ownerId: string): Promise<void> {
     const currentSeller = this.authService.currentSeller();
-    const email = currentSeller?.email || '';
-    const phone = currentSeller?.mobile || '';
+    if (!currentSeller) {
+      this.myProperties.set([]);
+      this.totalCount.set(0);
+      this.pendingCount.set(0);
+      this.approvedCount.set(0);
+      this.rejectedCount.set(0);
+      return;
+    }
 
-    // 1. Get from local store
-    let props = this.propertyService.getPropertiesByOwner(ownerId);
+    const email = currentSeller?.email?.trim().toLowerCase() || '';
+    const phone = currentSeller?.mobile?.trim() || '';
+    const sellerId = ownerId || (currentSeller as any)?.seller_id || currentSeller?.id || '';
 
-    // Also include properties submitted locally by seller
+    // 1. Get from local store strictly by ownerId
+    let props: Property[] = [];
+    if (sellerId) {
+      props = this.propertyService.getPropertiesByOwner(sellerId);
+    }
+
+    // Also check local seller properties cached for this exact seller
     try {
       const stored = localStorage.getItem('aura_seller_properties');
       if (stored) {
         const localSellerProps = JSON.parse(stored);
-        const filtered = localSellerProps.filter((p: any) => !p.seller_id || p.seller_id === ownerId || p.seller_email === email);
+        const filtered = localSellerProps.filter((p: any) => 
+          (sellerId && p.seller_id === sellerId) || 
+          (email && p.seller_email && p.seller_email.toLowerCase() === email)
+        );
         for (const lp of filtered) {
           if (!props.some(p => p.id === (lp.id || lp.property_id))) {
             props.push({
@@ -802,7 +818,7 @@ export class SellerDashboardComponent implements OnInit {
               address: lp.full_address || lp.location,
               submissionDate: lp.created_at ? new Date(lp.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
               submissionStatus: lp.status || 'PENDING',
-              ownerId: lp.seller_id,
+              ownerId: lp.seller_id || sellerId,
               ownerRole: 'seller'
             });
           }
@@ -810,44 +826,54 @@ export class SellerDashboardComponent implements OnInit {
       }
     } catch {}
 
-    // 2. Fetch live status from backend
+    // 2. Fetch live status from backend (Strictly isolated by sellerId and email)
     try {
       const query = new URLSearchParams();
-      if (ownerId) query.set('sellerId', ownerId);
+      if (sellerId) query.set('sellerId', sellerId);
       if (email) query.set('email', email);
       if (phone) query.set('phone', phone);
+      query.set('role', 'SELLER');
+
       const res = await fetch(`${getApiBaseUrl()}/properties/seller/listings?${query.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.properties)) {
-          for (const bp of data.properties) {
-            const found = props.find(p => p.id === bp.id || p.id === bp.property_id || p.title === bp.title);
-            if (found) {
-              found.submissionStatus = bp.status;
-            } else {
-              props.push({
-                id: bp.id,
-                title: bp.title,
-                price: bp.price,
-                location: bp.location,
-                type: bp.category,
-                category: bp.category,
-                tier: bp.plan === 'GOLD' ? 'gold' : 'platinum',
-                imageUrl: (bp.image_urls && bp.image_urls[0]) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-                galleryImages: bp.image_urls || [],
-                specs: bp.category_specs || {},
-                description: bp.description || '',
-                address: bp.location,
-                submissionDate: bp.created_at ? new Date(bp.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
-                submissionStatus: bp.status,
-                ownerId: bp.seller_id,
-                ownerRole: 'seller'
-              });
+          const apiProps: Property[] = data.properties.map((bp: any) => ({
+            id: bp.id || bp.property_id,
+            title: bp.title,
+            price: bp.price,
+            location: bp.location,
+            city: bp.city,
+            type: bp.category,
+            category: bp.category,
+            tier: bp.plan === 'GOLD' ? 'gold' : 'platinum',
+            imageUrl: (bp.image_urls && bp.image_urls[0]) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+            galleryImages: bp.image_urls || [],
+            specs: bp.category_specs || {},
+            description: bp.description || '',
+            address: bp.location,
+            submissionDate: bp.created_at ? new Date(bp.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
+            submissionStatus: bp.status || 'PENDING',
+            ownerId: bp.seller_id || sellerId,
+            ownerRole: 'seller'
+          }));
+
+          // Merge backend records with local records for this specific seller
+          const combinedMap = new Map<string, Property>();
+          for (const ap of apiProps) {
+            combinedMap.set(ap.id, ap);
+          }
+          for (const lp of props) {
+            if (!combinedMap.has(lp.id)) {
+              combinedMap.set(lp.id, lp);
             }
           }
+          props = Array.from(combinedMap.values());
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Backend sync warning in seller dashboard:', err);
+    }
 
     this.myProperties.set(props);
     this.totalCount.set(props.length);

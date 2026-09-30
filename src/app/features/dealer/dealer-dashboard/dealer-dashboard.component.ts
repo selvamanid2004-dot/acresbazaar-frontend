@@ -2881,8 +2881,66 @@ export class DealerDashboardComponent implements OnInit {
     }
   }
 
-  loadProperties(ownerId: string): void {
-    const props = this.propertyService.getPropertiesByOwner(ownerId);
+  async loadProperties(ownerId: string): Promise<void> {
+    if (!ownerId) {
+      this.myProperties.set([]);
+      return;
+    }
+
+    const curDealer = this.dealer();
+    const dealerEmail = curDealer?.email?.trim().toLowerCase() || '';
+
+    // 1. Local properties strictly for this dealer
+    let props = this.propertyService.getPropertiesByOwner(ownerId);
+
+    // 2. Fetch live properties submitted by this dealer from backend
+    try {
+      const q = new URLSearchParams();
+      if (ownerId) q.set('sellerId', ownerId);
+      if (dealerEmail) q.set('email', dealerEmail);
+      q.set('role', 'DEALER');
+
+      const res = await fetch(`${getApiBaseUrl()}/properties/seller/listings?${q.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.properties)) {
+          const apiProps = data.properties.map((bp: any) => ({
+            id: bp.id || bp.property_id,
+            title: bp.title,
+            slug: bp.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            price: bp.price,
+            priceDisplay: bp.priceDisplay || bp.price,
+            location: bp.location,
+            city: bp.city,
+            type: bp.category,
+            category: bp.category,
+            tier: (bp.plan || bp.planType || 'PLATINUM').toLowerCase(),
+            imageUrl: (bp.image_urls && bp.image_urls[0]) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+            galleryImages: bp.image_urls || [],
+            specs: bp.category_specs || {},
+            description: bp.description || '',
+            submissionDate: bp.created_at ? new Date(bp.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
+            submissionStatus: bp.status || 'PENDING',
+            ownerId: bp.seller_id || ownerId,
+            ownerRole: 'dealer'
+          }));
+
+          const combinedMap = new Map<string, any>();
+          for (const ap of apiProps) {
+            combinedMap.set(ap.id, ap);
+          }
+          for (const lp of props) {
+            if (!combinedMap.has(lp.id)) {
+              combinedMap.set(lp.id, lp);
+            }
+          }
+          props = Array.from(combinedMap.values());
+        }
+      }
+    } catch (err) {
+      console.warn('Backend sync warning for dealer properties:', err);
+    }
+
     this.myProperties.set(props);
   }
 
