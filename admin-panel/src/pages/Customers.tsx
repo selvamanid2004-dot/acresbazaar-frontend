@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Search, 
@@ -22,6 +22,7 @@ import { Customer } from '../types';
 import { api } from '../services/api';
 
 export const Customers: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get('tab') || 'all';
 
@@ -93,6 +94,10 @@ export const Customers: React.FC = () => {
   }, [currentTab, searchQuery]);
 
   const handleTabChange = (tab: string) => {
+    if (tab === 'admins') {
+      navigate('/staff-management');
+      return;
+    }
     setSearchParams({ tab });
   };
 

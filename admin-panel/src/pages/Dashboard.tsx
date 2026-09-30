@@ -6,14 +6,20 @@ import {
   UserPlus, 
   Send, 
   MessageSquare, 
-  ArrowUpRight 
+  ArrowUpRight,
+  AlertCircle,
+  Award,
+  ShieldCheck,
+  UserCog
 } from 'lucide-react';
 import { DashboardStats, ChatConversation } from '../types';
 import { api } from '../services/api';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { ChatModal } from '../components/ChatModal';
+import { getCurrentAdminUser, hasModulePermission } from '../services/authUtils';
 
 export const Dashboard: React.FC = () => {
+  const adminUser = getCurrentAdminUser();
   const [stats, setStats] = useState<DashboardStats>({
     totalProperties: 0,
     newProperties: 0,
@@ -24,6 +30,13 @@ export const Dashboard: React.FC = () => {
   const [recentChats, setRecentChats] = useState<ChatConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+  const canProperties = hasModulePermission(adminUser, 'properties');
+  const canCustomers = hasModulePermission(adminUser, 'customers') || hasModulePermission(adminUser, 'buyers') || hasModulePermission(adminUser, 'sellers') || hasModulePermission(adminUser, 'dealers');
+  const canReports = hasModulePermission(adminUser, 'reports');
+  const canRewards = hasModulePermission(adminUser, 'rewards');
+  const canPartners = hasModulePermission(adminUser, 'verified_partners');
+  const canStaff = hasModulePermission(adminUser, 'staff_management') || adminUser?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -46,72 +59,112 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div>
-      {/* 5 Summary Cards ONLY */}
+      {/* Summary Cards */}
       <div className="dash-metric-grid">
         {/* 1. Total Properties */}
-        <div className="dash-card">
-          <div className="dash-card-info">
-            <h3>Total Properties</h3>
-            <div className="metric-num">
-              {loading ? '...' : stats.totalProperties}
+        {canProperties && (
+          <div className="dash-card">
+            <div className="dash-card-info">
+              <h3>Total Properties</h3>
+              <div className="metric-num">
+                {loading ? '...' : stats.totalProperties}
+              </div>
+            </div>
+            <div className="dash-card-icon" style={{ backgroundColor: 'rgba(2, 132, 199, 0.12)', color: '#38bdf8' }}>
+              <Building2 size={24} />
             </div>
           </div>
-          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(2, 132, 199, 0.12)', color: '#38bdf8' }}>
-            <Building2 size={24} />
-          </div>
-        </div>
+        )}
 
         {/* 2. New Properties */}
-        <div className="dash-card">
-          <div className="dash-card-info">
-            <h3>New Properties</h3>
-            <div className="metric-num">
-              {loading ? '...' : stats.newProperties}
+        {canProperties && (
+          <div className="dash-card">
+            <div className="dash-card-info">
+              <h3>New Properties</h3>
+              <div className="metric-num">
+                {loading ? '...' : stats.newProperties}
+              </div>
+            </div>
+            <div className="dash-card-icon" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24' }}>
+              <Sparkles size={24} />
             </div>
           </div>
-          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24' }}>
-            <Sparkles size={24} />
-          </div>
-        </div>
+        )}
 
         {/* 3. Total Customers */}
-        <div className="dash-card">
-          <div className="dash-card-info">
-            <h3>Total Customers</h3>
-            <div className="metric-num">
-              {loading ? '...' : stats.totalCustomers}
+        {canCustomers && (
+          <div className="dash-card">
+            <div className="dash-card-info">
+              <h3>Total Customers</h3>
+              <div className="metric-num">
+                {loading ? '...' : stats.totalCustomers}
+              </div>
+            </div>
+            <div className="dash-card-icon" style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#34d399' }}>
+              <Users size={24} />
             </div>
           </div>
-          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#34d399' }}>
-            <Users size={24} />
-          </div>
-        </div>
+        )}
 
         {/* 4. New Customers */}
-        <div className="dash-card">
-          <div className="dash-card-info">
-            <h3>New Customers</h3>
-            <div className="metric-num">
-              {loading ? '...' : stats.newCustomers}
+        {canCustomers && (
+          <div className="dash-card">
+            <div className="dash-card-info">
+              <h3>New Customers</h3>
+              <div className="metric-num">
+                {loading ? '...' : stats.newCustomers}
+              </div>
+            </div>
+            <div className="dash-card-icon" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc' }}>
+              <UserPlus size={24} />
             </div>
           </div>
-          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc' }}>
-            <UserPlus size={24} />
-          </div>
-        </div>
+        )}
 
         {/* 5. Posted Properties */}
-        <div className="dash-card">
-          <div className="dash-card-info">
-            <h3>Posted Properties</h3>
-            <div className="metric-num">
-              {loading ? '...' : stats.postedProperties}
+        {canProperties && (
+          <div className="dash-card">
+            <div className="dash-card-info">
+              <h3>Posted Properties</h3>
+              <div className="metric-num">
+                {loading ? '...' : stats.postedProperties}
+              </div>
+            </div>
+            <div className="dash-card-icon" style={{ backgroundColor: 'rgba(244, 63, 94, 0.12)', color: '#fb7185' }}>
+              <Send size={24} />
             </div>
           </div>
-          <div className="dash-card-icon" style={{ backgroundColor: 'rgba(244, 63, 94, 0.12)', color: '#fb7185' }}>
-            <Send size={24} />
+        )}
+
+        {/* 6. Staff & Admin module card (if permitted) */}
+        {canStaff && (
+          <div className="dash-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/staff-management'}>
+            <div className="dash-card-info">
+              <h3>Administrators & Staff</h3>
+              <div className="metric-num" style={{ fontSize: '18px', color: '#60a5fa' }}>
+                Manage RBAC
+              </div>
+            </div>
+            <div className="dash-card-icon" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
+              <UserCog size={24} />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* 7. Reports module card (if permitted and properties hidden) */}
+        {canReports && !canProperties && (
+          <div className="dash-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/reports'}>
+            <div className="dash-card-info">
+              <h3>Reports & Moderation</h3>
+              <div className="metric-num" style={{ fontSize: '18px', color: '#f87171' }}>
+                Active Desk
+              </div>
+            </div>
+            <div className="dash-card-icon" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171' }}>
+              <AlertCircle size={24} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Alongside/Below: RECENT CHATS (3 latest) & SMALL CALENDAR */}

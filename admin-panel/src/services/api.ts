@@ -1,5 +1,6 @@
 import { 
   AdminUser, 
+  ModulePermission,
   Customer, 
   Property, 
   Category, 
@@ -16,6 +17,8 @@ import {
 } from '../types';
 import {
   DEMO_ADMIN_USER,
+  DEMO_STAFF_USERS,
+  DEMO_MODULE_PERMISSIONS,
   DEMO_STATS,
   DEMO_CHATS,
   DEMO_CUSTOMERS,
@@ -971,6 +974,130 @@ export const api = {
       message: msg.message,
       createdAt: msg.createdAt
     };
+  },
+
+  // Administrator & Staff Management
+  async getStaff(params?: { role?: string; search?: string; status?: string }): Promise<AdminUser[]> {
+    if (isDemoSession()) {
+      let list = [...DEMO_STAFF_USERS];
+      if (params?.role && params.role !== 'ALL') {
+        list = list.filter(u => u.role === params.role);
+      }
+      if (params?.status && params.status !== 'ALL') {
+        list = list.filter(u => params.status === 'ACTIVE' ? u.isActive !== false : u.isActive === false);
+      }
+      if (params?.search) {
+        const q = params.search.toLowerCase();
+        list = list.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+      }
+      return list;
+    }
+    try {
+      const q = new URLSearchParams();
+      if (params?.role && params.role !== 'ALL') q.set('role', params.role);
+      if (params?.status && params.status !== 'ALL') q.set('status', params.status);
+      if (params?.search && params.search.trim()) q.set('search', params.search.trim());
+      const query = q.toString() ? `?${q.toString()}` : '';
+      const res: any = await request(`/staff${query}`);
+      return res.staff || [];
+    } catch (err: any) {
+      if (err.message?.includes('BACKEND_OFFLINE')) return DEMO_STAFF_USERS;
+      throw err;
+    }
+  },
+
+  async getStaffMember(id: string): Promise<AdminUser> {
+    if (isDemoSession()) {
+      return DEMO_STAFF_USERS.find(u => u.id === id) || DEMO_STAFF_USERS[0];
+    }
+    const res: any = await request(`/staff/${id}`);
+    return res.staff || res;
+  },
+
+  async createStaff(data: {
+    username?: string;
+    email: string;
+    name: string;
+    password: string;
+    role: 'ADMIN' | 'STAFF' | 'SUPER_ADMIN' | string;
+    permissions: string[];
+    isActive?: boolean;
+  }): Promise<AdminUser> {
+    if (isDemoSession()) {
+      const newStaff: AdminUser = {
+        id: `demo-staff-${Date.now()}`,
+        email: data.email || data.username || '',
+        name: data.name,
+        role: data.role,
+        permissions: data.permissions || [],
+        isActive: data.isActive !== false,
+        createdAt: new Date().toISOString()
+      };
+      DEMO_STAFF_USERS.unshift(newStaff);
+      return newStaff;
+    }
+    const res: any = await request('/staff', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.staff || res;
+  },
+
+  async updateStaff(id: string, data: Partial<AdminUser>): Promise<AdminUser> {
+    if (isDemoSession()) {
+      const user = DEMO_STAFF_USERS.find(u => u.id === id) || DEMO_STAFF_USERS[0];
+      Object.assign(user, data);
+      return user;
+    }
+    const res: any = await request(`/staff/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res.staff || res;
+  },
+
+  async resetStaffPassword(id: string, password: string): Promise<{ success: boolean; message: string }> {
+    if (isDemoSession()) {
+      return { success: true, message: 'Password has been reset successfully (Demo Mode).' };
+    }
+    return request(`/staff/${id}/password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ password }),
+    });
+  },
+
+  async toggleStaffStatus(id: string, status?: boolean): Promise<AdminUser> {
+    if (isDemoSession()) {
+      const user = DEMO_STAFF_USERS.find(u => u.id === id) || DEMO_STAFF_USERS[0];
+      user.isActive = status !== undefined ? status : !user.isActive;
+      return user;
+    }
+    const res: any = await request(`/staff/${id}/toggle-status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+    return res.staff || res;
+  },
+
+  async deleteStaff(id: string): Promise<{ success: boolean; message: string }> {
+    if (isDemoSession()) {
+      const idx = DEMO_STAFF_USERS.findIndex(u => u.id === id);
+      if (idx !== -1) DEMO_STAFF_USERS.splice(idx, 1);
+      return { success: true, message: 'Account deleted successfully' };
+    }
+    return request(`/staff/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getModulePermissions(): Promise<ModulePermission[]> {
+    if (isDemoSession()) return DEMO_MODULE_PERMISSIONS;
+    try {
+      const res: any = await request('/staff/modules');
+      return res.modules || DEMO_MODULE_PERMISSIONS;
+    } catch {
+      return DEMO_MODULE_PERMISSIONS;
+    }
   },
 
   // Export URLs

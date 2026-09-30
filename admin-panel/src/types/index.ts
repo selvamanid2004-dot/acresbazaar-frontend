@@ -2,7 +2,18 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  role: string;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'STAFF' | string;
+  isActive?: boolean;
+  permissions?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ModulePermission {
+  id: string;
+  name: string;
+  group: string;
+  description: string;
 }
 
 export interface Customer {
