@@ -1106,6 +1106,7 @@ export class SnapPropertyUploadComponent implements OnInit {
       sellerName: this.spotterUser?.name || 'Public Spotter',
       sellerPhone: this.spotterUser?.mobile || '',
       sellerEmail: this.spotterUser?.email || '',
+      sellerRole: 'COMMON_PEOPLE',
       categorySpecs,
       images: [this.photoPreview],
       status: 'PENDING'
