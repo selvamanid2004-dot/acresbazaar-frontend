@@ -16,15 +16,17 @@ export const routes: Routes = [
     children: [
       { path: '', component: HomeComponent },
 
-      // Snap Property Module (Common People)
+      // Snap Property Module (Common People / Spotters)
       { path: 'snap-property', redirectTo: 'snap-property/dashboard', pathMatch: 'full' },
       { 
         path: 'snap-property/register', 
-        loadComponent: () => import('./features/snap-property/snap-property-register/snap-property-register.component').then(m => m.SnapPropertyRegisterComponent) 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'SPOTTER' }
       },
       { 
         path: 'snap-property/login', 
-        loadComponent: () => import('./features/snap-property/snap-property-login/snap-property-login.component').then(m => m.SnapPropertyLoginComponent) 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'SPOTTER' }
       },
       { 
         path: 'snap-property/dashboard', 
@@ -35,23 +37,79 @@ export const routes: Routes = [
         loadComponent: () => import('./features/snap-property/snap-property-upload/snap-property-upload.component').then(m => m.SnapPropertyUploadComponent) 
       },
 
-      // Buyer & Community Authentication Routes
+      // Unified Authentication Routes - Buyers, Sellers, Dealers, Spotters
       { 
         path: 'login', 
-        loadComponent: () => import('./features/auth/buyer-login/buyer-login.component').then(m => m.BuyerLoginComponent) 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'BUYER' }
       },
-      { path: 'register', redirectTo: 'register/buyer', pathMatch: 'full' },
+      { 
+        path: 'buyers/login', 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'BUYER' }
+      },
+      { 
+        path: 'sellers/login', 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'SELLER' }
+      },
+      { 
+        path: 'dealers/login', 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'DEALER' }
+      },
+      { 
+        path: 'spotters/login', 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'SPOTTER' }
+      },
+
+      // Registration Routes
+      { 
+        path: 'register', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'BUYER' }
+      },
       { 
         path: 'register/buyer', 
-        loadComponent: () => import('./features/auth/buyer-register/buyer-register.component').then(m => m.BuyerRegisterComponent) 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'BUYER' }
       },
       { 
         path: 'register/common', 
-        loadComponent: () => import('./features/snap-property/snap-property-register/snap-property-register.component').then(m => m.SnapPropertyRegisterComponent), 
-        data: { role: 'COMMON_PEOPLE' } 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent), 
+        data: { role: 'SPOTTER' } 
       },
-      { path: 'register/seller', redirectTo: 'seller/register', pathMatch: 'full' },
-      { path: 'register/dealer', redirectTo: 'dealer/register', pathMatch: 'full' },
+      { 
+        path: 'register/seller', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'SELLER' }
+      },
+      { 
+        path: 'register/dealer', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'DEALER' }
+      },
+      { 
+        path: 'buyers/register', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'BUYER' }
+      },
+      { 
+        path: 'sellers/register', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'SELLER' }
+      },
+      { 
+        path: 'dealers/register', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'DEALER' }
+      },
+      { 
+        path: 'spotters/register', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'SPOTTER' }
+      },
       { 
         path: 'forgot-password', 
         loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent) 
@@ -61,11 +119,13 @@ export const routes: Routes = [
       { path: 'seller', redirectTo: 'seller/categories', pathMatch: 'full' },
       { 
         path: 'seller/register', 
-        loadComponent: () => import('./features/seller/seller-register/seller-register.component').then(m => m.SellerRegisterComponent) 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'SELLER' }
       },
       { 
         path: 'seller/login', 
-        loadComponent: () => import('./features/seller/seller-login/seller-login.component').then(m => m.SellerLoginComponent) 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'SELLER' }
       },
       { 
         path: 'seller/categories', 
@@ -94,11 +154,13 @@ export const routes: Routes = [
       // Dealer Routes
       { 
         path: 'dealer/register', 
-        loadComponent: () => import('./features/dealer/dealer-register/dealer-register.component').then(m => m.DealerRegisterComponent) 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'DEALER' }
       },
       { 
         path: 'dealer/login', 
-        loadComponent: () => import('./features/dealer/dealer-login/dealer-login.component').then(m => m.DealerLoginComponent) 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'DEALER' }
       },
       { 
         path: 'dealer/dashboard', 
