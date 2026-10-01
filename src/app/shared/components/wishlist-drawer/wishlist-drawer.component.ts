@@ -68,7 +68,7 @@ import { Property } from '../../../core/models/property.model';
           >
             <!-- Thumbnail Image -->
             <div class="item-img-box" (click)="viewDetails(item)">
-              <img [src]="item.imageUrl" [alt]="item.title" class="item-img" />
+              <img [src]="item.imageUrl" (error)="onImgError($event, item.category)" [alt]="item.title" class="item-img" />
               <span class="tier-pill" [class.tier-gold]="item.tier === 'gold'" [class.tier-plat]="item.tier === 'platinum'">
                 {{ item.tier | uppercase }}
               </span>
@@ -466,5 +466,25 @@ export class WishlistDrawerComponent {
   exploreProperties(): void {
     this.close();
     this.router.navigate(['/buyers']);
+  }
+
+  onImgError(e: Event, category?: string) {
+    const target = e.target as HTMLImageElement;
+    if (target) {
+      const cat = (category || '').toLowerCase();
+      if (cat.includes('plot') || cat.includes('land')) {
+        target.src = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('villa') || cat.includes('estate') || cat.includes('house')) {
+        target.src = 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('apartment') || cat.includes('flat')) {
+        target.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('commercial') || cat.includes('office') || cat.includes('retail')) {
+        target.src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('farm')) {
+        target.src = 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&w=800&q=80';
+      } else {
+        target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+      }
+    }
   }
 }

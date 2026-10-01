@@ -187,7 +187,7 @@ import { AuthService } from '../../core/services/auth.service';
               
               <!-- 1. Property Image Prominently Visible -->
               <div class="card-media-box">
-                <img [src]="prop.imageUrl" alt="Property image" class="prop-img" loading="lazy" />
+                <img [src]="prop.imageUrl" (error)="onImgError($event, prop.category)" alt="Property image" class="prop-img" loading="lazy" />
                 <div class="media-badges-overlay">
                   <span class="plan-pill-tag gold-pill-tag">Gold Property</span>
                 </div>
@@ -327,7 +327,7 @@ import { AuthService } from '../../core/services/auth.service';
               
               <!-- 1. Property Image Prominently Visible -->
               <div class="card-media-box">
-                <img [src]="prop.imageUrl" alt="Property image" class="prop-img" loading="lazy" />
+                <img [src]="prop.imageUrl" (error)="onImgError($event, prop.category)" alt="Property image" class="prop-img" loading="lazy" />
                 <div class="media-badges-overlay">
                   <span class="plan-pill-tag plat-pill-tag">Platinum Property</span>
                 </div>
@@ -1639,5 +1639,25 @@ export class BuyerCategoryComponent implements OnInit, OnDestroy {
     this.authService.logout();
     this.navStateService.activeMembership.set(null);
     this.notificationService.show('Session Reset', 'Property details have been re-locked for demonstration.', 'info');
+  }
+
+  onImgError(e: Event, category?: string) {
+    const target = e.target as HTMLImageElement;
+    if (target) {
+      const cat = (category || '').toLowerCase();
+      if (cat.includes('plot') || cat.includes('land')) {
+        target.src = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('villa') || cat.includes('estate') || cat.includes('house')) {
+        target.src = 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('apartment') || cat.includes('flat')) {
+        target.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('commercial') || cat.includes('office') || cat.includes('retail')) {
+        target.src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('farm')) {
+        target.src = 'https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&w=800&q=80';
+      } else {
+        target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+      }
+    }
   }
 }
