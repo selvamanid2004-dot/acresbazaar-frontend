@@ -21,7 +21,7 @@ import {
   Check
 } from 'lucide-react';
 import { Property, Category } from '../types';
-import { api } from '../services/api';
+import { api, resolveImageUrl } from '../services/api';
 
 export const SnapProperties: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -268,7 +268,7 @@ export const SnapProperties: React.FC = () => {
                 </tr>
               ) : snaps.length > 0 ? (
                 snaps.map((p) => {
-                  const coverImg = p.images?.[0]?.url || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400';
+                  const coverImg = resolveImageUrl(p.images?.[0]?.url) || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400';
                   const boardType = p.categorySpecs?.boardType || 'TO-LET / RENT';
                   const boardContact = p.categorySpecs?.boardContact || p.sellerPhone || 'Not captured';
                   const landmark = p.categorySpecs?.landmark || '';
@@ -576,10 +576,10 @@ export const SnapProperties: React.FC = () => {
                     cursor: 'pointer',
                     backgroundColor: '#0f1422'
                   }}
-                  onClick={() => setPreviewImage(viewSnap.images[0].url)}
+                  onClick={() => setPreviewImage(resolveImageUrl(viewSnap.images[0].url))}
                 >
                   <img 
-                    src={viewSnap.images[0].url} 
+                    src={resolveImageUrl(viewSnap.images[0].url)} 
                     alt={viewSnap.title} 
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
                   />
@@ -679,7 +679,7 @@ export const SnapProperties: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
               <button className="btn btn-secondary btn-icon" onClick={() => setPreviewImage(null)}>✕</button>
             </div>
-            <img src={previewImage} alt="Preview" style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '8px' }} />
+            <img src={resolveImageUrl(previewImage)} alt="Preview" style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '8px' }} />
           </div>
         </div>
       )}

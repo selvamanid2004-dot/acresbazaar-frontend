@@ -25,7 +25,7 @@ import {
   Check
 } from 'lucide-react';
 import { Property, Category } from '../types';
-import { api } from '../services/api';
+import { api, resolveImageUrl } from '../services/api';
 
 export const Properties: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -187,10 +187,11 @@ export const Properties: React.FC = () => {
     }
   };
 
-  const formatPrice = (p: number) => {
+  const formatPrice = (p?: number) => {
+    if (typeof p !== 'number' || isNaN(p) || p <= 0) return '₹0';
     if (p >= 10000000) return `₹${(p / 10000000).toFixed(2)} Cr`;
     if (p >= 100000) return `₹${(p / 100000).toFixed(2)} Lac`;
-    return `₹${p.toLocaleString()}`;
+    return `₹${p.toLocaleString('en-IN')}`;
   };
 
   return (
@@ -298,9 +299,12 @@ export const Properties: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {p.images && p.images[0] ? (
                           <img 
-                            src={p.images[0].url} 
+                            src={resolveImageUrl(p.images[0].url)} 
                             alt={p.title} 
                             style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
                           />
                         ) : (
                           <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
@@ -577,7 +581,7 @@ export const Properties: React.FC = () => {
                     {viewProperty.priceDisplay || formatPrice(viewProperty.price)}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Numeric Value: ₹{viewProperty.price.toLocaleString('en-IN')}
+                    Numeric Value: ₹{(viewProperty.price || 0).toLocaleString('en-IN')}
                   </div>
                 </div>
 
@@ -617,38 +621,52 @@ export const Properties: React.FC = () => {
                     <span>Submitted Category Specifications ({viewProperty.category})</span>
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {viewProperty.categorySpecs && Object.keys(viewProperty.categorySpecs).length > 0
-                      ? `${Object.keys(viewProperty.categorySpecs).length} Attributes Recorded`
-                      : 'Standard Attributes'}
+                    {(() => {
+                      let specs = viewProperty.categorySpecs;
+                      if (typeof specs === 'string') {
+                        try { specs = JSON.parse(specs); } catch { specs = {}; }
+                      }
+                      const count = specs && typeof specs === 'object' ? Object.keys(specs).length : 0;
+                      return count > 0 ? `${count} Attributes Recorded` : 'Standard Attributes';
+                    })()}
                   </span>
                 </div>
 
-                {viewProperty.categorySpecs && Object.keys(viewProperty.categorySpecs).length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
-                    {Object.entries(viewProperty.categorySpecs).map(([key, value]) => (
-                      <div 
-                        key={key} 
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          border: '1px solid rgba(255, 255, 255, 0.06)',
-                          borderRadius: '8px',
-                          padding: '10px 12px'
-                        }}
-                      >
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                          {formatSpecKey(key)}
+                {(() => {
+                  let specs = viewProperty.categorySpecs;
+                  if (typeof specs === 'string') {
+                    try { specs = JSON.parse(specs); } catch { specs = {}; }
+                  }
+                  if (!specs || typeof specs !== 'object') specs = {};
+                  const entries = Object.entries(specs);
+
+                  return entries.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                      {entries.map(([key, value]) => (
+                        <div 
+                          key={key} 
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            borderRadius: '8px',
+                            padding: '10px 12px'
+                          }}
+                        >
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                            {formatSpecKey(key)}
+                          </div>
+                          <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#fff', marginTop: '2px', wordBreak: 'break-word' }}>
+                            {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value ?? '—')}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#fff', marginTop: '2px', wordBreak: 'break-word' }}>
-                          {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value || '—')}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', padding: '10px 0' }}>
-                    No custom technical attributes submitted for this listing.
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', padding: '10px 0' }}>
+                      No custom technical attributes submitted for this listing.
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* 4. DESCRIPTION */}
@@ -694,12 +712,15 @@ export const Properties: React.FC = () => {
                           aspectRatio: '4/3',
                           background: '#000'
                         }}
-                        onClick={() => setPreviewImage(img.url)}
+                        onClick={() => setPreviewImage(resolveImageUrl(img.url))}
                       >
                         <img 
-                          src={img.url} 
+                          src={resolveImageUrl(img.url)} 
                           alt={`Property ${i + 1}`} 
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600';
+                          }}
                         />
                         {i === 0 && (
                           <span style={{
@@ -845,7 +866,7 @@ export const Properties: React.FC = () => {
               ✕
             </button>
             <img 
-              src={previewImage} 
+              src={resolveImageUrl(previewImage)} 
               alt="Full Preview" 
               style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)' }}
             />

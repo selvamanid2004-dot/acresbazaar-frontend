@@ -474,7 +474,7 @@ export const api = {
           } : null),
           images: (p.images || []).map((img: any) => ({
             id: img.id,
-            url: img.imageUrl,
+            url: resolveImageUrl(img.imageUrl || img.url),
             isCover: img.isPrimary,
             order: img.displayOrder
           })),
@@ -599,7 +599,7 @@ export const api = {
       } : null),
       images: (p.images || []).map((img: any) => ({
         id: img.id,
-        url: img.imageUrl,
+        url: resolveImageUrl(img.imageUrl || img.url),
         isCover: img.isPrimary,
         order: img.displayOrder
       })),
@@ -713,7 +713,11 @@ export const api = {
     if (isDemoSession()) return DEMO_CATEGORIES;
     try {
       const res: any = await request('/categories');
-      return res.categories || [];
+      const cats = res.categories || [];
+      return cats.map((c: any) => ({
+        ...c,
+        imageUrl: resolveImageUrl(c.imageUrl)
+      }));
     } catch (err: any) {
       if (err.message?.includes('BACKEND_OFFLINE')) return DEMO_CATEGORIES;
       throw err;
