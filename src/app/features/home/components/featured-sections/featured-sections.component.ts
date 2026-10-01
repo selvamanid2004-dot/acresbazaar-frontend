@@ -37,7 +37,7 @@ import { AuthService } from '../../../../core/services/auth.service';
             
             <!-- Large Property Image Only -->
             <div class="card-thumb-wrap">
-              <img [src]="plot.imageUrl" alt="Property image" class="listing-img" loading="lazy" />
+              <img [src]="plot.imageUrl" (error)="onImgError($event, 'Plots')" alt="Property image" class="listing-img" loading="lazy" />
             </div>
 
             <div class="card-body">
@@ -142,7 +142,7 @@ import { AuthService } from '../../../../core/services/auth.service';
             
             <!-- Large Property Image Only -->
             <div class="card-thumb-wrap">
-              <img [src]="villa.imageUrl" alt="Property image" class="listing-img" loading="lazy" />
+              <img [src]="villa.imageUrl" (error)="onImgError($event, 'Villas')" alt="Property image" class="listing-img" loading="lazy" />
             </div>
 
             <div class="card-body">
@@ -247,7 +247,7 @@ import { AuthService } from '../../../../core/services/auth.service';
             
             <!-- Large Property Image Only -->
             <div class="card-thumb-wrap">
-              <img [src]="apt.imageUrl" alt="Property image" class="listing-img" loading="lazy" />
+              <img [src]="apt.imageUrl" (error)="onImgError($event, 'Apartments')" alt="Property image" class="listing-img" loading="lazy" />
             </div>
 
             <div class="card-body">
@@ -721,5 +721,21 @@ export class FeaturedSectionsComponent {
 
   onDetails(item: Property) {
     this.propertySelected.emit(item);
+  }
+
+  onImgError(e: Event, type = '') {
+    const target = e.target as HTMLImageElement;
+    if (target) {
+      const cat = type.toLowerCase();
+      if (cat.includes('plot')) {
+        target.src = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('villa')) {
+        target.src = 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80';
+      } else if (cat.includes('apt') || cat.includes('apartment')) {
+        target.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80';
+      } else {
+        target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+      }
+    }
   }
 }
