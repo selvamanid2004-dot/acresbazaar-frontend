@@ -567,39 +567,63 @@ export class PropertyService {
 
     const queryStr = params.toString() ? `?${params.toString()}` : '';
     try {
-      const res = await fetchWithTimeout(`${getApiBaseUrl()}/properties/public${queryStr}`, {}, 5000);
+      const res = await fetchWithTimeout(`${getApiBaseUrl()}/properties/public${queryStr}`, {}, 8000);
       if (!res.ok) throw new Error('Search request failed');
       const data = await res.json();
       if (data && data.properties && Array.isArray(data.properties)) {
-        return data.properties.map((p: any) => ({
-          id: p.id,
-          title: p.title,
-          slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          price: p.price,
-          priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
-          location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
-          city: p.city || '',
-          address: p.address || p.location || '',
-          exactAddress: p.address || p.location || '',
-          type: p.category,
-          category: p.category,
-          tier: ((p.tier || p.planType || '').toLowerCase() === 'gold' ? 'gold' : 'platinum') as 'gold' | 'platinum',
-          imageUrl: resolveImageUrl(p.imageUrl) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-          galleryImages: (p.galleryImages || []).map((img: string) => resolveImageUrl(img)),
-          specs: p.specs || {},
-          description: p.description,
-          shortDescription: p.description || '',
-          submissionDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
-          submissionStatus: 'APPROVED',
-          ownerName: p.sellerName,
-          isVerified: true,
-          postedBy: {
-            name: p.seller?.name || p.sellerName || 'Verified Partner',
-            role: (p.seller?.role || p.sellerRole || 'PARTNER') === 'DEALER' ? 'Dealer' : 'Owner',
-            phone: p.seller?.mobile || '+91 98450 00000',
-            verified: true
+        return data.properties.map((p: any) => {
+          let parsedSpecs: any = p.specs || {};
+          if (typeof p.categorySpecs === 'string') {
+            try { parsedSpecs = { ...parsedSpecs, ...JSON.parse(p.categorySpecs) }; } catch {}
+          } else if (p.categorySpecs && typeof p.categorySpecs === 'object') {
+            parsedSpecs = { ...parsedSpecs, ...p.categorySpecs };
           }
-        }));
+          if (!parsedSpecs.sqft && (parsedSpecs.builtUpArea || parsedSpecs.area || parsedSpecs.superBuiltUpArea)) {
+            const num = parseInt(String(parsedSpecs.builtUpArea || parsedSpecs.area || parsedSpecs.superBuiltUpArea).replace(/[^0-9]/g, ''));
+            if (num > 0) parsedSpecs.sqft = num;
+          }
+          if (!parsedSpecs.beds && (parsedSpecs.bhk || parsedSpecs.bedrooms)) {
+            const num = parseInt(String(parsedSpecs.bhk || parsedSpecs.bedrooms).replace(/[^0-9]/g, ''));
+            if (num > 0) parsedSpecs.beds = num;
+          }
+          if (!parsedSpecs.baths && (parsedSpecs.bathrooms || parsedSpecs.baths)) {
+            const num = parseInt(String(parsedSpecs.bathrooms || parsedSpecs.baths).replace(/[^0-9]/g, ''));
+            if (num > 0) parsedSpecs.baths = num;
+          }
+          if (!parsedSpecs.plotSize && (parsedSpecs.plotArea || parsedSpecs.dimensions)) {
+            parsedSpecs.plotSize = String(parsedSpecs.plotArea || parsedSpecs.dimensions);
+          }
+
+          return {
+            id: p.id,
+            title: p.title,
+            slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            price: p.price,
+            priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
+            location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
+            city: p.city || '',
+            address: p.address || p.location || '',
+            exactAddress: p.address || p.location || '',
+            type: p.category,
+            category: p.category,
+            tier: ((p.tier || p.planType || '').toLowerCase() === 'gold' ? 'gold' : 'platinum') as 'gold' | 'platinum',
+            imageUrl: resolveImageUrl(p.imageUrl) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+            galleryImages: (p.galleryImages || []).map((img: string) => resolveImageUrl(img)),
+            specs: parsedSpecs,
+            description: p.description,
+            shortDescription: p.description || '',
+            submissionDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
+            submissionStatus: 'APPROVED',
+            ownerName: p.sellerName,
+            isVerified: true,
+            postedBy: {
+              name: p.seller?.name || p.sellerName || 'Verified Partner',
+              role: (p.seller?.role || p.sellerRole || 'PARTNER') === 'DEALER' ? 'Dealer' : 'Owner',
+              phone: p.seller?.mobile || '+91 98450 00000',
+              verified: true
+            }
+          };
+        });
       }
       return [];
     } catch {
@@ -653,34 +677,58 @@ export class PropertyService {
   syncPlatinumFromBackend(): Promise<Property[]> {
     if (this.inFlightSync) return this.inFlightSync;
 
-    // Fetch live approved properties with 2500ms max timeout to prevent page stalls
-    this.inFlightSync = fetchWithTimeout(`${getApiBaseUrl()}/properties/public`, {}, 2500)
+    // Fetch live approved properties with 8000ms timeout
+    this.inFlightSync = fetchWithTimeout(`${getApiBaseUrl()}/properties/public`, {}, 8000)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data && data.properties && Array.isArray(data.properties) && data.properties.length > 0) {
-          const apiProps: Property[] = data.properties.map((p: any) => ({
-            id: p.id,
-            title: p.title,
-            slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            price: p.price,
-            priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
-            location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
-            city: p.city || '',
-            address: p.address || p.location || '',
-            exactAddress: p.address || p.location || '',
-            type: p.category,
-            category: p.category,
-            tier: ((p.tier || p.planType || '').toLowerCase() === 'gold' ? 'gold' : 'platinum') as 'gold' | 'platinum',
-            imageUrl: resolveImageUrl(p.imageUrl) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-            galleryImages: (p.galleryImages || []).map((img: string) => resolveImageUrl(img)),
-            specs: p.specs || {},
-            description: p.description,
-            shortDescription: p.description || '',
-            submissionDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
-            submissionStatus: 'APPROVED',
-            ownerName: p.sellerName,
-            isVerified: true
-          }));
+          const apiProps: Property[] = data.properties.map((p: any) => {
+            let parsedSpecs: any = p.specs || {};
+            if (typeof p.categorySpecs === 'string') {
+              try { parsedSpecs = { ...parsedSpecs, ...JSON.parse(p.categorySpecs) }; } catch {}
+            } else if (p.categorySpecs && typeof p.categorySpecs === 'object') {
+              parsedSpecs = { ...parsedSpecs, ...p.categorySpecs };
+            }
+            if (!parsedSpecs.sqft && (parsedSpecs.builtUpArea || parsedSpecs.area || parsedSpecs.superBuiltUpArea)) {
+              const num = parseInt(String(parsedSpecs.builtUpArea || parsedSpecs.area || parsedSpecs.superBuiltUpArea).replace(/[^0-9]/g, ''));
+              if (num > 0) parsedSpecs.sqft = num;
+            }
+            if (!parsedSpecs.beds && (parsedSpecs.bhk || parsedSpecs.bedrooms)) {
+              const num = parseInt(String(parsedSpecs.bhk || parsedSpecs.bedrooms).replace(/[^0-9]/g, ''));
+              if (num > 0) parsedSpecs.beds = num;
+            }
+            if (!parsedSpecs.baths && (parsedSpecs.bathrooms || parsedSpecs.baths)) {
+              const num = parseInt(String(parsedSpecs.bathrooms || parsedSpecs.baths).replace(/[^0-9]/g, ''));
+              if (num > 0) parsedSpecs.baths = num;
+            }
+            if (!parsedSpecs.plotSize && (parsedSpecs.plotArea || parsedSpecs.dimensions)) {
+              parsedSpecs.plotSize = String(parsedSpecs.plotArea || parsedSpecs.dimensions);
+            }
+
+            return {
+              id: p.id,
+              title: p.title,
+              slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              price: p.price,
+              priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
+              location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
+              city: p.city || '',
+              address: p.address || p.location || '',
+              exactAddress: p.address || p.location || '',
+              type: p.category,
+              category: p.category,
+              tier: ((p.tier || p.planType || '').toLowerCase() === 'gold' ? 'gold' : 'platinum') as 'gold' | 'platinum',
+              imageUrl: resolveImageUrl(p.imageUrl) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+              galleryImages: (p.galleryImages || []).map((img: string) => resolveImageUrl(img)),
+              specs: parsedSpecs,
+              description: p.description,
+              shortDescription: p.description || '',
+              submissionDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
+              submissionStatus: 'APPROVED',
+              ownerName: p.sellerName,
+              isVerified: true
+            };
+          });
 
           this.saveCustomProperties(apiProps);
           return apiProps;

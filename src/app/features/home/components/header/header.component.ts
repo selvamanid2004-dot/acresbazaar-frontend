@@ -1217,7 +1217,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
 
     // Add cache-bust timestamp so browser doesn't serve stale logo image
-    fetchWithTimeout(`${getApiBaseUrl()}/settings/group/logo?_t=${Date.now()}`, {}, 2500)
+    fetchWithTimeout(`${getApiBaseUrl()}/settings/group/logo?_t=${Date.now()}`, {}, 6000)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         const rawLogo = data?.settings?.website_logo || data?.settings?.logo_url;
@@ -1225,9 +1225,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
           const resolvedLogo = resolveImageUrl(rawLogo);
           // Add cache-busting param to the image URL itself so <img> always reloads after change
           const bustParam = `?_v=${Date.now()}`;
-          const logoWithBust = resolvedLogo.includes('?') ? resolvedLogo : resolvedLogo + bustParam;
+          const logoWithBust = resolvedLogo.startsWith('data:') ? resolvedLogo : (resolvedLogo.includes('?') ? resolvedLogo : resolvedLogo + bustParam);
           this.websiteLogo.set(logoWithBust);
-          // Store clean URL (without bust) in localStorage
+          // Store clean URL in localStorage
           localStorage.setItem('aura_website_logo', resolvedLogo);
         } else if (data?.settings && (data.settings.website_logo === '' || data.settings.logo_url === '')) {
           // Logo was explicitly removed from CMS
@@ -1245,8 +1245,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   onLogoError(): void {
-    this.websiteLogo.set(null);
-    localStorage.removeItem('aura_website_logo');
+    const current = this.websiteLogo();
+    if (current && current.includes('?_v=')) {
+      this.websiteLogo.set(current.split('?')[0]);
+    } else {
+      this.websiteLogo.set(null);
+    }
   }
 
   get activeNav(): string {

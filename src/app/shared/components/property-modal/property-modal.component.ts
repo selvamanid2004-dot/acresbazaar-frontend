@@ -17,7 +17,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
         
         <!-- Modal Media Banner -->
         <div class="modal-media-header">
-          <img [src]="property.imageUrl" [alt]="property.title" class="modal-img" />
+          <img [src]="property.imageUrl" (error)="onMediaError($event)" [alt]="property.title" class="modal-img" />
           <div class="modal-media-overlay"></div>
 
           <button type="button" class="close-btn" (click)="close()" aria-label="Close modal">
@@ -62,24 +62,24 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
               <strong class="spec-value">{{ property.type | uppercase }}</strong>
             </div>
 
-            <div class="spec-card" *ngIf="property.specs.sqft">
+            <div class="spec-card" *ngIf="getFormattedArea()">
               <span class="spec-name">Super Built-Up Area</span>
-              <strong class="spec-value">{{ property.specs.sqft }} sq.ft</strong>
+              <strong class="spec-value">{{ getFormattedArea() }}</strong>
             </div>
 
-            <div class="spec-card" *ngIf="property.specs.beds">
-              <span class="spec-name">Bedrooms</span>
-              <strong class="spec-value">{{ property.specs.beds }} BHK Master Suites</strong>
+            <div class="spec-card" *ngIf="getFormattedBhk() !== '—'">
+              <span class="spec-name">Bedrooms / BHK</span>
+              <strong class="spec-value">{{ getFormattedBhk() }}</strong>
             </div>
 
-            <div class="spec-card" *ngIf="property.specs.baths">
+            <div class="spec-card" *ngIf="property.specs.baths || property.specs.bathrooms">
               <span class="spec-name">Bathrooms</span>
-              <strong class="spec-value">{{ property.specs.baths }} En-suite Baths</strong>
+              <strong class="spec-value">{{ property.specs.baths || property.specs.bathrooms }} Baths</strong>
             </div>
 
-            <div class="spec-card" *ngIf="property.specs.plotSize">
+            <div class="spec-card" *ngIf="getFormattedPlot()">
               <span class="spec-name">Plot Dimensions</span>
-              <strong class="spec-value">{{ property.specs.plotSize }}</strong>
+              <strong class="spec-value">{{ getFormattedPlot() }}</strong>
             </div>
 
             <div class="spec-card" *ngIf="property.specs.facing">
@@ -944,6 +944,36 @@ export class PropertyModalComponent implements OnChanges {
 
   close() {
     this.closeRequested.emit();
+  }
+
+  onMediaError(event: Event) {
+    const target = event.target as HTMLImageElement;
+    if (target) {
+      target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+    }
+  }
+
+  getFormattedArea(): string {
+    if (!this.property?.specs) return '';
+    const val = this.property.specs.sqft || this.property.specs.builtUpArea || this.property.specs.area;
+    if (!val) return '';
+    const str = String(val);
+    return str.includes('sq') ? str : `${str} sq.ft`;
+  }
+
+  getFormattedBhk(): string {
+    if (!this.property?.specs) return '';
+    const s = this.property.specs;
+    if (s.bhk) return s.bhk;
+    if (s.beds) return `${s.beds} BHK Master Suites`;
+    if (s.bedrooms) return `${s.bedrooms} Bedrooms`;
+    return '—';
+  }
+
+  getFormattedPlot(): string {
+    if (!this.property?.specs) return '';
+    const s = this.property.specs;
+    return s.plotSize || s.plotArea || s.dimensions || '';
   }
 
   // --- WISHLIST TOGGLE (STORED IN TOP WISHLIST LIKE FLIPKART) ---
