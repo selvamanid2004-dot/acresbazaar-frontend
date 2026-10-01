@@ -106,9 +106,17 @@ export interface HeroSlide {
 
 export interface SearchFilter {
   tab?: string;
-  category: string;
-  location: string;
-  budgetRange: string;
+  category?: string;
+  location?: string;
+  budgetRange?: string;
+  minPrice?: number | string;
+  maxPrice?: number | string;
+  propertyType?: string;
+  bhk?: string;
+  facing?: string;
+  furnishing?: string;
+  constructionStatus?: string;
+  search?: string;
 }
 
 export interface ScoutStep {

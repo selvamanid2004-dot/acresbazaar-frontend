@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -88,7 +88,7 @@ import { PropertyService } from '../../../../core/services/property.service';
           <!-- SECOND ROW: Core Search Controls -->
           <form class="search-controls-row" (ngSubmit)="onSearch()">
             
-            <!-- Category Dropdown: All Residential, Plots, Villas, Apartments / Flats, Independent Houses, Commercial Spaces, Farm Lands -->
+            <!-- Category Dropdown: All Residential, Plots & Land, Villas, Apartments / Flats, Independent Houses, Commercial Spaces, Farm Lands -->
             <div class="control-group category-group">
               <label for="search-cat-select" class="group-label">Category</label>
               <div class="select-wrapper">
@@ -96,11 +96,10 @@ import { PropertyService } from '../../../../core/services/property.service';
                   id="search-cat-select" 
                   class="control-select" 
                   [(ngModel)]="selectedCategory" 
-                  (ngModelChange)="onCategoryChange($event)" 
                   name="category">
-                  <option value="all-residential">All Residential</option>
-                  <option value="plots">Plots</option>
-                  <option value="villas">Villas</option>
+                  <option value="all-residential">All Categories</option>
+                  <option value="plots">Plots & Land</option>
+                  <option value="villas">Villas & Estates</option>
                   <option value="apartments">Apartments / Flats</option>
                   <option value="independent-houses">Independent Houses</option>
                   <option value="commercial">Commercial Spaces</option>
@@ -112,9 +111,9 @@ import { PropertyService } from '../../../../core/services/property.service';
             <!-- Divider -->
             <div class="control-divider"></div>
 
-            <!-- Location / Project / Keyword Search -->
+            <!-- Location Search with Dynamic Database-driven Suggestions -->
             <div class="control-group location-group">
-              <label for="search-keyword-input" class="group-label">Location / Project</label>
+              <label for="search-keyword-input" class="group-label">Location / City</label>
               <div class="input-wrapper">
                 <svg class="location-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
@@ -123,35 +122,48 @@ import { PropertyService } from '../../../../core/services/property.service';
                 <input 
                   id="search-keyword-input"
                   type="text" 
+                  list="dynamicPropertyLocations"
                   class="control-input" 
-                  placeholder="Search by location, project or property" 
+                  placeholder="Enter city, locality or area" 
                   [(ngModel)]="searchKeyword" 
+                  (input)="onLocationInput()"
                   name="keyword" 
                   autocomplete="off" />
+                <datalist id="dynamicPropertyLocations">
+                  <option *ngFor="let loc of dynamicLocations()" [value]="loc">{{ loc }}</option>
+                </datalist>
               </div>
             </div>
 
             <!-- Divider -->
             <div class="control-divider"></div>
 
-            <!-- Budget Filter -->
+            <!-- Budget Filter (in INR Lakhs and Crores) -->
             <div class="control-group budget-group">
               <label for="search-budget-select" class="group-label">Budget</label>
               <div class="select-wrapper">
                 <select id="search-budget-select" class="control-select" [(ngModel)]="selectedBudget" name="budget">
                   <option value="any">Budget (Any)</option>
-                  <option value="under-500k">Under $500,000</option>
-                  <option value="500k-1m">$500,000 - $1,000,000</option>
-                  <option value="1m-2m">$1,000,000 - $2,000,000</option>
-                  <option value="2m-5m">$2,000,000 - $5,000,000</option>
-                  <option value="5m-plus">$5,000,000+ (Luxury)</option>
+                  <option value="under-20l">Under ₹20 Lakhs</option>
+                  <option value="20l-50l">₹20 Lakhs – ₹50 Lakhs</option>
+                  <option value="50l-1cr">₹50 Lakhs – ₹1 Crore</option>
+                  <option value="1cr-3cr">₹1 Crore – ₹3 Crores</option>
+                  <option value="3cr-5cr">₹3 Crores – ₹5 Crores</option>
+                  <option value="above-5cr">Above ₹5 Crores</option>
                 </select>
               </div>
             </div>
 
-            <!-- Search Action CTA Button -->
+            <!-- Search Action CTA Button & Clear -->
             <div class="search-btn-wrapper">
-              <button type="submit" class="btn btn-primary btn-search">
+              <button type="button" class="btn btn-clear-search" *ngIf="hasActiveFilters()" (click)="clearFilters()" title="Clear filters">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Clear</span>
+              </button>
+              <button type="submit" class="btn btn-primary btn-search" id="property-search-btn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -161,6 +173,103 @@ import { PropertyService } from '../../../../core/services/property.service';
             </div>
 
           </form>
+
+          <!-- ADVANCED FILTERS TOGGLE & EXPANDABLE SECTION -->
+          <div class="advanced-filter-toggle-row">
+            <button 
+              type="button" 
+              class="btn-toggle-advanced" 
+              (click)="toggleAdvancedFilters()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+              <span>{{ showAdvancedFilters() ? 'Fewer Filters' : 'More Search Filters' }}</span>
+              <span class="active-badge-count" *ngIf="advancedFiltersCount() > 0">{{ advancedFiltersCount() }} Active</span>
+              <svg class="chevron-icon" [class.rotated]="showAdvancedFilters()" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <!-- EXPANDABLE ADVANCED FILTERS GRID -->
+          <div class="advanced-filters-panel" *ngIf="showAdvancedFilters()">
+            <div class="advanced-grid">
+              
+              <!-- Property Sub-Type -->
+              <div class="adv-group">
+                <label for="search-type-select" class="adv-label">Property Type</label>
+                <select id="search-type-select" class="adv-select" [(ngModel)]="selectedPropertyType" name="propertyType">
+                  <option value="any">Any Type</option>
+                  <option value="Residential">Residential</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Plot">Gated / Layout Plot</option>
+                  <option value="Villa">Villa / House</option>
+                  <option value="Apartment">Apartment / Flat</option>
+                  <option value="Farm Land">Farm Land</option>
+                </select>
+              </div>
+
+              <!-- BHK / Bedrooms -->
+              <div class="adv-group">
+                <label for="search-bhk-select" class="adv-label">BHK / Bedrooms</label>
+                <select id="search-bhk-select" class="adv-select" [(ngModel)]="selectedBhk" name="bhk">
+                  <option value="any">Any BHK</option>
+                  <option value="1 BHK">1 BHK</option>
+                  <option value="2 BHK">2 BHK</option>
+                  <option value="3 BHK">3 BHK</option>
+                  <option value="4 BHK">4 BHK</option>
+                  <option value="5+ BHK">5+ BHK</option>
+                </select>
+              </div>
+
+              <!-- Facing Direction -->
+              <div class="adv-group">
+                <label for="search-facing-select" class="adv-label">Facing Direction</label>
+                <select id="search-facing-select" class="adv-select" [(ngModel)]="selectedFacing" name="facing">
+                  <option value="any">Any Facing</option>
+                  <option value="East">East Facing</option>
+                  <option value="North">North Facing</option>
+                  <option value="South">South Facing</option>
+                  <option value="West">West Facing</option>
+                  <option value="North-East">North-East</option>
+                  <option value="North-West">North-West</option>
+                  <option value="South-East">South-East</option>
+                  <option value="South-West">South-West</option>
+                </select>
+              </div>
+
+              <!-- Furnishing -->
+              <div class="adv-group">
+                <label for="search-furnishing-select" class="adv-label">Furnishing</label>
+                <select id="search-furnishing-select" class="adv-select" [(ngModel)]="selectedFurnishing" name="furnishing">
+                  <option value="any">Any Furnishing</option>
+                  <option value="Fully Furnished">Fully Furnished</option>
+                  <option value="Semi-Furnished">Semi-Furnished</option>
+                  <option value="Unfurnished">Unfurnished</option>
+                </select>
+              </div>
+
+              <!-- Possession / Construction Status -->
+              <div class="adv-group">
+                <label for="search-status-select" class="adv-label">Possession Status</label>
+                <select id="search-status-select" class="adv-select" [(ngModel)]="selectedConstructionStatus" name="constructionStatus">
+                  <option value="any">Any Status</option>
+                  <option value="Ready to Move">Ready to Move</option>
+                  <option value="Under Construction">Under Construction</option>
+                  <option value="Newly Launched">Newly Launched</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
 
         </div>
 
@@ -446,6 +555,34 @@ import { PropertyService } from '../../../../core/services/property.service';
       align-items: flex-end;
     }
 
+    .search-btn-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-clear-search {
+      height: 46px;
+      padding: 0 1rem;
+      background: var(--slate-100);
+      color: var(--slate-600);
+      border: 1px solid var(--slate-300);
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear-search:hover {
+      background: #FEE2E2;
+      color: #DC2626;
+      border-color: #FCA5A5;
+    }
+
     .btn-search {
       height: 46px;
       padding: 0 1.75rem;
@@ -453,6 +590,118 @@ import { PropertyService } from '../../../../core/services/property.service';
       font-weight: 700;
       border-radius: var(--radius-md);
       box-shadow: 0 4px 12px rgba(11, 19, 43, 0.2);
+    }
+
+    /* ADVANCED FILTERS STYLING */
+    .advanced-filter-toggle-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed var(--slate-200);
+    }
+
+    .btn-toggle-advanced {
+      background: none;
+      border: none;
+      color: #0284C7;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-toggle-advanced:hover {
+      background: #F0F9FF;
+      color: #0369A1;
+    }
+
+    .active-badge-count {
+      background: #E0F2FE;
+      color: #0284C7;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      border: 1px solid #BAE6FD;
+    }
+
+    .chevron-icon {
+      transition: transform 0.2s ease;
+    }
+
+    .chevron-icon.rotated {
+      transform: rotate(180deg);
+    }
+
+    .advanced-filters-panel {
+      margin-top: 1rem;
+      padding: 1.25rem;
+      background: #F8FAFC;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--slate-200);
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .advanced-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 1024px) {
+      .advanced-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .advanced-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .adv-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .adv-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--slate-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .adv-select {
+      width: 100%;
+      height: 38px;
+      padding: 0 0.75rem;
+      border: 1.5px solid var(--slate-300);
+      border-radius: 6px;
+      background: #FFFFFF;
+      color: #0F172A;
+      font-size: 0.88rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .adv-select:focus {
+      border-color: #0284C7;
     }
 
     @media (max-width: 980px) {
@@ -496,8 +745,21 @@ import { PropertyService } from '../../../../core/services/property.service';
         padding-bottom: 0.4rem;
       }
 
-      .btn-search {
+      .search-btn-wrapper {
         width: 100%;
+        display: flex;
+        flex-direction: row;
+      }
+
+      .btn-clear-search {
+        flex: 1;
+        justify-content: center;
+        margin-top: 0.4rem;
+        height: 44px;
+      }
+
+      .btn-search {
+        flex: 2;
         margin-top: 0.4rem;
         height: 44px;
       }
@@ -528,7 +790,7 @@ import { PropertyService } from '../../../../core/services/property.service';
     }
   `]
 })
-export class PropertySearchComponent {
+export class PropertySearchComponent implements OnInit {
   router = inject(Router);
   notificationService = inject(NotificationService);
   navStateService = inject(NavStateService);
@@ -537,9 +799,56 @@ export class PropertySearchComponent {
 
   @Output() searchSubmitted = new EventEmitter<SearchFilter>();
 
+  // Primary Filters
   selectedCategory = 'all-residential';
   searchKeyword = '';
   selectedBudget = 'any';
+
+  // Advanced Filters
+  selectedPropertyType = 'any';
+  selectedBhk = 'any';
+  selectedFacing = 'any';
+  selectedFurnishing = 'any';
+  selectedConstructionStatus = 'any';
+  showAdvancedFilters = signal<boolean>(false);
+
+  // Dynamic suggestions fetched straight from actual database property records
+  dynamicLocations = signal<string[]>([]);
+  private locationDebounceTimer: any = null;
+
+  ngOnInit() {
+    this.loadLocations();
+  }
+
+  async loadLocations(query?: string) {
+    try {
+      const locs = await this.propertyService.fetchLocationsFromBackend(query);
+      this.dynamicLocations.set(locs);
+    } catch {
+      this.dynamicLocations.set([]);
+    }
+  }
+
+  onLocationInput() {
+    clearTimeout(this.locationDebounceTimer);
+    this.locationDebounceTimer = setTimeout(() => {
+      this.loadLocations(this.searchKeyword);
+    }, 250);
+  }
+
+  toggleAdvancedFilters() {
+    this.showAdvancedFilters.update(v => !v);
+  }
+
+  advancedFiltersCount(): number {
+    let count = 0;
+    if (this.selectedPropertyType !== 'any') count++;
+    if (this.selectedBhk !== 'any') count++;
+    if (this.selectedFacing !== 'any') count++;
+    if (this.selectedFurnishing !== 'any') count++;
+    if (this.selectedConstructionStatus !== 'any') count++;
+    return count;
+  }
 
   openPlanOption(plan: 'gold' | 'platinum') {
     if (plan === 'gold') {
@@ -549,17 +858,46 @@ export class PropertySearchComponent {
     }
   }
 
-  onCategoryChange(catSlug: string) {
-    this.selectedCategory = catSlug;
-    this.router.navigate(['/' + catSlug]);
+  hasActiveFilters(): boolean {
+    return (
+      (this.selectedCategory !== 'all-residential' && this.selectedCategory !== 'all' && this.selectedCategory !== '') ||
+      (this.searchKeyword !== undefined && this.searchKeyword.trim().length > 0) ||
+      (this.selectedBudget !== 'any' && this.selectedBudget !== 'ALL' && this.selectedBudget !== '') ||
+      (this.selectedPropertyType !== 'any') ||
+      (this.selectedBhk !== 'any') ||
+      (this.selectedFacing !== 'any') ||
+      (this.selectedFurnishing !== 'any') ||
+      (this.selectedConstructionStatus !== 'any')
+    );
+  }
+
+  clearFilters() {
+    this.selectedCategory = 'all-residential';
+    this.searchKeyword = '';
+    this.selectedBudget = 'any';
+    this.selectedPropertyType = 'any';
+    this.selectedBhk = 'any';
+    this.selectedFacing = 'any';
+    this.selectedFurnishing = 'any';
+    this.selectedConstructionStatus = 'any';
+    this.loadLocations();
+    this.searchSubmitted.emit({
+      category: 'all-residential',
+      location: '',
+      budgetRange: 'any'
+    });
   }
 
   onSearch() {
     this.searchSubmitted.emit({
       category: this.selectedCategory,
-      location: this.searchKeyword,
-      budgetRange: this.selectedBudget
+      location: this.searchKeyword.trim(),
+      budgetRange: this.selectedBudget,
+      propertyType: this.selectedPropertyType !== 'any' ? this.selectedPropertyType : undefined,
+      bhk: this.selectedBhk !== 'any' ? this.selectedBhk : undefined,
+      facing: this.selectedFacing !== 'any' ? this.selectedFacing : undefined,
+      furnishing: this.selectedFurnishing !== 'any' ? this.selectedFurnishing : undefined,
+      constructionStatus: this.selectedConstructionStatus !== 'any' ? this.selectedConstructionStatus : undefined
     });
-    this.router.navigate(['/' + this.selectedCategory]);
   }
 }

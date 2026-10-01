@@ -517,6 +517,139 @@ export class PropertyService {
 
   private inFlightSync: Promise<Property[]> | null = null;
 
+  async searchPublicProperties(filter: {
+    category?: string;
+    location?: string;
+    budgetRange?: string;
+    minPrice?: number | string;
+    maxPrice?: number | string;
+    propertyType?: string;
+    bhk?: string;
+    facing?: string;
+    furnishing?: string;
+    constructionStatus?: string;
+    search?: string;
+  }): Promise<Property[]> {
+    const params = new URLSearchParams();
+    if (filter.category && filter.category !== 'all-residential' && filter.category !== 'all' && filter.category !== 'ALL') {
+      params.append('category', filter.category);
+    }
+    if (filter.location && filter.location.trim()) {
+      params.append('location', filter.location.trim());
+    }
+    if (filter.budgetRange && filter.budgetRange !== 'any' && filter.budgetRange !== 'ALL') {
+      params.append('budget', filter.budgetRange);
+    }
+    if (filter.minPrice !== undefined && filter.minPrice !== '') {
+      params.append('minPrice', String(filter.minPrice));
+    }
+    if (filter.maxPrice !== undefined && filter.maxPrice !== '') {
+      params.append('maxPrice', String(filter.maxPrice));
+    }
+    if (filter.propertyType && filter.propertyType !== 'ALL' && filter.propertyType !== 'any') {
+      params.append('propertyType', filter.propertyType);
+    }
+    if (filter.bhk && filter.bhk !== 'ALL' && filter.bhk !== 'any') {
+      params.append('bhk', filter.bhk);
+    }
+    if (filter.facing && filter.facing !== 'ALL' && filter.facing !== 'any') {
+      params.append('facing', filter.facing);
+    }
+    if (filter.furnishing && filter.furnishing !== 'ALL' && filter.furnishing !== 'any') {
+      params.append('furnishing', filter.furnishing);
+    }
+    if (filter.constructionStatus && filter.constructionStatus !== 'ALL' && filter.constructionStatus !== 'any') {
+      params.append('constructionStatus', filter.constructionStatus);
+    }
+    if (filter.search && filter.search.trim()) {
+      params.append('search', filter.search.trim());
+    }
+
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    try {
+      const res = await fetchWithTimeout(`${getApiBaseUrl()}/properties/public${queryStr}`, {}, 5000);
+      if (!res.ok) throw new Error('Search request failed');
+      const data = await res.json();
+      if (data && data.properties && Array.isArray(data.properties)) {
+        return data.properties.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          price: p.price,
+          priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
+          location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
+          city: p.city || '',
+          address: p.address || p.location || '',
+          exactAddress: p.address || p.location || '',
+          type: p.category,
+          category: p.category,
+          tier: ((p.tier || p.planType || '').toLowerCase() === 'gold' ? 'gold' : 'platinum') as 'gold' | 'platinum',
+          imageUrl: resolveImageUrl(p.imageUrl) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+          galleryImages: (p.galleryImages || []).map((img: string) => resolveImageUrl(img)),
+          specs: p.specs || {},
+          description: p.description,
+          shortDescription: p.description || '',
+          submissionDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
+          submissionStatus: 'APPROVED',
+          ownerName: p.sellerName,
+          isVerified: true,
+          postedBy: {
+            name: p.seller?.name || p.sellerName || 'Verified Partner',
+            role: (p.seller?.role || p.sellerRole || 'PARTNER') === 'DEALER' ? 'Dealer' : 'Owner',
+            phone: p.seller?.mobile || '+91 98450 00000',
+            verified: true
+          }
+        }));
+      }
+      return [];
+    } catch {
+      // Offline fallback: match locally loaded approved properties
+      let filtered = this.getAllProperties();
+      if (filter.category && filter.category !== 'all-residential' && filter.category !== 'all' && filter.category !== 'ALL') {
+        filtered = this.getPropertiesByCategory(filter.category);
+      }
+      if (filter.location && filter.location.trim()) {
+        const q = filter.location.toLowerCase().trim();
+        filtered = filtered.filter(p => 
+          (p.location && p.location.toLowerCase().includes(q)) ||
+          (p.city && p.city.toLowerCase().includes(q)) ||
+          (p.title && p.title.toLowerCase().includes(q))
+        );
+      }
+      return filtered;
+    }
+  }
+
+  async fetchLocationsFromBackend(query?: string): Promise<string[]> {
+    try {
+      const q = query && query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+      const res = await fetchWithTimeout(`${getApiBaseUrl()}/properties/locations${q}`, {}, 3500);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.locations)) {
+          return data.locations;
+        }
+      }
+    } catch {}
+    // Fallback from loaded properties in memory
+    const locSet = new Set<string>();
+    for (const p of this.getAllProperties()) {
+      if (p.city && p.city.trim()) locSet.add(p.city.trim());
+      if (p.location && p.location.trim()) {
+        locSet.add(p.location.trim());
+        const parts = p.location.split(',').map(s => s.trim()).filter(s => s.length > 2);
+        for (const part of parts) locSet.add(part);
+      }
+    }
+    let list = Array.from(locSet);
+    if (query && query.trim()) {
+      const q = query.toLowerCase().trim();
+      list = list.filter(l => l.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => a.localeCompare(b));
+    return list;
+  }
+
   syncPlatinumFromBackend(): Promise<Property[]> {
     if (this.inFlightSync) return this.inFlightSync;
 

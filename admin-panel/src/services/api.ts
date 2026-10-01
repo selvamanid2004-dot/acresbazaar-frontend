@@ -41,6 +41,25 @@ const API_BASE = (
     : '/api')
 ).replace(/\/$/, '');
 
+export function resolveImageUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return '';
+  }
+  const trimmed = url.trim();
+  const backendBase = API_BASE.replace(/\/api$/, '');
+
+  if (trimmed.startsWith('/uploads/')) {
+    return `${backendBase}${trimmed}`;
+  }
+
+  if (trimmed.includes('localhost:5001/uploads/')) {
+    const uploadPath = trimmed.substring(trimmed.indexOf('/uploads/'));
+    return `${backendBase}${uploadPath}`;
+  }
+
+  return trimmed;
+}
+
 export function isDemoSession(): boolean {
   return localStorage.getItem('admin_is_demo') === 'true' || 
          localStorage.getItem('admin_token')?.startsWith('demo_') === true;

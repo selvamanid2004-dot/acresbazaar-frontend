@@ -147,7 +147,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
           <div *ngIf="showOwnerDetails" class="owner-contact-unlocked-card">
             <div class="unlocked-header">
               <div class="badge-row">
-                <span class="badge badge-emerald">✓ BOOKED & DISPATCHED TO ADMIN</span>
+                <span class="badge badge-emerald">✓ BOOKING CONFIRMED</span>
                 <span class="booking-ref-tag" *ngIf="bookingRef">Ref #{{ bookingRef }}</span>
               </div>
               <h4>Direct Owner Contact Information</h4>
@@ -240,7 +240,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
 
               <div class="submodal-actions">
                 <button type="submit" class="btn-submit-report" [disabled]="reportSubmitting || !reportData.description">
-                  {{ reportSubmitting ? 'Submitting Report...' : 'Submit Report to Admin' }}
+                  {{ reportSubmitting ? 'Submitting Report...' : 'Submit Report' }}
                 </button>
                 <button type="button" class="btn-cancel-report" (click)="closeReportModal()">Cancel</button>
               </div>
@@ -1008,7 +1008,7 @@ export class PropertyModalComponent implements OnChanges {
 
       this.notificationService.show(
         'Property Booked & Owner Contact Unlocked!',
-        `Your booking is recorded in the Admin Panel. Verified owner contact details are displayed below.`,
+        `Your booking is confirmed. Verified owner contact details are displayed below.`,
         'success'
       );
 

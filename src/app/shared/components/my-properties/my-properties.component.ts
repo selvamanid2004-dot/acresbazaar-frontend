@@ -724,53 +724,6 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       cursor: pointer;
     }
 
-    .admin-actions {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-
-    .admin-btn {
-      padding: 5px 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      border-radius: 6px;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
-    }
-
-    .approve-btn {
-      background: rgba(34, 197, 94, 0.2);
-      color: #4ADE80;
-      border: 1px solid rgba(34, 197, 94, 0.4);
-    }
-
-    .approve-btn:hover {
-      background: rgba(34, 197, 94, 0.35);
-    }
-
-    .reject-btn {
-      background: rgba(239, 68, 68, 0.2);
-      color: #F87171;
-      border: 1px solid rgba(239, 68, 68, 0.4);
-    }
-
-    .reject-btn:hover {
-      background: rgba(239, 68, 68, 0.35);
-    }
-
-    .reset-btn {
-      background: rgba(234, 179, 8, 0.2);
-      color: #FACC15;
-      border: 1px solid rgba(234, 179, 8, 0.4);
-    }
-
-    .reset-btn:hover {
-      background: rgba(234, 179, 8, 0.35);
-    }
-
     @media (max-width: 768px) {
       .prop-row-card {
         flex-direction: column;
