@@ -49,7 +49,7 @@ export type AuthRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
             [class.active]="currentRole === 'SPOTTER'" 
             (click)="switchRole('SPOTTER')">
             <span class="tab-icon">📸</span>
-            <span class="tab-label">Spotter</span>
+            <span class="tab-label">Partner</span>
           </button>
         </div>
 
@@ -656,7 +656,7 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'Seller';
       case 'DEALER': return 'Dealer';
-      case 'SPOTTER': return 'Spotter';
+      case 'SPOTTER': return 'Partner';
       default: return 'Buyer';
     }
   }
@@ -665,7 +665,7 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'Seller Login';
       case 'DEALER': return 'Dealer Login';
-      case 'SPOTTER': return 'Spotter Login';
+      case 'SPOTTER': return 'Partner Login';
       default: return 'Buyer Login';
     }
   }
@@ -683,7 +683,7 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'SELLER PORTAL';
       case 'DEALER': return 'DEALER PORTAL';
-      case 'SPOTTER': return 'SPOTTER PORTAL';
+      case 'SPOTTER': return 'PARTNER PORTAL';
       default: return 'BUYER PORTAL';
     }
   }
@@ -710,7 +710,7 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'Seller Email / Gmail Address';
       case 'DEALER': return 'Dealer Email / Business Address';
-      case 'SPOTTER': return 'Spotter Email / Gmail Address';
+      case 'SPOTTER': return 'Partner Email / Gmail Address';
       default: return 'Email / Gmail Address';
     }
   }
@@ -719,7 +719,7 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'seller@example.com';
       case 'DEALER': return 'dealer@agency.com';
-      case 'SPOTTER': return 'spotter@example.com';
+      case 'SPOTTER': return 'partner@example.com';
       default: return 'buyer@example.com';
     }
   }

@@ -1001,7 +1001,7 @@ export const WebsiteSettings: React.FC = () => {
                     <textarea
                       rows={2}
                       className="form-control"
-                      value={settings.contact_subtitle || 'Have questions about property listings, buyer plans, or spotter rewards? Our team is here to assist you 24/7.'}
+                      value={settings.contact_subtitle || 'Have questions about property listings, buyer plans, or partner rewards? Our team is here to assist you 24/7.'}
                       onChange={(e) => handleFieldChange('contact_subtitle', e.target.value)}
                     />
                   </div>

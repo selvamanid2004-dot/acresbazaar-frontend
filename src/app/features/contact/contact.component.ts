@@ -92,7 +92,7 @@ import { getApiBaseUrl } from '../../core/services/api-config';
               <span class="form-pill">SEND US A MESSAGE</span>
               <h2 class="form-main-heading">Have a Question or Facing an Issue?</h2>
               <p class="form-sub-heading">
-                Whether you need assistance with property verification, spotter 1,000-point reward payouts, buyer plans, or dealer onboarding, fill out the form below and our concierge will respond promptly.
+                Whether you need assistance with property verification, partner 1,000-point reward payouts, buyer plans, or dealer onboarding, fill out the form below and our concierge will respond promptly.
               </p>
             </div>
 
@@ -417,7 +417,7 @@ export class ContactComponent implements OnInit {
 
   contactTag = signal<string>('SUPPORT & INQUIRIES');
   contactTitle = signal<string>('Get In Touch With AcresBazaar');
-  contactSubtitle = signal<string>('Have questions about property listings, buyer plans, or spotter rewards? Our team is here to assist you 24/7.');
+  contactSubtitle = signal<string>('Have questions about property listings, buyer plans, or partner rewards? Our team is here to assist you 24/7.');
   contactBannerImage = signal<string>('');
 
   contactEmail = signal<string>('support@acresbazaar.com');

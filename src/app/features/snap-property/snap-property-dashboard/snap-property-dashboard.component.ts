@@ -54,9 +54,9 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
           <div class="welcome-content">
             <div class="role-pill">
               <span class="pulse-dot"></span>
-              COMMON PEOPLE · SPOTTER DASHBOARD
+              COMMUNITY PARTNER · DASHBOARD
             </div>
-            <h1>Welcome, <span class="highlight-name">{{ spotterUser?.name || 'Spotter' }}</span></h1>
+            <h1>Welcome, <span class="highlight-name">{{ spotterUser?.name || 'Partner' }}</span></h1>
             <p class="subtitle">
               Track your uploaded TO-LET boards, check verification status in real time, and earn 100 points per upload to unlock your ₹1,000 cash reward!
             </p>
@@ -138,7 +138,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
               </svg>
             </div>
             <div style="flex: 1;">
-              <h2 class="reward-title">Spotter Reward Program · 1,000 Points Milestone</h2>
+              <h2 class="reward-title">Partner Reward Program · 1,000 Points Milestone</h2>
               <p class="reward-desc">
                 Every property you upload earns you <strong>100 Points</strong>. 
                 Once your score reaches <strong>1,000 Points</strong> (10 uploads), unlock your <strong>₹1,000 Cash Reward</strong> directly disbursed by Admin to your bank account!

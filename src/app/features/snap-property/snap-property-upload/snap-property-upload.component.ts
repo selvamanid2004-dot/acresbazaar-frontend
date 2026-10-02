@@ -1080,7 +1080,7 @@ export class SnapPropertyUploadComponent implements OnInit {
       landmark: this.formData.landmark.trim(),
       gpsLat: this.gpsCoords?.lat || null,
       gpsLng: this.gpsCoords?.lng || null,
-      spotterName: this.spotterUser?.name || 'Public Spotter',
+      spotterName: this.spotterUser?.name || 'Community Partner',
       spotterMobile: this.spotterUser?.mobile || '',
       spotterEmail: this.spotterUser?.email || '',
       notes: this.formData.notes.trim()
@@ -1103,7 +1103,7 @@ export class SnapPropertyUploadComponent implements OnInit {
       priceDisplay: this.formData.priceDisplay.trim() || this.formData.boardType,
       description: `TO-LET board spotted at ${this.formData.locality}, ${this.formData.city}. Contact on board: ${this.formData.boardContact}. Notes: ${this.formData.notes}`,
       sellerId: this.spotterUser?.id || null,
-      sellerName: this.spotterUser?.name || 'Public Spotter',
+      sellerName: this.spotterUser?.name || 'Community Partner',
       sellerPhone: this.spotterUser?.mobile || '',
       sellerEmail: this.spotterUser?.email || '',
       sellerRole: 'COMMON_PEOPLE',

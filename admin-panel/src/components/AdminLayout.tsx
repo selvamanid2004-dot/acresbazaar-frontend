@@ -211,7 +211,7 @@ export const AdminLayout: React.FC = () => {
                     <NavLink to="/customers?tab=dealers" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=dealers') ? 'active' : ''}`} onClick={closeMobileMenu}>Dealers</NavLink>
                   )}
                   {canCommonPeople && (
-                    <NavLink to="/customers?tab=common" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=common') ? 'active' : ''}`} onClick={closeMobileMenu}>Common People / Spotters</NavLink>
+                    <NavLink to="/customers?tab=common" className={({ isActive }) => `nav-link nav-link-sub ${location.search.includes('tab=common') ? 'active' : ''}`} onClick={closeMobileMenu}>Community Partners</NavLink>
                   )}
                 </div>
               )}

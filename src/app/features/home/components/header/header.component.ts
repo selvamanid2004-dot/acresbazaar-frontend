@@ -98,7 +98,7 @@ import { getApiBaseUrl, resolveImageUrl, fetchWithTimeout } from '../../../../co
                 <a routerLink="/snap-property/login" (click)="closeLoginDropdown()" class="login-dropdown-item">
                   <div class="drop-icon spotter-i">📸</div>
                   <div>
-                    <div class="drop-title">Spotter Login</div>
+                    <div class="drop-title">Partner Login</div>
                     <div class="drop-sub">Track snaps, earn points & claim rewards</div>
                   </div>
                 </a>
@@ -178,18 +178,18 @@ import { getApiBaseUrl, resolveImageUrl, fetchWithTimeout } from '../../../../co
             </button>
           </ng-container>
 
-          <!-- When SPOTTER is logged in -->
+          <!-- When PARTNER is logged in -->
           <ng-container *ngIf="isSpotterAuthenticated()">
-            <a routerLink="/snap-property/dashboard" class="user-profile-badge spotter-theme" title="Go to Spotter Dashboard & Rewards">
+            <a routerLink="/snap-property/dashboard" class="user-profile-badge spotter-theme" title="Go to Partner Dashboard & Rewards">
               <div class="user-avatar spotter-avatar">
                 📸
               </div>
               <div class="user-meta">
                 <span class="user-name">{{ getSpotterName() }}</span>
-                <span class="user-tier-tag spotter-tag">SPOTTER DASHBOARD</span>
+                <span class="user-tier-tag spotter-tag">PARTNER DASHBOARD</span>
               </div>
             </a>
-            <button type="button" class="btn-logout" (click)="onSpotterLogout()" title="Logout Spotter">
+            <button type="button" class="btn-logout" (click)="onSpotterLogout()" title="Logout Partner">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                 <polyline points="16 17 21 12 16 7"></polyline>

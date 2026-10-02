@@ -77,7 +77,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
                 [class.active]="currentRole === 'SPOTTER'" 
                 (click)="switchRole('SPOTTER')">
                 <span class="tab-icon">📸</span>
-                <span class="tab-label">Spotter</span>
+                <span class="tab-label">Partner</span>
               </button>
             </div>
 
@@ -740,7 +740,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'Seller';
       case 'DEALER': return 'Dealer';
-      case 'SPOTTER': return 'Spotter';
+      case 'SPOTTER': return 'Partner';
       default: return 'Buyer';
     }
   }
@@ -753,7 +753,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'SELLER ONBOARDING';
       case 'DEALER': return 'DEALER & AGENCY ONBOARDING';
-      case 'SPOTTER': return 'COMMON PEOPLE · SNAP SPOTTER';
+      case 'SPOTTER': return 'COMMUNITY PARTNER · SPOTTER';
       default: return 'BUYER ONBOARDING';
     }
   }
@@ -788,7 +788,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'e.g. Ramesh Kumar (Property Owner)';
       case 'DEALER': return 'e.g. Horizon Realty Advisors / Amit Shah';
-      case 'SPOTTER': return 'e.g. Priya Sundaram (Neighborhood Scout)';
+      case 'SPOTTER': return 'e.g. Ramesh Kumar (Community Partner)';
       default: return 'e.g. Rahul Sharma';
     }
   }
@@ -797,7 +797,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     switch (this.currentRole) {
       case 'SELLER': return 'Register as Seller';
       case 'DEALER': return 'Register as Verified Dealer';
-      case 'SPOTTER': return 'Register as Spotter & Start Snapping';
+      case 'SPOTTER': return 'Register as Partner & Start Snapping';
       default: return 'Create Buyer Account';
     }
   }
@@ -900,11 +900,11 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
 
         this.http.post<any>(`${getApiBaseUrl()}/auth/register`, payload).subscribe({
           next: (res) => {
-            this.successMessage = 'Spotter account created! Launching camera upload module...';
+            this.successMessage = 'Partner account created! Launching camera upload module...';
             const sessionData = {
               token: res.token,
               user: {
-                id: res.user?.id || 'spotter-' + Date.now(),
+                id: res.user?.id || 'partner-' + Date.now(),
                 name: res.user?.name || this.formData.fullName,
                 email: res.user?.email || this.formData.email,
                 mobile: res.user?.mobile || this.formData.mobile,
@@ -914,7 +914,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
               expiresAt: Date.now() + 86400000 * 30
             };
             localStorage.setItem('aura_common_session', JSON.stringify(sessionData));
-            this.notificationService.show('Welcome Spotter!', 'Registration successful. You can now snap TO-LET boards.', 'success');
+            this.notificationService.show('Welcome Partner!', 'Registration successful. You can now snap TO-LET boards.', 'success');
             setTimeout(() => this.router.navigate(['/snap-property/upload']), 800);
           },
           error: (err) => {

@@ -137,7 +137,7 @@ export const SnapProperties: React.FC = () => {
             </span>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px' }}>
-            TO-LET boards and sale signboards captured by verified public spotters with GPS location
+            TO-LET boards and sale signboards captured by verified community partners with GPS location
           </p>
         </div>
 
@@ -146,7 +146,7 @@ export const SnapProperties: React.FC = () => {
           <input
             type="text"
             className="form-control"
-            placeholder="Search by title, location, phone, spotter..."
+            placeholder="Search by title, location, phone, partner..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -255,7 +255,7 @@ export const SnapProperties: React.FC = () => {
                 <th>Board / Property Info</th>
                 <th>Contact On Board</th>
                 <th>Spotted Location</th>
-                <th>Spotter (Common Person)</th>
+                <th>Partner (Community Partner)</th>
                 <th>Status</th>
                 <th>Date Spotted</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
@@ -375,11 +375,11 @@ export const SnapProperties: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Spotter (Common Person) */}
+                      {/* Partner (Community Partner) */}
                       <td>
                         <div style={{ fontWeight: 600, color: '#fff', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <User size={13} style={{ color: '#34d399' }} />
-                          <span>{p.sellerName || 'Public Spotter'}</span>
+                          <span>{p.sellerName || 'Community Partner'}</span>
                         </div>
                         <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
                           {p.sellerPhone ? p.sellerPhone : p.sellerEmail}
@@ -538,7 +538,7 @@ export const SnapProperties: React.FC = () => {
               </div>
 
               <div style={{ background: 'rgba(255,255,255,0.04)', padding: '12px', borderRadius: '8px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                • Spotter: <strong style={{ color: '#fff' }}>{approvalSnap.sellerName || 'Common Person'}</strong><br/>
+                • Partner: <strong style={{ color: '#fff' }}>{approvalSnap.sellerName || 'Community Partner'}</strong><br/>
                 • Contact on Board: <strong style={{ color: '#38bdf8' }}>{approvalSnap.categorySpecs?.boardContact || approvalSnap.sellerPhone || '—'}</strong>
               </div>
             </div>
@@ -620,11 +620,11 @@ export const SnapProperties: React.FC = () => {
                   <div style={{ fontSize: '14px', color: '#fff', marginTop: '2px' }}>{viewSnap.categorySpecs?.landmark || '—'}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Spotter Name</div>
-                  <div style={{ fontSize: '14px', color: '#fff', marginTop: '2px' }}>{viewSnap.sellerName || 'Public Spotter'}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Partner Name</div>
+                  <div style={{ fontSize: '14px', color: '#fff', marginTop: '2px' }}>{viewSnap.sellerName || 'Community Partner'}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Spotter Contact</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Partner Contact</div>
                   <div style={{ fontSize: '14px', color: '#fff', marginTop: '2px' }}>{viewSnap.sellerPhone || viewSnap.sellerEmail}</div>
                 </div>
                 <div style={{ gridColumn: 'span 2' }}>

@@ -510,7 +510,7 @@ export const api = {
           }
         } catch {}
 
-        const sellerDisplayName = p.sellerName || p.seller?.name || 'Spotter (Common People)';
+        const sellerDisplayName = p.sellerName || p.seller?.name || 'Community Partner';
         const sellerDisplayPhone = p.sellerPhone || p.seller?.mobile || '';
         const sellerDisplayEmail = p.sellerEmail || p.seller?.email || '';
 

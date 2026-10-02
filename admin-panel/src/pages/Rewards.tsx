@@ -81,17 +81,17 @@ export const Rewards: React.FC = () => {
                 rewards.map((r) => (
                   <tr key={r.id}>
                     <td>
-                      <div style={{ fontWeight: 600, color: '#fff' }}>{r.userName || r.user?.name || 'Spotter / Member'}</div>
+                      <div style={{ fontWeight: 600, color: '#fff' }}>{r.userName || r.user?.name || 'Partner / Member'}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{r.userEmail || r.user?.email || 'External'}</div>
                     </td>
                     <td>
                       {r.propertyTitle || r.property?.title ? (
                         <div>
                           <div style={{ fontSize: '13px', color: '#fff' }}>{r.propertyTitle || r.property?.title}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>{r.rewardTitle || 'Spotter Milestone'}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>{r.rewardTitle || 'Partner Milestone'}</div>
                         </div>
                       ) : (
-                        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Spotter Reward</span>
+                        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Partner Reward</span>
                       )}
                     </td>
                     <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
