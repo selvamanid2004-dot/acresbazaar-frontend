@@ -341,6 +341,43 @@ interface ImageUploadItem {
             </div>
 
             <div class="fields-grid">
+              <!-- Country -->
+              <div class="form-group">
+                <label for="propCountry">Country <span class="req">*</span></label>
+                <input
+                  id="propCountry"
+                  type="text"
+                  [value]="formData.country"
+                  name="country"
+                  readonly
+                  class="form-control"
+                  style="background: rgba(255, 255, 255, 0.05); cursor: not-allowed; color: #E2E8F0;"
+                />
+              </div>
+
+              <!-- State -->
+              <div class="form-group">
+                <label for="propState">State <span class="req">*</span></label>
+                <select id="propState" [(ngModel)]="formData.state" name="state" class="form-control" style="background: rgba(255, 255, 255, 0.05); cursor: not-allowed; color: #E2E8F0;" disabled>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                </select>
+              </div>
+
+              <!-- City -->
+              <div class="form-group">
+                <label for="propCity">City <span class="req">*</span></label>
+                <select
+                  id="propCity"
+                  [(ngModel)]="formData.city"
+                  name="city"
+                  required
+                  class="form-control"
+                >
+                  <option value="">Select City</option>
+                  <option *ngFor="let c of tamilNaduCities" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+
               <!-- Locality / Area -->
               <div class="form-group">
                 <label for="propLocation">Area / Locality <span class="req">*</span></label>
@@ -350,20 +387,7 @@ interface ImageUploadItem {
                   [(ngModel)]="formData.location"
                   name="location"
                   required
-                  placeholder="e.g. Whitefield / Sarjapur Road / Devanahalli"
-                  class="form-control"
-                />
-              </div>
-
-              <!-- City -->
-              <div class="form-group">
-                <label for="propCity">City</label>
-                <input
-                  id="propCity"
-                  type="text"
-                  [(ngModel)]="formData.city"
-                  name="city"
-                  placeholder="e.g. Bangalore"
+                  placeholder="e.g. Anna Nagar / Saravanampatti / Fairlands"
                   class="form-control"
                 />
               </div>
@@ -376,7 +400,7 @@ interface ImageUploadItem {
                   type="text"
                   [(ngModel)]="formData.fullAddress"
                   name="fullAddress"
-                  placeholder="e.g. Sy No. 42/2, Chikka Tirupathi Main Road"
+                  placeholder="e.g. Sy No. 42/2, Main Road"
                   class="form-control"
                 />
               </div>
@@ -415,7 +439,7 @@ interface ImageUploadItem {
                   type="text"
                   [(ngModel)]="formData.landmark"
                   name="landmark"
-                  placeholder="e.g. Behind Prestige Tech Cloud / 500m from Metro Station"
+                  placeholder="e.g. Near Collectorate / Opposite Bus Stand / 500m from Highway"
                   class="form-control"
                 />
               </div>
@@ -1337,6 +1361,52 @@ export class SellerPropertyNewComponent implements OnInit {
 
   submittedData: any = null;
 
+  readonly tamilNaduCities: string[] = [
+    'Chennai',
+    'Coimbatore',
+    'Madurai',
+    'Tiruchirappalli',
+    'Salem',
+    'Tiruppur',
+    'Erode',
+    'Vellore',
+    'Hosur',
+    'Thanjavur',
+    'Dindigul',
+    'Tirunelveli',
+    'Thoothukudi',
+    'Nagercoil',
+    'Kanchipuram',
+    'Karur',
+    'Kumbakonam',
+    'Cuddalore',
+    'Pudukkottai',
+    'Neyveli',
+    'Sivakasi',
+    'Udhagamandalam (Ooty)',
+    'Kodaikanal',
+    'Pollachi',
+    'Rajapalayam',
+    'Dharmapuri',
+    'Krishnagiri',
+    'Villupuram',
+    'Namakkal',
+    'Nagapattinam',
+    'Theni',
+    'Tenkasi',
+    'Mayiladuthurai',
+    'Ramanathapuram',
+    'Virudhunagar',
+    'Tiruvannamalai',
+    'Tiruvarur',
+    'Perambalur',
+    'Ariyalur',
+    'Ranipet',
+    'Tirupattur',
+    'Chengalpattu',
+    'Kallakurichi'
+  ];
+
   formData = {
     title: '',
     price: '',
@@ -1344,8 +1414,10 @@ export class SellerPropertyNewComponent implements OnInit {
     propertyType: 'Residential',
     availability: 'Ready to Move / Register',
     description: '',
+    country: 'India',
+    state: 'Tamil Nadu',
     location: '',
-    city: 'Bangalore',
+    city: '',
     fullAddress: '',
     roadAccess: '',
     facing: 'East',
@@ -1358,7 +1430,7 @@ export class SellerPropertyNewComponent implements OnInit {
   // Category specific objects
   plotSpecs = {
     dimensions: '30x40',
-    approvalAuthority: 'BMRDA Approved',
+    approvalAuthority: 'DTCP / CMDA Approved',
     isCornerPlot: 'No',
     isGatedCommunity: 'Yes',
     boundaryWall: 'Constructed',
@@ -1381,7 +1453,7 @@ export class SellerPropertyNewComponent implements OnInit {
     builtUpArea: '1650 sq ft',
     carpetArea: '1350 sq ft',
     floorNumber: '8th Floor',
-    projectName: 'Prestige Lakeside',
+    projectName: 'Grand Residency',
     maintenance: '₹ 4,000 / month'
   };
 
@@ -1598,7 +1670,12 @@ export class SellerPropertyNewComponent implements OnInit {
     }
 
     if (!this.formData.title || !this.formData.price || !this.formData.propertySize || !this.formData.description || !this.formData.location) {
-      this.errorMessage.set('Please complete all required fields (Title, Price, Size, Description, Location).');
+      this.errorMessage.set('Please complete all required fields (Title, Price, Size, Description, Area/Locality).');
+      return;
+    }
+
+    if (!this.formData.city) {
+      this.errorMessage.set('Please select a City from the dropdown.');
       return;
     }
 
@@ -1645,6 +1722,8 @@ export class SellerPropertyNewComponent implements OnInit {
             category: this.categoryName(),
             location: this.formData.location.trim(),
             city: this.formData.city.trim(),
+            state: this.formData.state,
+            country: this.formData.country,
             price: cleanPrice,
             priceDisplay: priceDisplayStr,
             description: this.formData.description.trim(),
@@ -1681,6 +1760,8 @@ export class SellerPropertyNewComponent implements OnInit {
         priceDisplay: priceDisplayStr,
         location: this.formData.location.trim(),
         city: this.formData.city.trim(),
+        state: this.formData.state,
+        country: this.formData.country,
         locality: this.formData.location.trim(),
         full_address: this.formData.fullAddress.trim(),
         status: 'PENDING',
@@ -1707,7 +1788,7 @@ export class SellerPropertyNewComponent implements OnInit {
         title: this.formData.title,
         price: priceDisplayStr,
         categoryName: this.categoryName(),
-        location: this.formData.location + ', ' + this.formData.city,
+        location: this.formData.location + ', ' + this.formData.city + ', ' + this.formData.state,
         submissionDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       };
       this.isSubmitted.set(true);
