@@ -1412,29 +1412,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   isSpotterAuthenticated(): boolean {
-    try {
-      const s = localStorage.getItem('aura_common_session');
-      return !!s;
-    } catch {
-      return false;
-    }
+    return this.authService.isSpotterAuthenticated();
   }
 
   getSpotterName(): string {
-    try {
-      const s = localStorage.getItem('aura_common_session');
-      if (s) {
-        const u = JSON.parse(s).user;
-        return u?.name?.split(' ')[0] || 'Spotter';
-      }
-    } catch {}
-    return 'Spotter';
+    const user = this.authService.getSpotterUser();
+    return user?.name?.split(' ')[0] || 'Partner';
   }
 
   onSpotterLogout() {
     this.closeMenu();
-    localStorage.removeItem('aura_common_session');
-    this.notificationService.show('Logged Out', 'Spotter account logged out successfully.', 'info');
+    this.authService.logoutSpotter();
     this.router.navigate(['/']);
   }
 

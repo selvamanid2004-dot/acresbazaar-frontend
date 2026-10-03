@@ -106,10 +106,38 @@ export class AuthService {
   // =========================================================================
 
   isSpotterAuthenticated(): boolean {
+    if (this.isSellerAuthenticated() || this.isDealerAuthenticated() || this.isAuthenticated()) {
+      return false;
+    }
     try {
-      return !!(localStorage.getItem('aura_common_session') || localStorage.getItem('spotter_auth_user'));
+      const raw = localStorage.getItem('aura_common_session');
+      if (!raw) return false;
+      const session = JSON.parse(raw);
+      if (session?.expiresAt && session.expiresAt < Date.now()) {
+        localStorage.removeItem('aura_common_session');
+        return false;
+      }
+      return !!(session?.user);
     } catch {
       return false;
+    }
+  }
+
+  getSpotterUser(): any {
+    if (this.isSellerAuthenticated() || this.isDealerAuthenticated() || this.isAuthenticated()) {
+      return null;
+    }
+    try {
+      const raw = localStorage.getItem('aura_common_session');
+      if (!raw) return null;
+      const session = JSON.parse(raw);
+      if (session?.expiresAt && session.expiresAt < Date.now()) {
+        localStorage.removeItem('aura_common_session');
+        return null;
+      }
+      return session?.user || null;
+    } catch {
+      return null;
     }
   }
 
@@ -124,7 +152,7 @@ export class AuthService {
   logoutSpotter(): void {
     localStorage.removeItem('aura_common_session');
     localStorage.removeItem('spotter_auth_user');
-    this.notificationService.show('Spotter Logged Out', 'Spotter session ended successfully.', 'info');
+    this.notificationService.show('Partner Logged Out', 'Partner session ended successfully.', 'info');
     this.router.navigate(['/snap-property/login']);
   }
 

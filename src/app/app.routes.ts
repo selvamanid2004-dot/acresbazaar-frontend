@@ -5,6 +5,7 @@ import { CategoryPageComponent } from './features/category-page/category-page.co
 import { authGuard } from './core/guards/auth.guard';
 import { sellerGuard } from './core/guards/seller.guard';
 import { dealerGuard } from './core/guards/dealer.guard';
+import { partnerGuard } from './core/guards/partner.guard';
 
 export const routes: Routes = [
   // =========================================================================
@@ -16,7 +17,7 @@ export const routes: Routes = [
     children: [
       { path: '', component: HomeComponent },
 
-      // Snap Property Module (Common People / Spotters)
+      // Snap Property Module (Community Partner / Spotters)
       { path: 'snap-property', redirectTo: 'snap-property/dashboard', pathMatch: 'full' },
       { 
         path: 'snap-property/register', 
@@ -30,11 +31,41 @@ export const routes: Routes = [
       },
       { 
         path: 'snap-property/dashboard', 
-        loadComponent: () => import('./features/snap-property/snap-property-dashboard/snap-property-dashboard.component').then(m => m.SnapPropertyDashboardComponent) 
+        loadComponent: () => import('./features/snap-property/snap-property-dashboard/snap-property-dashboard.component').then(m => m.SnapPropertyDashboardComponent),
+        canActivate: [partnerGuard]
       },
       { 
         path: 'snap-property/upload', 
-        loadComponent: () => import('./features/snap-property/snap-property-upload/snap-property-upload.component').then(m => m.SnapPropertyUploadComponent) 
+        loadComponent: () => import('./features/snap-property/snap-property-upload/snap-property-upload.component').then(m => m.SnapPropertyUploadComponent),
+        canActivate: [partnerGuard]
+      },
+
+      // Partner Dedicated URL Aliases (Protected by partnerGuard)
+      { path: 'partner', redirectTo: 'partner/dashboard', pathMatch: 'full' },
+      { 
+        path: 'partner/dashboard', 
+        loadComponent: () => import('./features/snap-property/snap-property-dashboard/snap-property-dashboard.component').then(m => m.SnapPropertyDashboardComponent),
+        canActivate: [partnerGuard]
+      },
+      { 
+        path: 'partner/upload', 
+        loadComponent: () => import('./features/snap-property/snap-property-upload/snap-property-upload.component').then(m => m.SnapPropertyUploadComponent),
+        canActivate: [partnerGuard]
+      },
+      { 
+        path: 'partner/properties', 
+        loadComponent: () => import('./features/snap-property/snap-property-dashboard/snap-property-dashboard.component').then(m => m.SnapPropertyDashboardComponent),
+        canActivate: [partnerGuard]
+      },
+      { 
+        path: 'partner/login', 
+        loadComponent: () => import('./features/auth/common-login/common-login.component').then(m => m.CommonLoginComponent),
+        data: { role: 'SPOTTER' }
+      },
+      { 
+        path: 'partner/register', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
+        data: { role: 'SPOTTER' }
       },
 
       // Unified Authentication Routes - Buyers, Sellers, Dealers, Spotters

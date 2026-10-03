@@ -6,6 +6,16 @@ export const sellerGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  // If active user is a Partner, redirect to Partner dashboard
+  if (authService.isSpotterAuthenticated() && !authService.isSellerAuthenticated()) {
+    return router.createUrlTree(['/snap-property/dashboard']);
+  }
+
+  // If active user is a Dealer, redirect to Dealer dashboard
+  if (authService.isDealerAuthenticated() && !authService.isSellerAuthenticated()) {
+    return router.createUrlTree(['/dealer/dashboard']);
+  }
+
   if (authService.isSellerAuthenticated()) {
     return true;
   }
@@ -14,3 +24,4 @@ export const sellerGuard: CanActivateFn = (route, state) => {
     queryParams: { returnUrl: state.url }
   });
 };
+

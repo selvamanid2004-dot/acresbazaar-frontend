@@ -793,7 +793,19 @@ export class CommonLoginComponent implements OnInit, OnChanges {
           password: this.password
         }).subscribe({
           next: (res) => {
-            this.successMessage.set('Spotter login successful! Opening Snaps Dashboard...');
+            const userRole = (res.user?.role || '').toUpperCase();
+            if (userRole === 'SELLER') {
+              this.errorMessage.set('This account is registered as a Seller. Please use Seller Login to access your Seller Dashboard.');
+              this.isSubmitting.set(false);
+              return;
+            }
+            if (userRole === 'DEALER') {
+              this.errorMessage.set('This account is registered as a Dealer. Please use Dealer Login.');
+              this.isSubmitting.set(false);
+              return;
+            }
+
+            this.successMessage.set('Partner login successful! Opening Partner Dashboard...');
             const sessionData = {
               token: res.token,
               user: {
@@ -801,12 +813,12 @@ export class CommonLoginComponent implements OnInit, OnChanges {
                 name: res.user?.name,
                 email: res.user?.email,
                 mobile: res.user?.mobile,
-                role: res.user?.role || 'COMMON_PEOPLE'
+                role: 'COMMON_PEOPLE'
               },
               expiresAt: Date.now() + 86400000 * 30
             };
             localStorage.setItem('aura_common_session', JSON.stringify(sessionData));
-            this.notificationService.show('Welcome Back!', `Logged in as ${res.user?.name}`, 'success');
+            this.notificationService.show('Welcome Back Partner!', `Logged in as ${res.user?.name}`, 'success');
             setTimeout(() => this.router.navigate(['/snap-property/dashboard']), 600);
           },
           error: (err) => {

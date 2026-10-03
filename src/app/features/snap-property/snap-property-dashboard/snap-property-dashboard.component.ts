@@ -1009,38 +1009,21 @@ export class SnapPropertyDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const commonSessionStr = localStorage.getItem('aura_common_session');
-    const authSessionStr = localStorage.getItem('aura_auth_session');
-    const sellerSessionStr = localStorage.getItem('aura_seller_session');
-
-    if (commonSessionStr) {
-      try {
-        const session = JSON.parse(commonSessionStr);
-        this.spotterUser = session.user;
-      } catch {}
-    } else if (authSessionStr) {
-      try {
-        const session = JSON.parse(authSessionStr);
-        this.spotterUser = {
-          id: session.buyer?.id,
-          name: session.buyer?.fullName,
-          email: session.buyer?.email,
-          mobile: session.buyer?.phone,
-          role: 'COMMON_PEOPLE'
-        };
-      } catch {}
-    } else if (sellerSessionStr) {
-      try {
-        const session = JSON.parse(sellerSessionStr);
-        this.spotterUser = {
-          id: session.user?.id,
-          name: session.user?.fullName,
-          email: session.user?.email,
-          mobile: session.user?.phone,
-          role: 'COMMON_PEOPLE'
-        };
-      } catch {}
+    // If active user is a Seller or Dealer, block access to Partner Dashboard immediately
+    if (this.authService.isSellerAuthenticated()) {
+      this.notificationService.show('Access Denied', 'Sellers are not authorized to access the Partner Dashboard.', 'info');
+      this.router.navigate(['/seller/categories']);
+      return;
     }
+
+    if (this.authService.isDealerAuthenticated()) {
+      this.notificationService.show('Access Denied', 'Dealers are not authorized to access the Partner Dashboard.', 'info');
+      this.router.navigate(['/dealer/dashboard']);
+      return;
+    }
+
+    // Retrieve verified Partner session
+    this.spotterUser = this.authService.getSpotterUser();
 
     if (!this.spotterUser) {
       this.router.navigate(['/snap-property/login']);
