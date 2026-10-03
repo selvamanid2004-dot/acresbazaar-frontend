@@ -366,16 +366,19 @@ interface ImageUploadItem {
               <!-- City -->
               <div class="form-group">
                 <label for="propCity">City <span class="req">*</span></label>
-                <select
+                <input
                   id="propCity"
+                  type="text"
+                  list="tnCitiesList"
                   [(ngModel)]="formData.city"
                   name="city"
                   required
+                  placeholder="Enter City (e.g. Salem, Chennai, Coimbatore)"
                   class="form-control"
-                >
-                  <option value="">Select City</option>
-                  <option *ngFor="let c of tamilNaduCities" [value]="c">{{ c }}</option>
-                </select>
+                />
+                <datalist id="tnCitiesList">
+                  <option *ngFor="let c of tamilNaduCities" [value]="c"></option>
+                </datalist>
               </div>
 
               <!-- Locality / Area -->
@@ -1674,8 +1677,8 @@ export class SellerPropertyNewComponent implements OnInit {
       return;
     }
 
-    if (!this.formData.city) {
-      this.errorMessage.set('Please select a City from the dropdown.');
+    if (!this.formData.city || !this.formData.city.trim()) {
+      this.errorMessage.set('Please enter the City.');
       return;
     }
 
