@@ -1713,7 +1713,7 @@ export class PropertyPostComponent implements OnInit {
           full_address: `${this.formData.address}, ${this.formData.locality}, ${this.formData.city}`,
           status: 'PENDING',
           created_at: new Date().toISOString(),
-          image_urls: images.slice(0, 1),
+          image_urls: images,
           category_specs: { ...this.specs },
           seller_id: ownerId,
           seller_name: this.contactData.name || 'Seller',

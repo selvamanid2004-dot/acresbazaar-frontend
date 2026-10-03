@@ -1685,7 +1685,7 @@ export class SellerPropertyNewComponent implements OnInit {
         full_address: this.formData.fullAddress.trim(),
         status: 'PENDING',
         created_at: new Date().toISOString(),
-        image_urls: [primaryCover],
+        image_urls: this.uploadedImages(),
         category_specs: categorySpecs,
         seller_id: sellerIdStr,
         seller_name: sellerNameStr,
