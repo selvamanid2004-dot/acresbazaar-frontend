@@ -793,12 +793,52 @@ export class PropertyService {
   }
 
   syncHomeSettingsFromBackend(): void {
+    // 1. Fetch dynamic active banners from database in configured sort order
+    fetch(`${getApiBaseUrl()}/banners/public?_t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && Array.isArray(data.banners) && data.banners.length > 0) {
+          const dynamicSlides: HeroSlide[] = data.banners.map((b: any, idx: number) => ({
+            id: idx + 1,
+            categoryLabel: (b.category || 'FEATURED').toUpperCase(),
+            badge: b.badge || 'Exclusive',
+            titlePrefix: '',
+            titleHighlight: b.title || "Find a Property You'll Love",
+            titleSuffix: '',
+            description: b.subtitle || 'Discover premium verified properties in top locations.',
+            priceStarting: 'Starting at Verified Price',
+            location: 'Prime Locations',
+            imageUrl: resolveImageUrl(b.image) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80',
+            ctaText: b.buttonText || 'Explore Now',
+            secondaryCtaText: 'View Properties'
+          }));
+          this.heroSlides.set(dynamicSlides);
+        } else {
+          // Fallback to website_settings home group if no banner records
+          this.fallbackHomeSettings();
+        }
+      })
+      .catch(() => {
+        this.fallbackHomeSettings();
+      });
+
+    // Listen for real-time banner update events from admin panel
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'aura_banners_updated') {
+          this.syncHomeSettingsFromBackend();
+        }
+      });
+    }
+  }
+
+  private fallbackHomeSettings(): void {
     fetchJsonCached<any>(`${getApiBaseUrl()}/settings/group/home`, 60000)
       .then(data => {
         if (data && data.settings) {
           const headline = data.settings.hero_title || data.settings.hero_headline;
           const subtitle = data.settings.hero_subtitle || data.settings.hero_subheading;
-          const bgImg = data.settings.hero_image;
+          const bgImg = data.settings.hero_image ? resolveImageUrl(data.settings.hero_image) : null;
           const badge = data.settings.hero_badge;
           const price = data.settings.hero_price_label;
 

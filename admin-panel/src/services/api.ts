@@ -17,7 +17,8 @@ import {
   RewardClaim,
   RewardConfig,
   ClaimsSummary,
-  PartnerProfileData
+  PartnerProfileData,
+  Banner
 } from '../types';
 import {
   DEMO_ADMIN_USER,
@@ -1080,6 +1081,45 @@ export const api = {
   async removeLogo(): Promise<{ success: boolean; logoUrl: string }> {
     return request('/settings/logo', {
       method: 'DELETE',
+    });
+  },
+
+  // Banners Management
+  async getBanners(): Promise<{ success: boolean; banners: Banner[] }> {
+    return request('/banners');
+  },
+
+  async createBanner(data: Partial<Banner>): Promise<{ success: boolean; banner: Banner }> {
+    return request('/banners', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateBanner(id: string, data: Partial<Banner>): Promise<{ success: boolean; banner: Banner }> {
+    return request(`/banners/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteBanner(id: string): Promise<{ success: boolean; id: string }> {
+    return request(`/banners/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async toggleBannerStatus(id: string, status?: string): Promise<{ success: boolean; banner: Banner }> {
+    return request(`/banners/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async reorderBanners(orderList: { id: string; sortOrder: number }[]): Promise<{ success: boolean }> {
+    return request('/banners/reorder', {
+      method: 'PATCH',
+      body: JSON.stringify({ orderList }),
     });
   },
 

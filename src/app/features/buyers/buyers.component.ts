@@ -6,6 +6,7 @@ import { Property } from '../../core/models/property.model';
 import { NavStateService } from '../../core/services/nav-state.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
+import { WishlistService } from '../../core/services/wishlist.service';
 
 @Component({
   selector: 'app-buyers',
@@ -114,9 +115,82 @@ import { AuthService } from '../../core/services/auth.service';
       </section>
 
       <!-- ============================================================ -->
+      <!-- BUYER WISHLIST SECTION (VISIBLE FOR BUYERS)                  -->
+      <!-- ============================================================ -->
+      <section class="buyer-wishlist-section" *ngIf="wishlistService.isLoggedIn" id="buyer-wishlist">
+        <div class="container">
+          <div class="section-head-center">
+            <span class="sub-label">YOUR SAVED INVENTORY</span>
+            <h2 class="sec-title">My Wishlist</h2>
+            <p class="sec-sub">
+              {{ wishlistService.wishlistCount() }} {{ wishlistService.wishlistCount() === 1 ? 'property' : 'properties' }} saved to your account.
+            </p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="wishlistService.wishlistCount() === 0" class="wishlist-empty-box">
+            <div class="wishlist-empty-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </div>
+            <h3 class="empty-head">Your Wishlist is Empty</h3>
+            <p class="empty-sub">Save properties you like and find them here later.</p>
+            <button type="button" class="btn btn-browse-action" (click)="onBrowseCategories()">
+              Browse Properties
+            </button>
+          </div>
+
+          <!-- Wishlist Cards Grid -->
+          <div *ngIf="wishlistService.wishlistCount() > 0" class="wishlist-buyer-grid">
+            <div *ngFor="let item of wishlistService.getWishlistProperties()" class="wishlist-prop-card">
+              <!-- Property Image with Heart -->
+              <div class="wishlist-prop-img-wrap" (click)="onViewWishlistProperty(item)">
+                <img [src]="item.imageUrl" (error)="onImgError($event, item.category)" [alt]="item.title" loading="lazy" />
+                <span class="wishlist-type-tag" *ngIf="item.category || item.type">
+                  {{ formatCategoryName(item.category || item.type) }}
+                </span>
+                <button 
+                  type="button" 
+                  class="wishlist-heart-btn" 
+                  (click)="onRemoveWishlistItem($event, item.id)" 
+                  title="Remove from Wishlist" 
+                  aria-label="Remove from Wishlist"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Property Details -->
+              <div class="wishlist-prop-body">
+                <h4 class="wishlist-prop-title" (click)="onViewWishlistProperty(item)" [title]="item.title">
+                  {{ item.title }}
+                </h4>
+                <div class="wishlist-prop-location" [title]="(item.location || '') + (item.city ? ', ' + item.city : '')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>{{ item.location }}{{ item.city ? ', ' + item.city : '' }}</span>
+                </div>
+                <div class="wishlist-prop-price">
+                  {{ item.priceDisplay }}
+                </div>
+                <button type="button" class="btn btn-view-prop-action" (click)="onViewWishlistProperty(item)">
+                  View Property
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
       <!-- ALL 7 PROPERTY CATEGORIES FOR BUYERS                         -->
       <!-- ============================================================ -->
-      <section class="buyer-categories-section">
+      <section class="buyer-categories-section" id="buyer-categories">
         <div class="container">
           
           <div class="section-head-center">
@@ -824,8 +898,209 @@ import { AuthService } from '../../core/services/auth.service';
       color: var(--primary-900);
     }
 
+    /* Buyer Wishlist Section */
+    .buyer-wishlist-section {
+      padding: 3rem 0;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .wishlist-empty-box {
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 3.5rem 1.5rem;
+      text-align: center;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .wishlist-empty-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+
+    .empty-head {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .empty-sub {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin: 0 0 1.5rem 0;
+    }
+
+    .btn-browse-action {
+      background: #0f172a;
+      color: #ffffff;
+      border: none;
+      padding: 0.75rem 1.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-browse-action:hover {
+      background: #1e293b;
+      transform: translateY(-1px);
+    }
+
+    .wishlist-buyer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .wishlist-prop-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wishlist-prop-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      transform: translateY(-3px);
+    }
+
+    .wishlist-prop-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 190px;
+      background: #e2e8f0;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .wishlist-prop-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .wishlist-prop-card:hover .wishlist-prop-img-wrap img {
+      transform: scale(1.04);
+    }
+
+    .wishlist-type-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+      text-transform: capitalize;
+    }
+
+    .wishlist-heart-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 2;
+    }
+
+    .wishlist-heart-btn:hover {
+      transform: scale(1.1);
+      background: #fef2f2;
+    }
+
+    .wishlist-prop-body {
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .wishlist-prop-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    .wishlist-prop-title:hover {
+      color: #2563eb;
+    }
+
+    .wishlist-prop-location {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .wishlist-prop-price {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 2px;
+    }
+
+    .btn-view-prop-action {
+      width: 100%;
+      background: #0f172a;
+      color: #ffffff;
+      border: none;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: auto;
+    }
+
+    .btn-view-prop-action:hover {
+      background: #1e293b;
+      transform: translateY(-1px);
+    }
+
     @media (max-width: 1024px) {
-      .categories-card-grid, .preview-properties-grid {
+      .categories-card-grid, .preview-properties-grid, .wishlist-buyer-grid {
         grid-template-columns: 1fr 1fr;
       }
       .buyer-advantages-grid {
@@ -834,7 +1109,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     @media (max-width: 640px) {
-      .categories-card-grid, .preview-properties-grid, .buyer-advantages-grid {
+      .categories-card-grid, .preview-properties-grid, .buyer-advantages-grid, .wishlist-buyer-grid {
         grid-template-columns: 1fr;
       }
       .nav-bar-inner {
@@ -845,6 +1120,7 @@ import { AuthService } from '../../core/services/auth.service';
   `]
 })
 export class BuyersComponent implements OnInit {
+  wishlistService = inject(WishlistService);
   propertyService = inject(PropertyService);
   navStateService = inject(NavStateService);
   notificationService = inject(NotificationService);
@@ -931,6 +1207,32 @@ export class BuyersComponent implements OnInit {
     } else {
       this.router.navigate(['/plans/platinum']);
     }
+  }
+
+  onViewWishlistProperty(item: Property) {
+    this.router.navigate([], {
+      queryParams: { property: item.id },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  onRemoveWishlistItem(event: Event, propertyId: string) {
+    event.stopPropagation();
+    this.wishlistService.removeFromWishlist(propertyId);
+  }
+
+  onBrowseCategories() {
+    const el = document.getElementById('buyer-categories');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      this.router.navigate(['/']);
+    }
+  }
+
+  formatCategoryName(cat?: string): string {
+    if (!cat) return 'Property';
+    return cat.replace(/-/g, ' ');
   }
 
   onRequestAdvisor() {

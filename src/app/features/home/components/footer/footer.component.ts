@@ -323,12 +323,28 @@ export class FooterComponent {
       })
       .catch(() => {});
 
-    // Load logo & branding
-    fetchJsonCached<any>(`${getApiBaseUrl()}/settings/group/logo`, 60000)
+    // Quick initial render from cached logo
+    const cachedLogo = typeof localStorage !== 'undefined' ? localStorage.getItem('aura_website_logo') : null;
+    if (cachedLogo) {
+      this.websiteLogo.set(cachedLogo);
+    }
+
+    // Load logo & branding dynamically with cache-busting
+    fetch(`${getApiBaseUrl()}/settings/group/logo?_t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
       .then(data => {
         const logo = data?.settings?.website_logo || data?.settings?.logo_url;
         if (logo && logo.trim()) {
-          this.websiteLogo.set(resolveImageUrl(logo.trim()));
+          const resolved = resolveImageUrl(logo.trim());
+          this.websiteLogo.set(resolved);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('aura_website_logo', resolved);
+          }
+        } else if (data?.settings && (data.settings.website_logo === '' || data.settings.logo_url === '')) {
+          this.websiteLogo.set(null);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('aura_website_logo');
+          }
         }
         const name = data?.settings?.brand_name || data?.settings?.website_name;
         if (name && name.trim()) {
@@ -340,6 +356,15 @@ export class FooterComponent {
         }
       })
       .catch(() => {});
+
+    // Listen to storage event for live logo update
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'aura_website_logo') {
+          this.websiteLogo.set(e.newValue || null);
+        }
+      });
+    }
   }
 
   onNavView(event: Event, view: 'about' | 'services' | 'buyers') {

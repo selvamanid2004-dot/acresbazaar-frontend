@@ -350,3 +350,19 @@ export interface WebsiteSetting {
   group: 'home' | 'about' | 'service' | 'logo' | 'contact';
   description?: string | null;
 }
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle?: string;
+  image: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  sortOrder: number;
+  badge?: string;
+  category?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
