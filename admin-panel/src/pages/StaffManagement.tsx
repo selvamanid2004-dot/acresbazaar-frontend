@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ShieldCheck,
   UserPlus,
@@ -21,6 +21,8 @@ import {
   Info,
   Layers,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   UserCheck,
   Building2,
   UserCog,
@@ -34,11 +36,51 @@ import {
   Zap,
   ArrowRight,
   BadgeCheck,
-  LockKeyhole
+  LockKeyhole,
+  CheckCheck,
+  Award
 } from 'lucide-react';
 import { api } from '../services/api';
-import { AdminUser, ModulePermission } from '../types';
+import { AdminUser, ModulePermission, ModuleAction } from '../types';
 import { getCurrentAdminUser, getRoleBadgeStyle } from '../services/authUtils';
+
+/**
+ * Native Indeterminate Checkbox Component
+ */
+const IndeterminateCheckbox: React.FC<{
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  style?: React.CSSProperties;
+  title?: string;
+  disabled?: boolean;
+}> = ({ checked, indeterminate, onChange, style, title, disabled }) => {
+  const checkboxRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
+  return (
+    <input
+      ref={checkboxRef}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      disabled={disabled}
+      title={title}
+      style={{
+        width: '18px',
+        height: '18px',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        accentColor: '#3b82f6',
+        ...style,
+      }}
+    />
+  );
+};
 
 export const StaffManagement: React.FC = () => {
   const currentAdmin = getCurrentAdminUser();
@@ -69,6 +111,9 @@ export const StaffManagement: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [activeFormTab, setActiveFormTab] = useState<'DETAILS' | 'PERMISSIONS'>('DETAILS');
 
+  // Module Accordion Expand/Collapse State
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+
   // Toast / Feedback
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -97,6 +142,46 @@ export const StaffManagement: React.FC = () => {
     loadData();
   }, []);
 
+  // Helper to get fallback actions for a module if not explicitly defined
+  const getModuleActions = (module: ModulePermission): ModuleAction[] => {
+    if (module.actions && module.actions.length > 0) {
+      return module.actions;
+    }
+    // Standard default actions
+    return [
+      { id: 'view', label: 'View', description: `View and inspect ${module.name}` },
+      { id: 'create', label: 'Add / Create', description: `Create new records in ${module.name}` },
+      { id: 'update', label: 'Edit / Update', description: `Modify existing records in ${module.name}` },
+      { id: 'delete', label: 'Delete', description: `Remove records in ${module.name}` },
+    ];
+  };
+
+  // Check if a specific action of a module is granted in permissions list
+  const isActionGranted = (moduleId: string, actionId: string, perms: string[]): boolean => {
+    const fullActionKey = `${moduleId}.${actionId}`;
+    return perms.includes(fullActionKey) || perms.includes(moduleId) || perms.includes(actionId);
+  };
+
+  // Get total action count across all modules
+  const totalAvailableActions = useMemo(() => {
+    return modulesList.reduce((acc, m) => acc + getModuleActions(m).length, 0);
+  }, [modulesList]);
+
+  // Calculate selected actions count in form
+  const totalSelectedActions = useMemo(() => {
+    if (formRole === 'SUPER_ADMIN') return totalAvailableActions;
+    let count = 0;
+    modulesList.forEach(m => {
+      const actions = getModuleActions(m);
+      actions.forEach(a => {
+        if (isActionGranted(m.id, a.id, formPermissions)) {
+          count++;
+        }
+      });
+    });
+    return count;
+  }, [modulesList, formPermissions, formRole, totalAvailableActions]);
+
   // Group modules logically with category metadata
   const groupedModules = useMemo(() => {
     const groups: Record<string, { icon: any; color: string; items: ModulePermission[] }> = {};
@@ -104,10 +189,11 @@ export const StaffManagement: React.FC = () => {
     const getGroupMeta = (name: string) => {
       if (name.includes('Property')) return { icon: Building2, color: '#3b82f6' };
       if (name.includes('Customer') || name.includes('User')) return { icon: Users, color: '#10b981' };
+      if (name.includes('Reward') || name.includes('Partner') || name.includes('Plan')) return { icon: Award, color: '#f59e0b' };
       if (name.includes('Communication') || name.includes('Chat')) return { icon: Zap, color: '#ec4899' };
-      if (name.includes('Platform') || name.includes('Setting')) return { icon: Settings, color: '#f59e0b' };
-      if (name.includes('Administration') || name.includes('Staff')) return { icon: ShieldCheck, color: '#8b5cf6' };
-      return { icon: Layers, color: '#06b6d4' };
+      if (name.includes('Platform') || name.includes('Setting')) return { icon: Settings, color: '#8b5cf6' };
+      if (name.includes('Administration') || name.includes('Staff')) return { icon: ShieldCheck, color: '#06b6d4' };
+      return { icon: Layers, color: '#64748b' };
     };
 
     modulesList.forEach(m => {
@@ -149,50 +235,179 @@ export const StaffManagement: React.FC = () => {
     };
   }, [staffList]);
 
-  // Handle Preset Permissions
+  // Expand / Collapse Helpers
+  const toggleModuleExpand = (moduleId: string) => {
+    setExpandedModules(prev => ({
+      ...prev,
+      [moduleId]: !prev[moduleId]
+    }));
+  };
+
+  const expandAllModules = () => {
+    const next: Record<string, boolean> = {};
+    modulesList.forEach(m => { next[m.id] = true; });
+    setExpandedModules(next);
+  };
+
+  const collapseAllModules = () => {
+    setExpandedModules({});
+  };
+
+  // Toggle individual granular action
+  const toggleAction = (moduleId: string, actionId: string) => {
+    const fullActionKey = `${moduleId}.${actionId}`;
+    const module = modulesList.find(m => m.id === moduleId);
+    const actions = module ? getModuleActions(module) : [];
+    const currentlyHas = isActionGranted(moduleId, actionId, formPermissions);
+
+    setFormPermissions(prev => {
+      let updated = [...prev];
+
+      // If legacy full module token was present, expand it to individual actions first
+      if (updated.includes(moduleId)) {
+        updated = updated.filter(p => p !== moduleId);
+        actions.forEach(a => {
+          const k = `${moduleId}.${a.id}`;
+          if (!updated.includes(k)) updated.push(k);
+        });
+      }
+
+      if (currentlyHas) {
+        // Remove action
+        updated = updated.filter(p => p !== fullActionKey && p !== actionId && p !== moduleId);
+      } else {
+        // Add action
+        if (!updated.includes(fullActionKey)) {
+          updated.push(fullActionKey);
+        }
+      }
+
+      // Check if all actions are now granted for this module
+      const allActionKeys = actions.map(a => `${moduleId}.${a.id}`);
+      const hasAll = allActionKeys.every(k => updated.includes(k));
+      if (hasAll && !updated.includes(moduleId)) {
+        updated.push(moduleId);
+      }
+
+      return updated;
+    });
+  };
+
+  // Toggle entire module (Parent Checkbox & Full Access Toggle)
+  const toggleModuleAllActions = (moduleId: string) => {
+    const module = modulesList.find(m => m.id === moduleId);
+    if (!module) return;
+    const actions = getModuleActions(module);
+    const allActionKeys = actions.map(a => `${moduleId}.${a.id}`);
+
+    // Check how many are currently granted
+    const grantedCount = actions.filter(a => isActionGranted(moduleId, a.id, formPermissions)).length;
+    const isAllGranted = grantedCount === actions.length;
+
+    setFormPermissions(prev => {
+      // Remove all actions and module key for this module
+      let updated = prev.filter(p => p !== moduleId && !allActionKeys.includes(p) && !actions.some(a => a.id === p));
+
+      // If not all were granted, enable all
+      if (!isAllGranted) {
+        updated = Array.from(new Set([...updated, moduleId, ...allActionKeys]));
+      }
+
+      return updated;
+    });
+  };
+
+  // Select all actions for a specific module
+  const selectModuleAll = (moduleId: string) => {
+    const module = modulesList.find(m => m.id === moduleId);
+    if (!module) return;
+    const actions = getModuleActions(module);
+    const allActionKeys = actions.map(a => `${moduleId}.${a.id}`);
+
+    setFormPermissions(prev => {
+      return Array.from(new Set([...prev, moduleId, ...allActionKeys]));
+    });
+  };
+
+  // Clear all actions for a specific module
+  const clearModuleAll = (moduleId: string) => {
+    const module = modulesList.find(m => m.id === moduleId);
+    if (!module) return;
+    const actions = getModuleActions(module);
+    const allActionKeys = actions.map(a => `${moduleId}.${a.id}`);
+
+    setFormPermissions(prev => {
+      return prev.filter(p => p !== moduleId && !allActionKeys.includes(p) && !actions.some(a => a.id === p));
+    });
+  };
+
+  // Apply Role Preset Templates
   const applyPreset = (presetType: string) => {
-    const allIds = modulesList.map(m => m.id);
+    const allActionKeys: string[] = [];
+    modulesList.forEach(m => {
+      allActionKeys.push(m.id);
+      getModuleActions(m).forEach(a => {
+        allActionKeys.push(`${m.id}.${a.id}`);
+      });
+    });
+
     switch (presetType) {
       case 'ALL':
-        setFormPermissions(allIds);
+        setFormPermissions(allActionKeys);
         break;
       case 'CLEAR':
         setFormPermissions([]);
         break;
-      case 'ADMIN':
-        setFormPermissions(allIds.filter(id => id !== 'staff_management'));
+      case 'ADMIN': {
+        const adminKeys: string[] = [];
+        modulesList.forEach(m => {
+          if (m.id === 'staff_management') {
+            // View only staff
+            adminKeys.push('staff_management.view');
+          } else {
+            adminKeys.push(m.id);
+            getModuleActions(m).forEach(a => adminKeys.push(`${m.id}.${a.id}`));
+          }
+        });
+        setFormPermissions(adminKeys);
         break;
-      case 'PROPERTIES':
-        setFormPermissions(['dashboard', 'properties', 'gold_properties', 'premium_properties', 'snap_properties', 'bookings', 'categories']);
+      }
+      case 'PROPERTIES': {
+        const propModules = ['dashboard', 'properties', 'gold_properties', 'premium_properties', 'snap_properties', 'bookings', 'categories'];
+        const keys: string[] = [];
+        modulesList.filter(m => propModules.includes(m.id)).forEach(m => {
+          keys.push(m.id);
+          getModuleActions(m).forEach(a => keys.push(`${m.id}.${a.id}`));
+        });
+        setFormPermissions(keys);
         break;
-      case 'CUSTOMERS':
-        setFormPermissions(['dashboard', 'buyers', 'sellers', 'dealers', 'common_people', 'verified_partners', 'reports']);
+      }
+      case 'CUSTOMERS': {
+        const custModules = ['dashboard', 'buyers', 'sellers', 'dealers', 'common_people', 'verified_partners', 'reports'];
+        const keys: string[] = [];
+        modulesList.filter(m => custModules.includes(m.id)).forEach(m => {
+          keys.push(m.id);
+          getModuleActions(m).forEach(a => keys.push(`${m.id}.${a.id}`));
+        });
+        setFormPermissions(keys);
         break;
-      case 'REPORTS':
-        setFormPermissions(['reports', 'dashboard']);
+      }
+      case 'REWARDS': {
+        const rewardModules = ['dashboard', 'rewards', 'plans', 'verified_partners', 'data_export'];
+        const keys: string[] = [];
+        modulesList.filter(m => rewardModules.includes(m.id)).forEach(m => {
+          keys.push(m.id);
+          getModuleActions(m).forEach(a => keys.push(`${m.id}.${a.id}`));
+        });
+        setFormPermissions(keys);
         break;
-      case 'CONTENT':
-        setFormPermissions(['categories', 'website_settings', 'contact_details', 'logo_management']);
+      }
+      case 'REPORTS': {
+        setFormPermissions(['dashboard', 'dashboard.view', 'reports', 'reports.view', 'reports.export', 'data_export', 'data_export.export']);
         break;
+      }
       default:
         break;
-    }
-  };
-
-  const togglePermission = (permId: string) => {
-    setFormPermissions(prev =>
-      prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
-    );
-  };
-
-  const toggleGroupPermissions = (groupModules: ModulePermission[]) => {
-    const groupIds = groupModules.map(m => m.id);
-    const allSelected = groupIds.every(id => formPermissions.includes(id));
-    if (allSelected) {
-      setFormPermissions(prev => prev.filter(id => !groupIds.includes(id)));
-    } else {
-      const merged = Array.from(new Set([...formPermissions, ...groupIds]));
-      setFormPermissions(merged);
     }
   };
 
@@ -202,10 +417,12 @@ export const StaffManagement: React.FC = () => {
     setFormEmail('');
     setFormPassword('');
     setFormRole('ADMIN');
-    setFormPermissions(['dashboard', 'properties', 'buyers', 'sellers', 'reports']);
+    // Default sensible starter actions
+    applyPreset('PROPERTIES');
     setFormIsActive(true);
     setShowPassword(false);
     setActiveFormTab('DETAILS');
+    setExpandedModules({ properties: true, buyers: true });
     setIsCreateOpen(true);
   };
 
@@ -218,6 +435,7 @@ export const StaffManagement: React.FC = () => {
     setFormPermissions(user.permissions || []);
     setFormIsActive(user.isActive !== false);
     setActiveFormTab('DETAILS');
+    setExpandedModules({});
     setIsEditOpen(true);
   };
 
@@ -355,10 +573,426 @@ export const StaffManagement: React.FC = () => {
     setShowPassword(true);
   };
 
-  // Calculate permission coverage
-  const permPercentage = modulesList.length > 0
-    ? Math.round((formPermissions.length / modulesList.length) * 100)
-    : 0;
+  /**
+   * Render Granular Permissions Matrix Section (Used in both Create & Edit Modals)
+   */
+  const renderPermissionsMatrix = () => {
+    return (
+      <div>
+        {/* Header with Quick Presets */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck size={18} color="#3b82f6" />
+                <span>Granular Module & Action Permissions</span>
+              </div>
+              <div style={{ fontSize: '12.5px', color: '#94a3b8', marginTop: '2px' }}>
+                Expand each module to grant or restrict specific actions (View, Create, Edit, Delete, Approve, Reject, etc.)
+              </div>
+            </div>
+
+            {/* Total Actions Counter Badge & Expand Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={expandAllModules}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#cbd5e1',
+                  borderRadius: '8px',
+                  padding: '5px 10px',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Expand All
+              </button>
+              <button
+                type="button"
+                onClick={collapseAllModules}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#cbd5e1',
+                  borderRadius: '8px',
+                  padding: '5px 10px',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Collapse All
+              </button>
+
+              <div style={{
+                padding: '6px 14px',
+                borderRadius: '10px',
+                background: formRole === 'SUPER_ADMIN' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                border: formRole === 'SUPER_ADMIN' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: formRole === 'SUPER_ADMIN' ? '#fbbf24' : '#60a5fa' }}>
+                  {formRole === 'SUPER_ADMIN'
+                    ? `Master Access (All ${totalAvailableActions} Actions)`
+                    : `${totalSelectedActions} / ${totalAvailableActions} Actions Active`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Templates Bar */}
+          {formRole !== 'SUPER_ADMIN' && (
+            <div style={{
+              padding: '12px 16px',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '8px'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', marginRight: '4px' }}>
+                ⚡ Role Templates:
+              </span>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('ALL')} style={{ borderRadius: '8px' }}>
+                Full Portal Access
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('ADMIN')} style={{ borderRadius: '8px' }}>
+                Admin Default
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('PROPERTIES')} style={{ borderRadius: '8px' }}>
+                🏠 Property Specialist
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('CUSTOMERS')} style={{ borderRadius: '8px' }}>
+                👥 CRM & Leads
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('REWARDS')} style={{ borderRadius: '8px' }}>
+                💰 Rewards & Finance
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('REPORTS')} style={{ borderRadius: '8px' }}>
+                📊 Analytics & Reports
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" style={{ color: '#f87171', borderRadius: '8px' }} onClick={() => applyPreset('CLEAR')}>
+                🧹 Clear All
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Super Admin Notice vs Granular Modules Accordion */}
+        {formRole === 'SUPER_ADMIN' ? (
+          <div style={{
+            padding: '24px',
+            borderRadius: '16px',
+            background: 'rgba(245, 158, 11, 0.08)',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+            color: '#fbbf24',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px'
+          }}>
+            <Sparkles size={32} style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: 800, marginBottom: '4px' }}>
+                👑 Super Admin Privileges Protected
+              </div>
+              <div style={{ fontSize: '13px', color: '#fde68a', lineHeight: 1.5 }}>
+                Super Admin accounts automatically maintain 100% operational access to all modules and all actions across the entire platform. No action restrictions can be applied to a Super Admin.
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {Object.entries(groupedModules).map(([groupName, groupData]) => {
+              const GroupIcon = groupData.icon;
+
+              return (
+                <div
+                  key={groupName}
+                  style={{
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Category Header */}
+                  <div style={{
+                    padding: '12px 18px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '8px',
+                        background: `${groupData.color}20`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: groupData.color
+                      }}>
+                        <GroupIcon size={16} />
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: 800, color: '#f8fafc' }}>
+                        {groupName}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                        ({groupData.items.length} {groupData.items.length === 1 ? 'Module' : 'Modules'})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Module Cards List inside Category */}
+                  <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {groupData.items.map(mod => {
+                      const actions = getModuleActions(mod);
+                      const grantedActions = actions.filter(a => isActionGranted(mod.id, a.id, formPermissions));
+                      const isAllActionsSelected = grantedActions.length === actions.length && actions.length > 0;
+                      const isSomeActionsSelected = grantedActions.length > 0 && !isAllActionsSelected;
+                      const isNoneSelected = grantedActions.length === 0;
+                      const isExpanded = !!expandedModules[mod.id];
+
+                      return (
+                        <div
+                          key={mod.id}
+                          style={{
+                            borderRadius: '12px',
+                            border: isAllActionsSelected
+                              ? '1px solid rgba(59, 130, 246, 0.4)'
+                              : isSomeActionsSelected
+                                ? '1px solid rgba(59, 130, 246, 0.25)'
+                                : '1px solid rgba(255, 255, 255, 0.06)',
+                            background: isAllActionsSelected
+                              ? 'rgba(59, 130, 246, 0.06)'
+                              : isSomeActionsSelected
+                                ? 'rgba(59, 130, 246, 0.03)'
+                                : 'rgba(255, 255, 255, 0.02)',
+                            transition: 'all 0.15s ease',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {/* Module Header Bar */}
+                          <div style={{
+                            padding: '12px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '12px',
+                            background: isExpanded ? 'rgba(0, 0, 0, 0.15)' : 'transparent',
+                            borderBottom: isExpanded ? '1px solid rgba(255, 255, 255, 0.06)' : 'none'
+                          }}>
+                            {/* Left: Parent Checkbox + Title + Description */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '240px', flex: 1 }}>
+                              <IndeterminateCheckbox
+                                checked={isAllActionsSelected}
+                                indeterminate={isSomeActionsSelected}
+                                onChange={() => toggleModuleAllActions(mod.id)}
+                                title={isAllActionsSelected ? 'Deselect All Actions' : 'Select All Actions for Module'}
+                              />
+
+                              <div style={{ cursor: 'pointer', flex: 1 }} onClick={() => toggleModuleExpand(mod.id)}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{
+                                    fontSize: '14px',
+                                    fontWeight: 700,
+                                    color: isAllActionsSelected ? '#93c5fd' : isSomeActionsSelected ? '#e2e8f0' : '#cbd5e1'
+                                  }}>
+                                    {mod.name}
+                                  </span>
+                                  <span style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    background: isAllActionsSelected
+                                      ? 'rgba(59, 130, 246, 0.25)'
+                                      : isSomeActionsSelected
+                                        ? 'rgba(59, 130, 246, 0.15)'
+                                        : 'rgba(255, 255, 255, 0.05)',
+                                    color: isAllActionsSelected ? '#93c5fd' : isSomeActionsSelected ? '#60a5fa' : '#94a3b8'
+                                  }}>
+                                    {grantedActions.length} / {actions.length} Actions
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '2px' }}>
+                                  {mod.description}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right: Full Access Toggle, Select/Clear buttons, Expand Chevron */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {/* Full Access Switch / Button */}
+                              <button
+                                type="button"
+                                onClick={() => toggleModuleAllActions(mod.id)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 10px',
+                                  borderRadius: '8px',
+                                  background: isAllActionsSelected ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'rgba(255, 255, 255, 0.05)',
+                                  color: isAllActionsSelected ? '#fff' : '#94a3b8',
+                                  border: isAllActionsSelected ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.08)',
+                                  fontSize: '11.5px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {isAllActionsSelected && <Check size={12} />}
+                                <span>Full Access</span>
+                              </button>
+
+                              {/* Select All */}
+                              <button
+                                type="button"
+                                onClick={() => selectModuleAll(mod.id)}
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  background: 'none',
+                                  color: '#60a5fa',
+                                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Select All
+                              </button>
+
+                              {/* Clear All */}
+                              <button
+                                type="button"
+                                onClick={() => clearModuleAll(mod.id)}
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  background: 'none',
+                                  color: '#f87171',
+                                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Clear All
+                              </button>
+
+                              {/* Expand / Collapse Toggle Button */}
+                              <button
+                                type="button"
+                                onClick={() => toggleModuleExpand(mod.id)}
+                                style={{
+                                  padding: '6px',
+                                  borderRadius: '8px',
+                                  background: 'rgba(255, 255, 255, 0.05)',
+                                  color: '#cbd5e1',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                                title={isExpanded ? 'Collapse Actions' : 'Expand Granular Actions'}
+                              >
+                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Expanded Actions Grid */}
+                          {isExpanded && (
+                            <div style={{
+                              padding: '16px 20px',
+                              background: 'rgba(0, 0, 0, 0.2)',
+                              borderTop: '1px solid rgba(255, 255, 255, 0.04)'
+                            }}>
+                              <div style={{
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                color: '#94a3b8',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                marginBottom: '10px'
+                              }}>
+                                Granular Operations & Capabilities for {mod.name}:
+                              </div>
+
+                              <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                                gap: '10px'
+                              }}>
+                                {actions.map(action => {
+                                  const checked = isActionGranted(mod.id, action.id, formPermissions);
+
+                                  return (
+                                    <label
+                                      key={action.id}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: '10px',
+                                        padding: '10px 12px',
+                                        borderRadius: '10px',
+                                        background: checked ? 'rgba(59, 130, 246, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                                        border: checked ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.06)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => toggleAction(mod.id, action.id)}
+                                        style={{ marginTop: '2px', accentColor: '#3b82f6', width: '16px', height: '16px' }}
+                                      />
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{
+                                          fontSize: '13px',
+                                          fontWeight: 700,
+                                          color: checked ? '#93c5fd' : '#f1f5f9'
+                                        }}>
+                                          {action.label}
+                                        </div>
+                                        {action.description && (
+                                          <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.3, marginTop: '2px' }}>
+                                            {action.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '8px 4px 60px' }}>
@@ -435,11 +1069,11 @@ export const StaffManagement: React.FC = () => {
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase'
               }}>
-                RBAC Security
+                Granular RBAC Security
               </span>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '13.5px', color: '#94a3b8' }}>
-              Create and manage executive Administrators and Staff with granular module permissions
+              Create and manage Administrators & Staff with module-level and action-level granular permissions
             </p>
           </div>
         </div>
@@ -498,33 +1132,19 @@ export const StaffManagement: React.FC = () => {
       }}>
         {/* Total Accounts */}
         <div style={{
-          background: 'rgba(19, 27, 46, 0.85)',
-          backdropFilter: 'blur(12px)',
+          background: 'rgba(30, 41, 59, 0.5)',
           borderRadius: '16px',
           border: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '20px 22px',
+          padding: '18px 20px',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 4px 20px -2px rgba(0,0,0,0.4)',
-          position: 'relative',
-          overflow: 'hidden'
+          gap: '16px'
         }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#3b82f6' }} />
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Total Users
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#fff', margin: '4px 0 2px', letterSpacing: '-0.02em' }}>
-              {stats.total}
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>Registered system users</div>
-          </div>
           <div style={{
             width: '46px',
             height: '46px',
             borderRadius: '12px',
-            background: 'rgba(59, 130, 246, 0.12)',
+            background: 'rgba(59, 130, 246, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -532,178 +1152,129 @@ export const StaffManagement: React.FC = () => {
           }}>
             <Users size={22} />
           </div>
+          <div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#fff' }}>{stats.total}</div>
+            <div style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: 500 }}>Total Accounts</div>
+          </div>
         </div>
 
         {/* Active Accounts */}
         <div style={{
-          background: 'rgba(19, 27, 46, 0.85)',
-          backdropFilter: 'blur(12px)',
+          background: 'rgba(30, 41, 59, 0.5)',
           borderRadius: '16px',
           border: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '20px 22px',
+          padding: '18px 20px',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 4px 20px -2px rgba(0,0,0,0.4)',
-          position: 'relative',
-          overflow: 'hidden'
+          gap: '16px'
         }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#10b981' }} />
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Active Status
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#34d399', margin: '4px 0 2px', letterSpacing: '-0.02em' }}>
-              {stats.active}
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>Authorized to sign in</div>
-          </div>
           <div style={{
             width: '46px',
             height: '46px',
             borderRadius: '12px',
-            background: 'rgba(16, 185, 129, 0.12)',
+            background: 'rgba(16, 185, 129, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#34d399'
           }}>
-            <UserCheck size={22} />
+            <CheckCircle2 size={22} />
           </div>
-        </div>
-
-        {/* Super Admins */}
-        <div style={{
-          background: 'rgba(19, 27, 46, 0.85)',
-          backdropFilter: 'blur(12px)',
-          borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '20px 22px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          boxShadow: '0 4px 20px -2px rgba(0,0,0,0.4)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#f59e0b' }} />
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Super Admins
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#fbbf24', margin: '4px 0 2px', letterSpacing: '-0.02em' }}>
-              {stats.superAdmins}
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>Full unrestricted access</div>
-          </div>
-          <div style={{
-            width: '46px',
-            height: '46px',
-            borderRadius: '12px',
-            background: 'rgba(245, 158, 11, 0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fbbf24'
-          }}>
-            <Sparkles size={22} />
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#34d399' }}>{stats.active}</div>
+            <div style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: 500 }}>Active Accounts</div>
           </div>
         </div>
 
         {/* Administrators */}
         <div style={{
-          background: 'rgba(19, 27, 46, 0.85)',
-          backdropFilter: 'blur(12px)',
+          background: 'rgba(30, 41, 59, 0.5)',
           borderRadius: '16px',
           border: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '20px 22px',
+          padding: '18px 20px',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 4px 20px -2px rgba(0,0,0,0.4)',
-          position: 'relative',
-          overflow: 'hidden'
+          gap: '16px'
         }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#8b5cf6' }} />
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Admins & Staff
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#c084fc', margin: '4px 0 2px', letterSpacing: '-0.02em' }}>
-              {stats.admins + stats.staff}
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>{stats.admins} Admins · {stats.staff} Staff</div>
-          </div>
           <div style={{
             width: '46px',
             height: '46px',
             borderRadius: '12px',
-            background: 'rgba(139, 92, 246, 0.12)',
+            background: 'rgba(59, 130, 246, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#c084fc'
+            color: '#60a5fa'
+          }}>
+            <ShieldCheck size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#60a5fa' }}>{stats.admins}</div>
+            <div style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: 500 }}>Administrators</div>
+          </div>
+        </div>
+
+        {/* Staff Members */}
+        <div style={{
+          background: 'rgba(30, 41, 59, 0.5)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          padding: '18px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{
+            width: '46px',
+            height: '46px',
+            borderRadius: '12px',
+            background: 'rgba(16, 185, 129, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#34d399'
           }}>
             <Layers size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#34d399' }}>{stats.staff}</div>
+            <div style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: 500 }}>Staff Members</div>
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
+      {/* Filter & Search Bar */}
       <div style={{
-        background: 'rgba(19, 27, 46, 0.75)',
-        backdropFilter: 'blur(12px)',
-        padding: '16px 20px',
-        borderRadius: '16px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        marginBottom: '20px',
         display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '14px'
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px',
+        marginBottom: '20px'
       }}>
-        {/* Search input */}
-        <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: '440px' }}>
-          <Search size={17} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+        {/* Search */}
+        <div style={{ position: 'relative', width: '320px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input
             type="text"
             className="form-control"
-            placeholder="Search by name, email, role..."
+            placeholder="Search staff by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              paddingLeft: '40px',
-              paddingRight: searchQuery ? '36px' : '14px',
-              borderRadius: '10px',
-              height: '42px',
-              fontSize: '13.5px'
-            }}
+            style={{ paddingLeft: '40px', height: '42px', borderRadius: '12px', fontSize: '13.5px' }}
           />
           {searchQuery && (
             <button
-              type="button"
               onClick={() => setSearchQuery('')}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                padding: '4px'
-              }}
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
             >
-              <X size={14} />
+              <X size={15} />
             </button>
           )}
         </div>
 
-        {/* Filter Pills */}
+        {/* Filter Selects */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* Role Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role:</span>
             <select
@@ -719,7 +1290,6 @@ export const StaffManagement: React.FC = () => {
             </select>
           </div>
 
-          {/* Status Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status:</span>
             <select
@@ -751,7 +1321,7 @@ export const StaffManagement: React.FC = () => {
               <tr style={{ background: 'rgba(15, 20, 34, 0.75)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <th style={{ padding: '16px 20px', width: '280px' }}>User & Identity</th>
                 <th style={{ padding: '16px 20px', width: '160px' }}>Role</th>
-                <th style={{ padding: '16px 20px' }}>Module Access & Permissions</th>
+                <th style={{ padding: '16px 20px' }}>Granular Module Access</th>
                 <th style={{ padding: '16px 20px', width: '120px' }}>Status</th>
                 <th style={{ padding: '16px 20px', width: '130px' }}>Created</th>
                 <th style={{ padding: '16px 20px', width: '170px', textAlign: 'right' }}>Actions</th>
@@ -806,6 +1376,12 @@ export const StaffManagement: React.FC = () => {
                   const isCurrentSelf = currentAdmin?.id === user.id || currentAdmin?.email === user.email;
                   const permissions = user.permissions || [];
                   const isUserSuperAdmin = user.role === 'SUPER_ADMIN';
+
+                  // Calculate how many modules the user has at least 1 action in
+                  const activeModules = modulesList.filter(m => {
+                    const actions = getModuleActions(m);
+                    return actions.some(a => isActionGranted(m.id, a.id, permissions));
+                  });
 
                   return (
                     <tr
@@ -886,7 +1462,7 @@ export const StaffManagement: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Module Permissions */}
+                      {/* Module Permissions Breakdown */}
                       <td style={{ padding: '16px 20px' }}>
                         {isUserSuperAdmin ? (
                           <div style={{
@@ -902,37 +1478,53 @@ export const StaffManagement: React.FC = () => {
                             fontWeight: 700
                           }}>
                             <Sparkles size={13} />
-                            <span>Master Access (All 21 Modules Active)</span>
+                            <span>Master Access (All Modules & Actions Unrestricted)</span>
                           </div>
-                        ) : permissions.length === 0 ? (
+                        ) : activeModules.length === 0 ? (
                           <span style={{ color: '#f87171', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
                             <AlertTriangle size={14} />
                             <span>No access granted</span>
                           </span>
                         ) : (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                            {permissions.slice(0, 3).map(permKey => {
-                              const found = modulesList.find(m => m.id === permKey);
+                            {activeModules.slice(0, 3).map(mod => {
+                              const actions = getModuleActions(mod);
+                              const granted = actions.filter(a => isActionGranted(mod.id, a.id, permissions));
+                              const isFull = granted.length === actions.length;
+
                               return (
                                 <span
-                                  key={permKey}
+                                  key={mod.id}
+                                  title={`${mod.name}: ${granted.map(g => g.label).join(', ')}`}
                                   style={{
-                                    padding: '3px 9px',
+                                    padding: '3px 8px',
                                     borderRadius: '6px',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    color: '#e2e8f0',
+                                    background: isFull ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                    color: isFull ? '#93c5fd' : '#e2e8f0',
                                     fontSize: '11.5px',
-                                    fontWeight: 500,
-                                    border: '1px solid rgba(255,255,255,0.08)'
+                                    fontWeight: 600,
+                                    border: isFull ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.08)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
                                   }}
                                 >
-                                  {found?.name || permKey}
+                                  <span>{mod.name}</span>
+                                  <span style={{
+                                    fontSize: '10px',
+                                    opacity: 0.8,
+                                    background: 'rgba(0,0,0,0.25)',
+                                    padding: '1px 4px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    {granted.length}/{actions.length}
+                                  </span>
                                 </span>
                               );
                             })}
-                            {permissions.length > 3 && (
+                            {activeModules.length > 3 && (
                               <span
-                                title={permissions.slice(3).map(p => modulesList.find(m => m.id === p)?.name || p).join(', ')}
+                                title={activeModules.slice(3).map(m => m.name).join(', ')}
                                 style={{
                                   padding: '3px 8px',
                                   borderRadius: '6px',
@@ -944,7 +1536,7 @@ export const StaffManagement: React.FC = () => {
                                   border: '1px solid rgba(59, 130, 246, 0.3)'
                                 }}
                               >
-                                +{permissions.length - 3} more
+                                +{activeModules.length - 3} more
                               </span>
                             )}
                           </div>
@@ -1079,13 +1671,13 @@ export const StaffManagement: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 🚀 CREATE ADMINISTRATOR / STAFF MODAL (REDESIGNED PREMIUM UI)           */}
+      {/* 🚀 CREATE ADMINISTRATOR / STAFF MODAL                                     */}
       {/* ========================================================================= */}
       {isCreateOpen && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(5, 8, 16, 0.82)',
+          background: 'rgba(5, 8, 16, 0.85)',
           backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',
@@ -1098,13 +1690,12 @@ export const StaffManagement: React.FC = () => {
             borderRadius: '24px',
             border: '1px solid rgba(255,255,255,0.12)',
             width: '100%',
-            maxWidth: '860px',
+            maxWidth: '920px',
             maxHeight: '92vh',
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '0 30px 70px -10px rgba(0,0,0,0.8), 0 0 50px rgba(59, 130, 246, 0.15)',
-            overflow: 'hidden',
-            animation: 'fadeIn 0.2s ease-out'
+            overflow: 'hidden'
           }}>
             {/* Modal Header */}
             <div style={{
@@ -1127,14 +1718,14 @@ export const StaffManagement: React.FC = () => {
                   color: '#fff',
                   boxShadow: '0 6px 18px rgba(59, 130, 246, 0.35)'
                 }}>
-                  <UserPlus size={22} />
+                  <UserPlus size={20} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.01em' }}>
-                    Create Administrator / Staff
+                  <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#f8fafc' }}>
+                    Create Administrator or Staff User
                   </h3>
                   <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>
-                    Setup login credentials, assign role privileges, and configure module permissions
+                    Configure credentials and granular action permissions for this account
                   </div>
                 </div>
               </div>
@@ -1148,7 +1739,7 @@ export const StaffManagement: React.FC = () => {
               </button>
             </div>
 
-            {/* Step / Section Navigation Tabs */}
+            {/* Navigation Tabs */}
             <div style={{
               display: 'flex',
               borderBottom: '1px solid rgba(255,255,255,0.08)',
@@ -1187,7 +1778,7 @@ export const StaffManagement: React.FC = () => {
                 }}>
                   1
                 </span>
-                <span>Account Credentials & Role</span>
+                <span>Account Information</span>
               </button>
 
               <button
@@ -1231,7 +1822,7 @@ export const StaffManagement: React.FC = () => {
                   color: formRole === 'SUPER_ADMIN' ? '#fbbf24' : '#60a5fa',
                   fontWeight: 700
                 }}>
-                  {formRole === 'SUPER_ADMIN' ? 'All 21' : `${formPermissions.length}`}
+                  {formRole === 'SUPER_ADMIN' ? `Master All` : `${totalSelectedActions} Actions`}
                 </span>
               </button>
             </div>
@@ -1273,7 +1864,7 @@ export const StaffManagement: React.FC = () => {
                             />
                           </div>
                           <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
-                            Manage properties, CRM customers, reports, and assigned operations.
+                            Executive permissions for property catalog, customers, and financial tools.
                           </div>
                         </div>
 
@@ -1303,7 +1894,7 @@ export const StaffManagement: React.FC = () => {
                             />
                           </div>
                           <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
-                            Assigned to task-specific modules such as inquiries, chats, and bookings.
+                            Role-specific staff (e.g. Property reviewers, Lead responders, or Verification agents).
                           </div>
                         </div>
 
@@ -1460,207 +2051,7 @@ export const StaffManagement: React.FC = () => {
                   </div>
                 ) : (
                   /* PERMISSIONS MATRIX TAB */
-                  <div>
-                    {/* Header with Quick Presets */}
-                    <div style={{ marginBottom: '20px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
-                        <div>
-                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>
-                            Assigned Portal Modules
-                          </div>
-                          <div style={{ fontSize: '12.5px', color: '#94a3b8', marginTop: '2px' }}>
-                            Choose exactly which sections and tools this user can view and manage
-                          </div>
-                        </div>
-
-                        {/* Progress Badge */}
-                        <div style={{
-                          padding: '6px 14px',
-                          borderRadius: '10px',
-                          background: formRole === 'SUPER_ADMIN' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                          border: formRole === 'SUPER_ADMIN' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: formRole === 'SUPER_ADMIN' ? '#fbbf24' : '#60a5fa' }}>
-                            {formRole === 'SUPER_ADMIN' ? '21 / 21 Modules (100%)' : `${formPermissions.length} / ${modulesList.length} Modules (${permPercentage}%)`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Quick Templates Bar */}
-                      {formRole !== 'SUPER_ADMIN' && (
-                        <div style={{
-                          padding: '12px 16px',
-                          borderRadius: '12px',
-                          background: 'rgba(255,255,255,0.03)',
-                          border: '1px solid rgba(255,255,255,0.06)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: '8px'
-                        }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', marginRight: '4px' }}>
-                            ⚡ Quick Templates:
-                          </span>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('ALL')} style={{ borderRadius: '8px' }}>
-                            Select All (21)
-                          </button>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('ADMIN')} style={{ borderRadius: '8px' }}>
-                            Admin Default (20)
-                          </button>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('PROPERTIES')} style={{ borderRadius: '8px' }}>
-                            🏠 Property Specialist
-                          </button>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('CUSTOMERS')} style={{ borderRadius: '8px' }}>
-                            👥 CRM & Leads
-                          </button>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('REPORTS')} style={{ borderRadius: '8px' }}>
-                            📊 Analytics & Reports
-                          </button>
-                          <button type="button" className="btn btn-secondary btn-sm" style={{ color: '#f87171', borderRadius: '8px' }} onClick={() => applyPreset('CLEAR')}>
-                            🧹 Clear All
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Permissions Accordions / Category Cards */}
-                    {formRole === 'SUPER_ADMIN' ? (
-                      <div style={{
-                        padding: '24px',
-                        borderRadius: '16px',
-                        background: 'rgba(245, 158, 11, 0.08)',
-                        border: '1px solid rgba(245, 158, 11, 0.25)',
-                        color: '#fbbf24',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px'
-                      }}>
-                        <Sparkles size={32} style={{ flexShrink: 0 }} />
-                        <div>
-                          <div style={{ fontSize: '15px', fontWeight: 800, marginBottom: '4px' }}>
-                            Master Super Admin Privileges
-                          </div>
-                          <div style={{ fontSize: '13px', color: '#fde68a', lineHeight: 1.5 }}>
-                            Super Admin accounts have full, unrestricted operational access to every single module, setting, financial data, and staff administration by default.
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {Object.entries(groupedModules).map(([groupName, groupData]) => {
-                          const groupSelectedCount = groupData.items.filter(m => formPermissions.includes(m.id)).length;
-                          const isAllGroupSelected = groupSelectedCount === groupData.items.length;
-                          const GroupIcon = groupData.icon;
-
-                          return (
-                            <div
-                              key={groupName}
-                              style={{
-                                borderRadius: '14px',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
-                                background: 'rgba(255, 255, 255, 0.02)',
-                                overflow: 'hidden'
-                              }}
-                            >
-                              {/* Category Header */}
-                              <div style={{
-                                padding: '12px 16px',
-                                background: 'rgba(255, 255, 255, 0.04)',
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <div style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    borderRadius: '8px',
-                                    background: `${groupData.color}20`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: groupData.color
-                                  }}>
-                                    <GroupIcon size={16} />
-                                  </div>
-                                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#f8fafc' }}>
-                                    {groupName}
-                                  </span>
-                                  <span style={{
-                                    fontSize: '11px',
-                                    fontWeight: 700,
-                                    padding: '2px 8px',
-                                    borderRadius: '8px',
-                                    background: groupSelectedCount > 0 ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.06)',
-                                    color: groupSelectedCount > 0 ? '#60a5fa' : '#94a3b8'
-                                  }}>
-                                    {groupSelectedCount} of {groupData.items.length}
-                                  </span>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => toggleGroupPermissions(groupData.items)}
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: isAllGroupSelected ? '#f87171' : '#60a5fa',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {isAllGroupSelected ? 'Deselect Category' : 'Select All in Category'}
-                                </button>
-                              </div>
-
-                              {/* Category Modules Grid */}
-                              <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '10px' }}>
-                                {groupData.items.map(mod => {
-                                  const isChecked = formPermissions.includes(mod.id);
-                                  return (
-                                    <label
-                                      key={mod.id}
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: '12px',
-                                        padding: '10px 12px',
-                                        borderRadius: '10px',
-                                        background: isChecked ? 'rgba(59, 130, 246, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                                        border: isChecked ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.04)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s ease'
-                                      }}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={isChecked}
-                                        onChange={() => togglePermission(mod.id)}
-                                        style={{ marginTop: '2px', accentColor: '#3b82f6', width: '17px', height: '17px' }}
-                                      />
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '13px', fontWeight: 700, color: isChecked ? '#93c5fd' : '#e2e8f0' }}>
-                                          {mod.name}
-                                        </div>
-                                        <div style={{ fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.3, marginTop: '2px' }}>
-                                          {mod.description}
-                                        </div>
-                                      </div>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  renderPermissionsMatrix()
                 )}
               </div>
 
@@ -1756,7 +2147,7 @@ export const StaffManagement: React.FC = () => {
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(5, 8, 16, 0.82)',
+          background: 'rgba(5, 8, 16, 0.85)',
           backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',
@@ -1769,7 +2160,7 @@ export const StaffManagement: React.FC = () => {
             borderRadius: '24px',
             border: '1px solid rgba(255,255,255,0.12)',
             width: '100%',
-            maxWidth: '860px',
+            maxWidth: '920px',
             maxHeight: '92vh',
             display: 'flex',
             flexDirection: 'column',
@@ -1804,7 +2195,7 @@ export const StaffManagement: React.FC = () => {
                     Edit User & Permissions
                   </h3>
                   <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>
-                    Updating account for <strong>{selectedUser.name}</strong> ({selectedUser.email})
+                    Updating permissions for <strong>{selectedUser.name}</strong> ({selectedUser.email})
                   </div>
                 </div>
               </div>
@@ -1859,7 +2250,7 @@ export const StaffManagement: React.FC = () => {
                   gap: '8px'
                 }}
               >
-                <span>Module Permissions</span>
+                <span>Module Permissions Matrix</span>
                 <span style={{
                   fontSize: '11px',
                   padding: '2px 7px',
@@ -1868,7 +2259,7 @@ export const StaffManagement: React.FC = () => {
                   color: formRole === 'SUPER_ADMIN' ? '#fbbf24' : '#60a5fa',
                   fontWeight: 700
                 }}>
-                  {formRole === 'SUPER_ADMIN' ? 'All 21' : `${formPermissions.length}`}
+                  {formRole === 'SUPER_ADMIN' ? 'Master All' : `${totalSelectedActions} Actions`}
                 </span>
               </button>
             </div>
@@ -1921,7 +2312,7 @@ export const StaffManagement: React.FC = () => {
                             </div>
                             <input type="radio" checked={formRole === 'STAFF'} onChange={() => setFormRole('STAFF')} style={{ accentColor: '#10b981' }} />
                           </div>
-                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Task-specific modules</div>
+                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Task-specific operations</div>
                         </div>
 
                         {isSuperAdmin && (
@@ -2010,118 +2401,7 @@ export const StaffManagement: React.FC = () => {
                   </div>
                 ) : (
                   /* PERMISSIONS MATRIX IN EDIT */
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>Module Access Matrix</div>
-                        <div style={{ fontSize: '12.5px', color: '#94a3b8', marginTop: '2px' }}>Changes take effect on their next action</div>
-                      </div>
-
-                      {formRole !== 'SUPER_ADMIN' && (
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('ALL')} style={{ borderRadius: '8px' }}>Select All</button>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('ADMIN')} style={{ borderRadius: '8px' }}>Admin Default</button>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('PROPERTIES')} style={{ borderRadius: '8px' }}>Properties</button>
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => applyPreset('CUSTOMERS')} style={{ borderRadius: '8px' }}>Customers</button>
-                          <button type="button" className="btn btn-secondary btn-sm" style={{ color: '#f87171', borderRadius: '8px' }} onClick={() => applyPreset('CLEAR')}>Clear All</button>
-                        </div>
-                      )}
-                    </div>
-
-                    {formRole === 'SUPER_ADMIN' ? (
-                      <div style={{
-                        padding: '24px',
-                        borderRadius: '16px',
-                        background: 'rgba(245, 158, 11, 0.08)',
-                        border: '1px solid rgba(245, 158, 11, 0.25)',
-                        color: '#fbbf24'
-                      }}>
-                        <strong>Super Admin Privilege:</strong> Unrestricted access across all 21 modules.
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {Object.entries(groupedModules).map(([groupName, groupData]) => {
-                          const groupSelectedCount = groupData.items.filter(m => formPermissions.includes(m.id)).length;
-                          const isAllGroupSelected = groupSelectedCount === groupData.items.length;
-                          const GroupIcon = groupData.icon;
-
-                          return (
-                            <div
-                              key={groupName}
-                              style={{
-                                borderRadius: '14px',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
-                                background: 'rgba(255, 255, 255, 0.02)',
-                                overflow: 'hidden'
-                              }}
-                            >
-                              <div style={{
-                                padding: '12px 16px',
-                                background: 'rgba(255, 255, 255, 0.04)',
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${groupData.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: groupData.color }}>
-                                    <GroupIcon size={16} />
-                                  </div>
-                                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#f8fafc' }}>{groupName}</span>
-                                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
-                                    {groupSelectedCount} / {groupData.items.length}
-                                  </span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleGroupPermissions(groupData.items)}
-                                  style={{ background: 'none', border: 'none', color: isAllGroupSelected ? '#f87171' : '#60a5fa', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                                >
-                                  {isAllGroupSelected ? 'Deselect Category' : 'Select All in Category'}
-                                </button>
-                              </div>
-
-                              <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '10px' }}>
-                                {groupData.items.map(mod => {
-                                  const isChecked = formPermissions.includes(mod.id);
-                                  return (
-                                    <label
-                                      key={mod.id}
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: '12px',
-                                        padding: '10px 12px',
-                                        borderRadius: '10px',
-                                        background: isChecked ? 'rgba(59, 130, 246, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                                        border: isChecked ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.04)',
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={isChecked}
-                                        onChange={() => togglePermission(mod.id)}
-                                        style={{ marginTop: '2px', accentColor: '#3b82f6', width: '17px', height: '17px' }}
-                                      />
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '13px', fontWeight: 700, color: isChecked ? '#93c5fd' : '#e2e8f0' }}>
-                                          {mod.name}
-                                        </div>
-                                        <div style={{ fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.3, marginTop: '2px' }}>
-                                          {mod.description}
-                                        </div>
-                                      </div>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  renderPermissionsMatrix()
                 )}
               </div>
 
@@ -2192,7 +2472,7 @@ export const StaffManagement: React.FC = () => {
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(5, 8, 16, 0.82)',
+          background: 'rgba(5, 8, 16, 0.85)',
           backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',
@@ -2234,7 +2514,7 @@ export const StaffManagement: React.FC = () => {
                   <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#f8fafc' }}>
                     Reset User Password
                   </h3>
-                  <div style={{ fontSize: '12.5px', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '12.5px', color: '#94a3b8', marginTop: '2px' }}>
                     For {selectedUser.name} ({selectedUser.email})
                   </div>
                 </div>
@@ -2353,7 +2633,7 @@ export const StaffManagement: React.FC = () => {
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(5, 8, 16, 0.82)',
+          background: 'rgba(5, 8, 16, 0.85)',
           backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',

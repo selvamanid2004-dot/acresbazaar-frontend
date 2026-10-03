@@ -26,8 +26,15 @@ import {
 } from 'lucide-react';
 import { Property, Category } from '../types';
 import { api, resolveImageUrl } from '../services/api';
+import { getCurrentAdminUser, canPerform } from '../services/authUtils';
 
 export const Properties: React.FC = () => {
+  const currentAdmin = getCurrentAdminUser();
+  const canEditProperty = canPerform(currentAdmin, 'properties', 'update') || canPerform(currentAdmin, 'properties', 'edit');
+  const canDeleteProperty = canPerform(currentAdmin, 'properties', 'delete');
+  const canApproveProperty = canPerform(currentAdmin, 'properties', 'approve');
+  const canRejectProperty = canPerform(currentAdmin, 'properties', 'reject');
+
   const [searchParams, setSearchParams] = useSearchParams();
   const statusParam = searchParams.get('status') || 'ALL';
 
@@ -389,32 +396,36 @@ export const Properties: React.FC = () => {
                         >
                           <Eye size={14} />
                         </button>
-                        <button
-                          className="btn btn-secondary btn-icon"
-                          title="Edit Property"
-                          onClick={() => setEditProperty(p)}
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        {p.status !== 'APPROVED' ? (
-                          <button
-                            className="btn btn-success btn-icon"
-                            title="Approve Property (Select Gold or Premium Category)"
-                            onClick={() => openApproveModal(p)}
-                          >
-                            <CheckCircle2 size={14} />
-                          </button>
-                        ) : (
+                        {canEditProperty && (
                           <button
                             className="btn btn-secondary btn-icon"
-                            title="Change Category (Gold / Premium)"
-                            style={{ color: p.planType === 'GOLD' ? '#D4AF37' : '#c084fc' }}
-                            onClick={() => openApproveModal(p)}
+                            title="Edit Property"
+                            onClick={() => setEditProperty(p)}
                           >
-                            <Layers size={14} />
+                            <Edit3 size={14} />
                           </button>
                         )}
-                        {p.status !== 'HOLD' && (
+                        {canApproveProperty && (
+                          p.status !== 'APPROVED' ? (
+                            <button
+                              className="btn btn-success btn-icon"
+                              title="Approve Property (Select Gold or Premium Category)"
+                              onClick={() => openApproveModal(p)}
+                            >
+                              <CheckCircle2 size={14} />
+                            </button>
+                          ) : (
+                            <button
+                              className="btn btn-secondary btn-icon"
+                              title="Change Category (Gold / Premium)"
+                              style={{ color: p.planType === 'GOLD' ? '#D4AF37' : '#c084fc' }}
+                              onClick={() => openApproveModal(p)}
+                            >
+                              <Layers size={14} />
+                            </button>
+                          )
+                        )}
+                        {canRejectProperty && p.status !== 'HOLD' && (
                           <button
                             className="btn btn-secondary btn-icon"
                             title="Place on Hold"
@@ -424,7 +435,7 @@ export const Properties: React.FC = () => {
                             <PauseCircle size={14} />
                           </button>
                         )}
-                        {p.status !== 'REJECTED' && (
+                        {canRejectProperty && p.status !== 'REJECTED' && (
                           <button
                             className="btn btn-danger btn-icon"
                             title="Reject Property"
@@ -433,14 +444,16 @@ export const Properties: React.FC = () => {
                             <XCircle size={14} />
                           </button>
                         )}
-                        <button
-                          className="btn btn-secondary btn-icon"
-                          title="Delete Property"
-                          style={{ color: 'var(--rose)' }}
-                          onClick={() => handleDelete(p.id)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {canDeleteProperty && (
+                          <button
+                            className="btn btn-secondary btn-icon"
+                            title="Delete Property"
+                            style={{ color: 'var(--rose)' }}
+                            onClick={() => handleDelete(p.id)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -854,43 +867,45 @@ export const Properties: React.FC = () => {
             {/* MODAL FOOTER WITH INSTANT APPROVAL ACTIONS */}
             <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {viewProperty.status !== 'APPROVED' ? (
-                  <>
+                {canApproveProperty && (
+                  viewProperty.status !== 'APPROVED' ? (
+                    <>
+                      <button 
+                        className="btn btn-success"
+                        onClick={() => {
+                          setSelectedApprovalTier('GOLD');
+                          setApprovalProperty(viewProperty);
+                        }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <CheckCircle2 size={16} />
+                        <span>Approve as Gold ($49/mo)</span>
+                      </button>
+                      <button 
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setSelectedApprovalTier('PLATINUM');
+                          setApprovalProperty(viewProperty);
+                        }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Layers size={16} />
+                        <span>Approve as Platinum ($129/mo)</span>
+                      </button>
+                    </>
+                  ) : (
                     <button 
-                      className="btn btn-success"
-                      onClick={() => {
-                        setSelectedApprovalTier('GOLD');
-                        setApprovalProperty(viewProperty);
-                      }}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      <CheckCircle2 size={16} />
-                      <span>Approve as Gold ($49/mo)</span>
-                    </button>
-                    <button 
-                      className="btn btn-primary"
-                      onClick={() => {
-                        setSelectedApprovalTier('PLATINUM');
-                        setApprovalProperty(viewProperty);
-                      }}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      className="btn btn-secondary"
+                      style={{ color: viewProperty.planType === 'GOLD' ? '#fbbf24' : '#c084fc', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      onClick={() => openApproveModal(viewProperty)}
                     >
                       <Layers size={16} />
-                      <span>Approve as Platinum ($129/mo)</span>
+                      <span>Change Plan Tier (Currently {viewProperty.planType})</span>
                     </button>
-                  </>
-                ) : (
-                  <button 
-                    className="btn btn-secondary"
-                    style={{ color: viewProperty.planType === 'GOLD' ? '#fbbf24' : '#c084fc', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                    onClick={() => openApproveModal(viewProperty)}
-                  >
-                    <Layers size={16} />
-                    <span>Change Plan Tier (Currently {viewProperty.planType})</span>
-                  </button>
+                  )
                 )}
 
-                {viewProperty.status !== 'HOLD' && (
+                {canRejectProperty && viewProperty.status !== 'HOLD' && (
                   <button 
                     className="btn btn-secondary"
                     onClick={() => {
@@ -904,7 +919,7 @@ export const Properties: React.FC = () => {
                   </button>
                 )}
 
-                {viewProperty.status !== 'REJECTED' && (
+                {canRejectProperty && viewProperty.status !== 'REJECTED' && (
                   <button 
                     className="btn btn-danger"
                     onClick={() => {
@@ -920,17 +935,19 @@ export const Properties: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setEditProperty(viewProperty);
-                    setViewProperty(null);
-                  }}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <Edit3 size={15} />
-                  <span>Edit Details</span>
-                </button>
+                {canEditProperty && (
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setEditProperty(viewProperty);
+                      setViewProperty(null);
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Edit3 size={15} />
+                    <span>Edit Details</span>
+                  </button>
+                )}
                 <button className="btn btn-secondary" onClick={() => setViewProperty(null)}>Close</button>
               </div>
             </div>

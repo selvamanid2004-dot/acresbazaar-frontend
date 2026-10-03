@@ -9,11 +9,20 @@ export interface AdminUser {
   updatedAt?: string;
 }
 
+export interface ModuleAction {
+  id: string; // e.g. "view", "create", "update", "delete", "approve", "reject" or "properties.view"
+  action?: string;
+  name?: string;
+  label?: string;
+  description?: string;
+}
+
 export interface ModulePermission {
   id: string;
   name: string;
   group: string;
   description: string;
+  actions?: ModuleAction[];
 }
 
 export interface Customer {

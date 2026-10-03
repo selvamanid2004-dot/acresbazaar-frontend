@@ -10,6 +10,9 @@ export function getCurrentAdminUser(): AdminUser | null {
   }
 }
 
+/**
+ * Check if the user has access to a top-level module
+ */
 export function hasModulePermission(user: AdminUser | null, moduleKey: string): boolean {
   if (!user) return false;
   
@@ -20,52 +23,102 @@ export function hasModulePermission(user: AdminUser | null, moduleKey: string): 
 
   const perms = user.permissions || [];
 
-  // Direct match
-  if (perms.includes(moduleKey)) {
+  // Direct match for module or any action inside the module
+  if (perms.includes(moduleKey) || perms.some(p => p.startsWith(`${moduleKey}.`))) {
     return true;
   }
 
   // Hierarchical / Parent permission mappings:
   // Customers group
   if (moduleKey === 'customers' && (
-    perms.includes('buyers') ||
-    perms.includes('sellers') ||
-    perms.includes('dealers') ||
-    perms.includes('common_people') ||
-    perms.includes('staff_management')
+    perms.includes('buyers') || perms.some(p => p.startsWith('buyers.')) ||
+    perms.includes('sellers') || perms.some(p => p.startsWith('sellers.')) ||
+    perms.includes('dealers') || perms.some(p => p.startsWith('dealers.')) ||
+    perms.includes('common_people') || perms.some(p => p.startsWith('common_people.')) ||
+    perms.includes('staff_management') || perms.some(p => p.startsWith('staff_management.'))
   )) {
     return true;
   }
-  if (moduleKey === 'buyers' && perms.includes('customers')) return true;
-  if (moduleKey === 'sellers' && perms.includes('customers')) return true;
-  if (moduleKey === 'dealers' && perms.includes('customers')) return true;
-  if (moduleKey === 'common_people' && perms.includes('customers')) return true;
+  if (moduleKey === 'buyers' && (perms.includes('customers') || perms.some(p => p.startsWith('customers.')))) return true;
+  if (moduleKey === 'sellers' && (perms.includes('customers') || perms.some(p => p.startsWith('customers.')))) return true;
+  if (moduleKey === 'dealers' && (perms.includes('customers') || perms.some(p => p.startsWith('customers.')))) return true;
+  if (moduleKey === 'common_people' && (perms.includes('customers') || perms.some(p => p.startsWith('customers.')))) return true;
 
   // Properties group
   if (moduleKey === 'properties' && (
-    perms.includes('gold_properties') ||
-    perms.includes('premium_properties') ||
-    perms.includes('snap_properties') ||
-    perms.includes('bookings')
+    perms.includes('gold_properties') || perms.some(p => p.startsWith('gold_properties.')) ||
+    perms.includes('premium_properties') || perms.some(p => p.startsWith('premium_properties.')) ||
+    perms.includes('snap_properties') || perms.some(p => p.startsWith('snap_properties.')) ||
+    perms.includes('bookings') || perms.some(p => p.startsWith('bookings.'))
   )) {
     return true;
   }
-  if (moduleKey === 'gold_properties' && perms.includes('properties')) return true;
-  if (moduleKey === 'premium_properties' && perms.includes('properties')) return true;
-  if (moduleKey === 'snap_properties' && perms.includes('properties')) return true;
-  if (moduleKey === 'bookings' && perms.includes('properties')) return true;
+  if (moduleKey === 'gold_properties' && (perms.includes('properties') || perms.some(p => p.startsWith('properties.')))) return true;
+  if (moduleKey === 'premium_properties' && (perms.includes('properties') || perms.some(p => p.startsWith('properties.')))) return true;
+  if (moduleKey === 'snap_properties' && (perms.includes('properties') || perms.some(p => p.startsWith('properties.')))) return true;
+  if (moduleKey === 'bookings' && (perms.includes('properties') || perms.some(p => p.startsWith('properties.')))) return true;
 
   // CMS & Settings group
   if (moduleKey === 'website_settings' && (
-    perms.includes('contact_details') ||
-    perms.includes('logo_management')
+    perms.includes('contact_details') || perms.some(p => p.startsWith('contact_details.')) ||
+    perms.includes('logo_management') || perms.some(p => p.startsWith('logo_management.'))
   )) {
     return true;
   }
-  if (moduleKey === 'contact_details' && perms.includes('website_settings')) return true;
-  if (moduleKey === 'logo_management' && perms.includes('website_settings')) return true;
+  if (moduleKey === 'contact_details' && (perms.includes('website_settings') || perms.some(p => p.startsWith('website_settings.')))) return true;
+  if (moduleKey === 'logo_management' && (perms.includes('website_settings') || perms.some(p => p.startsWith('website_settings.')))) return true;
 
   return false;
+}
+
+/**
+ * Check if the user has permission for a specific granular action e.g. "properties.delete", "rewards.approve"
+ */
+export function hasActionPermission(user: AdminUser | null, actionCode: string): boolean {
+  if (!user) return false;
+
+  // Super Admin has unrestricted access to all actions
+  if (user.role === 'SUPER_ADMIN') {
+    return true;
+  }
+
+  const perms = user.permissions || [];
+
+  // Direct action code match
+  if (perms.includes(actionCode)) {
+    return true;
+  }
+
+  if (actionCode.includes('.')) {
+    const [moduleName, actionName] = actionCode.split('.');
+
+    // If user has full access to the module
+    if (perms.includes(moduleName)) {
+      return true;
+    }
+
+    // Hierarchical checks
+    if (['gold_properties', 'premium_properties', 'snap_properties'].includes(moduleName)) {
+      if (perms.includes('properties') || perms.includes(`properties.${actionName}`)) return true;
+    }
+
+    if (['buyers', 'sellers', 'dealers', 'common_people'].includes(moduleName)) {
+      if (perms.includes('customers') || perms.includes(`customers.${actionName}`)) return true;
+    }
+
+    if (['contact_details', 'logo_management'].includes(moduleName)) {
+      if (perms.includes('website_settings') || perms.includes(`website_settings.${actionName}`)) return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Shorthand helper for module and action name
+ */
+export function canPerform(user: AdminUser | null, moduleName: string, actionName: string): boolean {
+  return hasActionPermission(user, `${moduleName}.${actionName}`);
 }
 
 // Find the first authorized route for an admin/staff to redirect safely

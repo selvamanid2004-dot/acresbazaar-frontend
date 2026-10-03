@@ -22,8 +22,16 @@ import {
 } from 'lucide-react';
 import { RewardClaim, RewardConfig, ClaimsSummary, PartnerProfileData } from '../types';
 import { api } from '../services/api';
+import { getCurrentAdminUser, canPerform } from '../services/authUtils';
 
 export const Rewards: React.FC = () => {
+  const currentAdmin = getCurrentAdminUser();
+  const canApprove = canPerform(currentAdmin, 'rewards', 'approve');
+  const canReject = canPerform(currentAdmin, 'rewards', 'reject');
+  const canProcess = canPerform(currentAdmin, 'rewards', 'process');
+  const canMarkPaid = canPerform(currentAdmin, 'rewards', 'mark_paid') || canPerform(currentAdmin, 'rewards', 'payment');
+  const canConfig = canPerform(currentAdmin, 'rewards', 'settings') || canPerform(currentAdmin, 'rewards', 'config');
+
   const [claims, setClaims] = useState<RewardClaim[]>([]);
   const [summary, setSummary] = useState<ClaimsSummary>({
     totalPartnerPointsIssued: 0,
@@ -202,14 +210,16 @@ export const Rewards: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button 
-            className="btn btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setIsConfigOpen(true)}
-          >
-            <Settings size={16} />
-            <span>Reward Settings (500 pts = ₹{config.rewardAmountInInr})</span>
-          </button>
+          {canConfig && (
+            <button 
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={() => setIsConfigOpen(true)}
+            >
+              <Settings size={16} />
+              <span>Reward Settings (500 pts = ₹{config.rewardAmountInInr})</span>
+            </button>
+          )}
 
           <button 
             className="btn btn-secondary"
@@ -472,40 +482,77 @@ export const Rewards: React.FC = () => {
                       <div style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         {claim.status === 'PENDING' && (
                           <>
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              title="Mark as Processing"
-                              onClick={() => handleSetStatus(claim.id, 'PROCESSING')}
-                            >
-                              Process
-                            </button>
-                            <button
-                              className="btn btn-primary btn-sm"
-                              style={{ background: '#10b981', borderColor: '#059669' }}
-                              title="Disburse Payout & Mark Paid"
-                              onClick={() => {
-                                setPaymentModalClaim(claim);
-                                setPaymentRef(`UTR-${Date.now().toString().slice(-8)}`);
-                                setPaymentNotes('');
-                              }}
-                            >
-                              Mark as Paid
-                            </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              title="Reject Claim & Release Points"
-                              onClick={() => {
-                                setRejectModalClaim(claim);
-                                setRejectionReason('');
-                              }}
-                            >
-                              Reject
-                            </button>
+                            {canProcess && (
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                title="Mark as Processing"
+                                onClick={() => handleSetStatus(claim.id, 'PROCESSING')}
+                              >
+                                Process
+                              </button>
+                            )}
+                            {canMarkPaid && (
+                              <button
+                                className="btn btn-primary btn-sm"
+                                style={{ background: '#10b981', borderColor: '#059669' }}
+                                title="Disburse Payout & Mark Paid"
+                                onClick={() => {
+                                  setPaymentModalClaim(claim);
+                                  setPaymentRef(`UTR-${Date.now().toString().slice(-8)}`);
+                                  setPaymentNotes('');
+                                }}
+                              >
+                                Mark as Paid
+                              </button>
+                            )}
+                            {canReject && (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                title="Reject Claim & Release Points"
+                                onClick={() => {
+                                  setRejectModalClaim(claim);
+                                  setRejectionReason('');
+                                }}
+                              >
+                                Reject
+                              </button>
+                            )}
                           </>
                         )}
 
                         {claim.status === 'PROCESSING' && (
                           <>
+                            {canMarkPaid && (
+                              <button
+                                className="btn btn-primary btn-sm"
+                                style={{ background: '#10b981', borderColor: '#059669' }}
+                                title="Disburse Payout & Mark Paid"
+                                onClick={() => {
+                                  setPaymentModalClaim(claim);
+                                  setPaymentRef(`UTR-${Date.now().toString().slice(-8)}`);
+                                  setPaymentNotes('');
+                                }}
+                              >
+                                Mark as Paid
+                              </button>
+                            )}
+                            {canReject && (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                title="Reject Claim & Release Points"
+                                onClick={() => {
+                                  setRejectModalClaim(claim);
+                                  setRejectionReason('');
+                                }}
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </>
+                        )}
+
+                        {claim.status === 'APPROVED' && (
+                          canMarkPaid && (
                             <button
                               className="btn btn-primary btn-sm"
                               style={{ background: '#10b981', borderColor: '#059669' }}
@@ -518,32 +565,7 @@ export const Rewards: React.FC = () => {
                             >
                               Mark as Paid
                             </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              title="Reject Claim & Release Points"
-                              onClick={() => {
-                                setRejectModalClaim(claim);
-                                setRejectionReason('');
-                              }}
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-
-                        {claim.status === 'APPROVED' && (
-                          <button
-                            className="btn btn-primary btn-sm"
-                            style={{ background: '#10b981', borderColor: '#059669' }}
-                            title="Disburse Payout & Mark Paid"
-                            onClick={() => {
-                              setPaymentModalClaim(claim);
-                              setPaymentRef(`UTR-${Date.now().toString().slice(-8)}`);
-                              setPaymentNotes('');
-                            }}
-                          >
-                            Mark as Paid
-                          </button>
+                          )
                         )}
 
                         {claim.status === 'PAID' && (
