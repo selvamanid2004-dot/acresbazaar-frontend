@@ -10,9 +10,18 @@ import { Property } from '../../../core/models/property.model';
     <article class="property-card" [class.platinum-card]="property.tier === 'platinum'">
       <!-- Media Header -->
       <div class="card-media">
-        <img [src]="property.imageUrl" (error)="onImgError($event)" [alt]="property.title" class="property-img" loading="lazy" />
+        <img [src]="coverImageUrl" (error)="onImgError($event)" [alt]="property.title" class="property-img" loading="lazy" />
         
         <div class="media-overlay"></div>
+
+        <!-- Image Count Badge -->
+        <div class="image-count-badge" *ngIf="imageCount > 0" title="Property has multiple photos">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          <span>{{ imageCount }} {{ imageCount === 1 ? 'Photo' : 'Photos' }}</span>
+        </div>
 
         <!-- Top Badges -->
         <div class="badge-row">
@@ -428,6 +437,32 @@ import { Property } from '../../../core/models/property.model';
       flex-shrink: 0;
     }
 
+    .image-count-badge {
+      position: absolute;
+      bottom: 0.85rem;
+      left: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 20px;
+      background: rgba(7, 13, 30, 0.78);
+      backdrop-filter: blur(6px);
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .image-count-badge:hover {
+      background: rgba(7, 13, 30, 0.95);
+      transform: scale(1.05);
+    }
+
     .btn-details:hover {
       background: var(--navy-950);
       color: var(--white);
@@ -449,6 +484,39 @@ export class PropertyCardComponent {
   @Output() bookmarkToggled = new EventEmitter<{ property: Property; bookmarked: boolean }>();
 
   isBookmarked: boolean = false;
+
+  get coverImageUrl(): string {
+    if (!this.property) return 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+    const anyProp = this.property as any;
+    if (anyProp.coverImage) return anyProp.coverImage;
+    if (this.property.imageUrl) return this.property.imageUrl;
+    if (Array.isArray(this.property.galleryImages) && this.property.galleryImages.length > 0) {
+      return this.property.galleryImages[0];
+    }
+    if (Array.isArray(anyProp.images) && anyProp.images.length > 0) {
+      const cover = anyProp.images.find((img: any) => img.isPrimary || img.isCover);
+      return cover ? (cover.imageUrl || cover.url) : (anyProp.images[0].imageUrl || anyProp.images[0].url);
+    }
+    return 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+  }
+
+  get imageCount(): number {
+    if (!this.property) return 1;
+    const anyProp = this.property as any;
+    if (Array.isArray(this.property.galleryImages) && this.property.galleryImages.length > 0) {
+      return this.property.galleryImages.length;
+    }
+    if (Array.isArray(anyProp.images) && anyProp.images.length > 0) {
+      return anyProp.images.length;
+    }
+    if (typeof anyProp.totalImages === 'number' && anyProp.totalImages > 0) {
+      return anyProp.totalImages;
+    }
+    if (typeof anyProp.imageCount === 'number' && anyProp.imageCount > 0) {
+      return anyProp.imageCount;
+    }
+    return 1;
+  }
 
   toggleBookmark(event: Event) {
     event.stopPropagation();

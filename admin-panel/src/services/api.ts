@@ -681,6 +681,55 @@ export const api = {
     });
   },
 
+  async setPropertyCoverImage(propertyId: string, imageId: string): Promise<Property> {
+    if (isDemoSession()) {
+      const p = DEMO_PROPERTIES.find(item => item.id === propertyId) || DEMO_PROPERTIES[0];
+      if (p.images) {
+        p.images.forEach(img => { img.isCover = img.id === imageId; });
+      }
+      return p;
+    }
+    const res: any = await request(`/properties/${propertyId}/images/${imageId}/cover`, {
+      method: 'PATCH',
+    });
+    return res.property || res;
+  },
+
+  async deletePropertyImage(propertyId: string, imageId: string): Promise<Property> {
+    if (isDemoSession()) {
+      const p = DEMO_PROPERTIES.find(item => item.id === propertyId) || DEMO_PROPERTIES[0];
+      if (p.images) {
+        p.images = p.images.filter(img => img.id !== imageId);
+      }
+      return p;
+    }
+    const res: any = await request(`/properties/${propertyId}/images/${imageId}`, {
+      method: 'DELETE',
+    });
+    return res.property || res;
+  },
+
+  async addPropertyImages(propertyId: string, images: string[]): Promise<Property> {
+    if (isDemoSession()) {
+      const p = DEMO_PROPERTIES.find(item => item.id === propertyId) || DEMO_PROPERTIES[0];
+      if (!p.images) p.images = [];
+      images.forEach((url, i) => {
+        p.images!.push({
+          id: `demo-img-${Date.now()}-${i}`,
+          url,
+          isCover: p.images!.length === 0 && i === 0,
+          order: p.images!.length + i
+        });
+      });
+      return p;
+    }
+    const res: any = await request(`/properties/${propertyId}/images`, {
+      method: 'POST',
+      body: JSON.stringify({ images }),
+    });
+    return res.property || res;
+  },
+
   // Property Bookings (Buyers & Dealers)
   async getBookings(params?: { role?: string; planType?: string; search?: string; status?: string }): Promise<PropertyBooking[]> {
     if (isDemoSession()) return DEMO_BOOKINGS;

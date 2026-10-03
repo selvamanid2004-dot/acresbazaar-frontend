@@ -688,71 +688,159 @@ export const Properties: React.FC = () => {
                 </div>
               </div>
 
-              {/* 5. UPLOADED PHOTOS (WITH LIGHTBOX ZOOM) */}
+              {/* 5. UPLOADED PHOTOS (WITH LIGHTBOX ZOOM & ACTIONS) */}
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ImageIcon size={14} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ImageIcon size={16} style={{ color: 'var(--gold-primary)' }} />
                     <span>Uploaded Property Photos ({viewProperty.images?.length || 0})</span>
                   </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Click any photo to view full resolution</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="badge" style={{ background: 'rgba(212, 175, 55, 0.15)', color: 'var(--gold-primary)', border: '1px solid rgba(212, 175, 55, 0.3)', fontSize: '11px', fontWeight: 700 }}>
+                      Total Images: {viewProperty.images?.length || 0}
+                    </span>
+                  </div>
                 </div>
 
                 {viewProperty.images && viewProperty.images.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
-                    {viewProperty.images.map((img, i) => (
-                      <div 
-                        key={img.id || i} 
-                        style={{
-                          position: 'relative',
-                          borderRadius: '10px',
-                          overflow: 'hidden',
-                          border: '1px solid var(--border-color)',
-                          cursor: 'pointer',
-                          aspectRatio: '4/3',
-                          background: '#000'
-                        }}
-                        onClick={() => setPreviewImage(resolveImageUrl(img.url))}
-                      >
-                        <img 
-                          src={resolveImageUrl(img.url)} 
-                          alt={`Property ${i + 1}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600';
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
+                    {viewProperty.images.map((img, i) => {
+                      const isCover = img.isCover || i === 0;
+                      return (
+                        <div 
+                          key={img.id || i} 
+                          style={{
+                            position: 'relative',
+                            borderRadius: '10px',
+                            overflow: 'hidden',
+                            border: isCover ? '2px solid var(--gold-primary)' : '1px solid var(--border-color)',
+                            background: '#0f172a',
+                            boxShadow: isCover ? '0 0 12px rgba(212, 175, 55, 0.3)' : 'none',
+                            display: 'flex',
+                            flexDirection: 'column'
                           }}
-                        />
-                        {i === 0 && (
-                          <span style={{
-                            position: 'absolute',
-                            top: '6px',
-                            left: '6px',
-                            background: 'rgba(0, 0, 0, 0.75)',
-                            color: 'var(--gold-primary)',
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            border: '1px solid rgba(212, 175, 55, 0.4)'
+                        >
+                          <div 
+                            style={{ position: 'relative', aspectRatio: '4/3', cursor: 'pointer', overflow: 'hidden' }}
+                            onClick={() => setPreviewImage(resolveImageUrl(img.url))}
+                            title="Click to view full photo"
+                          >
+                            <img 
+                              src={resolveImageUrl(img.url)} 
+                              alt={`Property ${i + 1}`} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600';
+                              }}
+                            />
+                            
+                            <span style={{
+                              position: 'absolute',
+                              top: '6px',
+                              left: '6px',
+                              background: isCover ? 'var(--gold-primary)' : 'rgba(0, 0, 0, 0.75)',
+                              color: isCover ? '#000' : '#fff',
+                              fontSize: '10px',
+                              fontWeight: 800,
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                            }}>
+                              {isCover ? '⭐ COVER' : `#${i + 1}`}
+                            </span>
+
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '6px',
+                              right: '6px',
+                              background: 'rgba(0, 0, 0, 0.7)',
+                              color: '#fff',
+                              padding: '3px 5px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <ZoomIn size={12} />
+                            </div>
+                          </div>
+
+                          {/* Quick Admin Actions on Photo */}
+                          <div style={{
+                            padding: '6px',
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            borderTop: '1px solid rgba(255,255,255,0.08)',
+                            gap: '4px'
                           }}>
-                            Cover Photo
-                          </span>
-                        )}
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '6px',
-                          right: '6px',
-                          background: 'rgba(0, 0, 0, 0.65)',
-                          color: '#fff',
-                          padding: '3px 5px',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}>
-                          <ZoomIn size={12} />
+                            {!isCover ? (
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'rgba(212, 175, 55, 0.15)',
+                                  color: 'var(--gold-primary)',
+                                  border: '1px solid rgba(212, 175, 55, 0.3)',
+                                  borderRadius: '4px',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  padding: '3px 6px',
+                                  cursor: 'pointer',
+                                  flex: 1
+                                }}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    await api.setPropertyCoverImage(viewProperty.id, img.id);
+                                    const updated = await api.getProperty(viewProperty.id);
+                                    setViewProperty(updated);
+                                    fetchProperties();
+                                  } catch (err: any) {
+                                    alert(err.message || 'Failed to set cover image');
+                                  }
+                                }}
+                              >
+                                Set Cover
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: 700, padding: '3px 6px' }}>
+                                Main Image
+                              </span>
+                            )}
+
+                            <button
+                              type="button"
+                              style={{
+                                background: 'rgba(239, 68, 68, 0.2)',
+                                color: '#f87171',
+                                border: 'none',
+                                borderRadius: '4px',
+                                width: '22px',
+                                height: '22px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                              title="Delete this photo"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!window.confirm('Delete this image from property?')) return;
+                                try {
+                                  await api.deletePropertyImage(viewProperty.id, img.id);
+                                  const updated = await api.getProperty(viewProperty.id);
+                                  setViewProperty(updated);
+                                  fetchProperties();
+                                } catch (err: any) {
+                                  alert(err.message || 'Failed to delete image');
+                                }
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-input)', borderRadius: '10px' }}>

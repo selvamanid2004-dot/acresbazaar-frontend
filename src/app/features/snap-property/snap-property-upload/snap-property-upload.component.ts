@@ -116,12 +116,13 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
               <input 
                 #galleryInput 
                 type="file" 
+                multiple
                 accept="image/*" 
                 (change)="onFileSelected($event)" 
                 style="display: none" />
 
-              <!-- Photo Preview or Trigger Box -->
-              <div class="camera-box" *ngIf="!photoPreview">
+              <!-- Photo Preview Grid or Trigger Box -->
+              <div class="camera-box" *ngIf="uploadedPhotos.length === 0">
                 <div class="camera-box-inner">
                   <div class="camera-icon-circle">
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -129,8 +130,8 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                       <circle cx="12" cy="13" r="4"></circle>
                     </svg>
                   </div>
-                  <h3>Take a Photo of the TO-LET / Signboard</h3>
-                  <p>Point your camera at the board and make sure the phone number is clear</p>
+                  <h3>Take Photos of the TO-LET / Signboard</h3>
+                  <p>Capture the main contact board, building exterior, road view, etc. (Upload 1 to 10 photos)</p>
                   
                   <div class="camera-btn-group">
                     <button type="button" class="btn-camera" (click)="cameraInput.click()">
@@ -153,26 +154,52 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                 </div>
               </div>
 
-              <!-- Snapped Photo Preview -->
-              <div class="photo-preview-wrap" *ngIf="photoPreview">
-                <div class="preview-img-box">
-                  <img [src]="photoPreview" alt="Snapped TO-LET Board" />
-                  <div class="preview-badge">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>Board Photo Captured</span>
+              <!-- Multiple Snapped Photos Grid -->
+              <div class="snapped-photos-container" *ngIf="uploadedPhotos.length > 0">
+                <div class="photos-grid-list">
+                  <div 
+                    *ngFor="let photo of uploadedPhotos; let idx = index" 
+                    class="photo-card-item"
+                    [class.is-primary]="idx === 0"
+                  >
+                    <img [src]="photo" alt="Snapped Photo" class="photo-img-tag" />
+                    <div class="card-badge-top">
+                      <span class="photo-num-tag">#{{ idx + 1 }}</span>
+                      <span class="primary-cover-tag" *ngIf="idx === 0">PRIMARY COVER</span>
+                    </div>
+
+                    <div class="card-actions-bar">
+                      <button 
+                        type="button" 
+                        *ngIf="idx !== 0" 
+                        (click)="setPrimaryPhoto(idx)" 
+                        class="btn-cover-action" 
+                        title="Set this photo as Main Cover"
+                      >
+                        ⭐ Set Cover
+                      </button>
+                      <button 
+                        type="button" 
+                        (click)="removePhoto(idx)" 
+                        class="btn-del-action" 
+                        title="Remove Photo"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div class="preview-actions">
-                  <button type="button" class="btn-retake" (click)="cameraInput.click()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                      <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                    <span>Retake Photo</span>
+
+                <div class="add-more-photos-row" *ngIf="uploadedPhotos.length < 10">
+                  <button type="button" class="btn-add-more" (click)="cameraInput.click()">
+                    <span>📷 Snap Another Photo</span>
                   </button>
-                  <button type="button" class="btn-remove" (click)="photoPreview = null">Remove</button>
+                  <button type="button" class="btn-add-more gallery" (click)="galleryInput.click()">
+                    <span>🖼️ Add from Gallery</span>
+                  </button>
+                  <span class="photos-count-text">
+                    {{ uploadedPhotos.length }} of 10 photos attached (Photo #1 is Primary Cover)
+                  </span>
                 </div>
               </div>
             </div>
@@ -615,74 +642,154 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       background: #f8fafc;
     }
 
-    .photo-preview-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
+    /* Multi Photo Grid */
+    .snapped-photos-container {
+      margin-top: 0.5rem;
     }
 
-    .preview-img-box {
-      width: 100%;
-      max-width: 480px;
-      height: 280px;
+    .photos-grid-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .photo-card-item {
+      position: relative;
       border-radius: 12px;
       overflow: hidden;
-      position: relative;
+      aspect-ratio: 4 / 3;
       background: #0f172a;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: all 0.2s;
     }
 
-    .preview-img-box img {
+    .photo-card-item.is-primary {
+      border-color: #10b981;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+    }
+
+    .photo-img-tag {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
     }
 
-    .preview-badge {
+    .card-badge-top {
       position: absolute;
-      bottom: 12px;
-      left: 12px;
-      background: rgba(16, 185, 129, 0.9);
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .photo-num-tag {
+      background: rgba(15, 23, 42, 0.75);
       color: #ffffff;
-      padding: 0.35rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    .primary-cover-tag {
+      background: #10b981;
+      color: #ffffff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    .card-actions-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .btn-cover-action {
+      background: rgba(15, 23, 42, 0.85);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 6px;
+      font-size: 0.72rem;
       font-weight: 700;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s;
+    }
+
+    .btn-cover-action:hover {
+      background: #10b981;
+      border-color: #10b981;
+    }
+
+    .btn-del-action {
+      background: rgba(239, 68, 68, 0.9);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      width: 26px;
+      height: 26px;
+      font-size: 0.85rem;
+      font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 5px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .preview-actions {
+    .btn-del-action:hover {
+      background: #dc2626;
+      transform: scale(1.08);
+    }
+
+    .add-more-photos-row {
       display: flex;
-      gap: 0.75rem;
+      align-items: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      padding-top: 0.5rem;
     }
 
-    .btn-retake {
+    .btn-add-more {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
       padding: 0.5rem 1rem;
-      background: #0f172a;
-      color: #ffffff;
-      border: none;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
       border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      color: #0f172a;
+      font-size: 0.82rem;
+      font-weight: 700;
       cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .btn-remove {
-      padding: 0.5rem 1rem;
-      background: #fee2e2;
-      color: #b91c1c;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.85rem;
+    .btn-add-more:hover {
+      border-color: #10b981;
+      color: #059669;
+      background: #f0fdf4;
+    }
+
+    .photos-count-text {
+      font-size: 0.82rem;
+      color: #64748b;
       font-weight: 600;
-      cursor: pointer;
     }
 
     .location-detect-bar {
@@ -947,7 +1054,7 @@ export class SnapPropertyUploadComponent implements OnInit {
   private authService = inject(AuthService);
 
   spotterUser: any = null;
-  photoPreview: string | null = null;
+  uploadedPhotos: string[] = [];
   detectingLocation = false;
   gpsStatus: string | null = null;
   gpsCoords: { lat: number; lng: number } | null = null;
@@ -1010,14 +1117,33 @@ export class SnapPropertyUploadComponent implements OnInit {
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.photoPreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+    if (input.files && input.files.length > 0) {
+      const files = Array.from(input.files);
+      files.forEach(file => {
+        if (this.uploadedPhotos.length < 10) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+            if (dataUrl && this.uploadedPhotos.length < 10) {
+              this.uploadedPhotos.push(dataUrl);
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      input.value = '';
     }
+  }
+
+  setPrimaryPhoto(index: number) {
+    if (index > 0 && index < this.uploadedPhotos.length) {
+      const selected = this.uploadedPhotos.splice(index, 1)[0];
+      this.uploadedPhotos.unshift(selected);
+    }
+  }
+
+  removePhoto(index: number) {
+    this.uploadedPhotos.splice(index, 1);
   }
 
   detectGPS() {
@@ -1050,8 +1176,8 @@ export class SnapPropertyUploadComponent implements OnInit {
   onSubmit() {
     this.errorMessage = '';
 
-    if (!this.photoPreview) {
-      this.errorMessage = 'Please snap or upload a photo of the TO-LET board.';
+    if (this.uploadedPhotos.length === 0) {
+      this.errorMessage = 'Please snap or upload at least 1 photo of the TO-LET board.';
       return;
     }
 
@@ -1108,7 +1234,7 @@ export class SnapPropertyUploadComponent implements OnInit {
       sellerEmail: this.spotterUser?.email || '',
       sellerRole: 'COMMON_PEOPLE',
       categorySpecs,
-      images: [this.photoPreview],
+      images: this.uploadedPhotos,
       status: 'PENDING'
     };
 
@@ -1127,7 +1253,7 @@ export class SnapPropertyUploadComponent implements OnInit {
 
   resetForm() {
     this.submittedSuccessfully = false;
-    this.photoPreview = null;
+    this.uploadedPhotos = [];
     this.gpsCoords = null;
     this.gpsStatus = null;
     this.formData.title = '';

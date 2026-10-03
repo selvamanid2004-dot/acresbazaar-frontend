@@ -564,27 +564,68 @@ export const SnapProperties: React.FC = () => {
               <button className="btn btn-secondary btn-icon" onClick={() => setViewSnap(null)}>✕</button>
             </div>
             <div className="modal-body">
-              {/* Photo */}
+              {/* Photos Gallery */}
               {viewSnap.images && viewSnap.images.length > 0 && (
-                <div 
-                  style={{ 
-                    height: '240px', 
-                    borderRadius: '12px', 
-                    overflow: 'hidden', 
-                    marginBottom: '18px',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    backgroundColor: '#0f1422'
-                  }}
-                  onClick={() => setPreviewImage(resolveImageUrl(viewSnap.images[0].url))}
-                >
-                  <img 
-                    src={resolveImageUrl(viewSnap.images[0].url)} 
-                    alt={viewSnap.title} 
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-                  />
-                  <div style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.7)', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', color: '#fff' }}>
-                    Click to view full image
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+                      Captured TO-LET & Location Photos
+                    </div>
+                    <span className="badge" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.3)', fontSize: '11px' }}>
+                      Total Images: {viewSnap.images.length}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                    {viewSnap.images.map((img, i) => {
+                      const isCover = img.isCover || i === 0;
+                      return (
+                        <div
+                          key={img.id || i}
+                          style={{
+                            position: 'relative',
+                            aspectRatio: '4/3',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            border: isCover ? '2px solid #34d399' : '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            backgroundColor: '#0f1422'
+                          }}
+                          onClick={() => setPreviewImage(resolveImageUrl(img.url))}
+                          title="Click to view full photo"
+                        >
+                          <img
+                            src={resolveImageUrl(img.url)}
+                            alt={`Photo ${i + 1}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <span style={{
+                            position: 'absolute',
+                            top: '4px',
+                            left: '4px',
+                            background: isCover ? '#34d399' : 'rgba(0,0,0,0.75)',
+                            color: isCover ? '#0f172a' : '#fff',
+                            fontSize: '9px',
+                            fontWeight: 800,
+                            padding: '1px 5px',
+                            borderRadius: '4px'
+                          }}>
+                            {isCover ? 'COVER' : `#${i + 1}`}
+                          </span>
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '4px',
+                            right: '4px',
+                            background: 'rgba(0,0,0,0.6)',
+                            color: '#fff',
+                            padding: '2px 4px',
+                            borderRadius: '4px'
+                          }}>
+                            <ZoomIn size={11} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -108,14 +108,14 @@ interface CategoryOption {
 
         <form (ngSubmit)="submitProperty()" class="property-form" novalidate>
           <!-- ---------------------------------------
-               SECTION: PHOTO UPLOAD (1 - 4 PHOTOS)
+               SECTION: PHOTO UPLOAD (MULTIPLE PHOTOS)
           ---------------------------------------- -->
           <div class="form-section-card">
             <div class="section-title-wrap">
               <div class="section-num">1</div>
               <div>
-                <h3>Upload Property Photos (1 to 4 Images) <span class="req">*</span></h3>
-                <p class="section-desc">Upload high-resolution photography. Exactly 1 to 4 photos allowed. The first image will be the primary cover.</p>
+                <h3>Upload Property Photos (Multiple Images Supported) <span class="req">*</span></h3>
+                <p class="section-desc">Upload high-resolution photography (up to 20 photos). The first photo will be used as the primary cover across search and listings.</p>
               </div>
             </div>
 
@@ -136,20 +136,20 @@ interface CategoryOption {
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
               </div>
-              <h4>Click to browse & upload property photos</h4>
-              <p>Supports JPG, PNG, WEBP (Max 4 images). Minimum 1 photo required.</p>
-              <div class="upload-btn-fake">Select Photos from Device</div>
+              <h4>Click to browse & upload multiple property photos</h4>
+              <p>Supports JPG, PNG, WEBP (Upload 1 to 20 images). Minimum 1 photo required.</p>
+              <div class="upload-btn-fake">+ Select Photos from Device</div>
             </div>
 
             <!-- Preset / Sample Images Helper for Convenience -->
             <div class="preset-helper">
-              <span>Or add luxury sample photos (Up to 4):</span>
-              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 4">
+              <span>Or add luxury sample photos:</span>
+              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 20">
                 + Load Curated Luxury Photos
               </button>
             </div>
 
-            <!-- Thumbnail Preview List -->
+            <!-- Thumbnail Preview List with Image Management -->
             <div *ngIf="uploadedImages().length > 0" class="thumbnails-grid">
               <div
                 *ngFor="let img of uploadedImages(); let i = index"
@@ -157,21 +157,43 @@ interface CategoryOption {
                 [class.cover]="i === 0"
               >
                 <img [src]="img" [alt]="'Photo ' + (i + 1)" class="thumb-img" />
-                <div *ngIf="i === 0" class="cover-badge">PRIMARY COVER</div>
+                <div class="thumb-header-badge">
+                  <span class="photo-num">#{{ i + 1 }}</span>
+                  <span *ngIf="i === 0" class="cover-badge">PRIMARY COVER</span>
+                </div>
+
                 <div class="thumb-actions">
-                  <label class="replace-label" title="Replace Photo">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      (change)="replacePhoto(i, $event)"
-                      style="display: none;"
-                    />
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="23 4 23 10 17 10"></polyline>
-                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                    </svg>
-                    Replace
-                  </label>
+                  <button 
+                    type="button" 
+                    *ngIf="i !== 0" 
+                    (click)="setCoverPhoto(i)" 
+                    class="cover-btn" 
+                    title="Set this photo as Main Cover"
+                  >
+                    ⭐ Set Cover
+                  </button>
+
+                  <div class="reorder-btns">
+                    <button 
+                      type="button" 
+                      *ngIf="i > 0" 
+                      (click)="movePhoto(i, i - 1)" 
+                      class="order-btn" 
+                      title="Move Left"
+                    >
+                      ◀
+                    </button>
+                    <button 
+                      type="button" 
+                      *ngIf="i < uploadedImages().length - 1" 
+                      (click)="movePhoto(i, i + 1)" 
+                      class="order-btn" 
+                      title="Move Right"
+                    >
+                      ▶
+                    </button>
+                  </div>
+
                   <button type="button" (click)="removePhoto(i)" class="remove-btn" title="Remove Photo">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -183,9 +205,10 @@ interface CategoryOption {
               </div>
             </div>
 
-            <div class="image-count-status" [class.valid]="uploadedImages().length >= 1 && uploadedImages().length <= 4">
-              <span>Uploaded: <strong>{{ uploadedImages().length }} of 4 photos</strong></span>
+            <div class="image-count-status" [class.valid]="uploadedImages().length >= 1">
+              <span>Uploaded: <strong>{{ uploadedImages().length }} of 20 photos</strong></span>
               <span *ngIf="uploadedImages().length === 0" class="warn-text">(At least 1 photo is required)</span>
+              <span *ngIf="uploadedImages().length > 0" class="success-text">✓ Photo #1 is your Main Cover Photo</span>
             </div>
           </div>
 
@@ -963,10 +986,26 @@ interface CategoryOption {
       display: block;
     }
 
-    .cover-badge {
+    .thumb-header-badge {
       position: absolute;
       top: 8px;
       left: 8px;
+      display: flex;
+      gap: 6px;
+      z-index: 2;
+    }
+
+    .photo-num {
+      background: rgba(0, 0, 0, 0.75);
+      color: #FFFFFF;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .cover-badge {
       background: #D4AF37;
       color: #0B1118;
       font-size: 0.65rem;
@@ -978,28 +1017,64 @@ interface CategoryOption {
 
     .thumb-actions {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
       background: #111A24;
       border-top: 1px solid #1E2D3D;
+      padding: 6px 8px;
+      gap: 6px;
     }
 
-    .replace-label, .remove-btn {
-      flex: 1;
+    .cover-btn {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #D4AF37;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .cover-btn:hover {
+      background: #D4AF37;
+      color: #000;
+    }
+
+    .reorder-btns {
+      display: flex;
+      gap: 3px;
+    }
+
+    .order-btn {
+      background: #1E2D3D;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94A3B8;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .order-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .remove-btn {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 4px;
-      font-size: 0.75rem;
+      gap: 3px;
+      font-size: 0.72rem;
       font-weight: 600;
-      padding: 8px 4px;
+      padding: 4px 6px;
       cursor: pointer;
       border: none;
       background: transparent;
       color: #94A3B8;
       transition: color 0.2s;
-    }
-
-    .replace-label:hover {
-      color: #D4AF37;
     }
 
     .remove-btn:hover {
@@ -1009,10 +1084,11 @@ interface CategoryOption {
     .image-count-status {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       margin-top: 14px;
       font-size: 0.85rem;
       color: #94A3B8;
+      flex-wrap: wrap;
     }
 
     .image-count-status.valid strong {
@@ -1021,6 +1097,11 @@ interface CategoryOption {
 
     .warn-text {
       color: #F87171;
+    }
+
+    .success-text {
+      color: #D4AF37;
+      font-weight: 600;
     }
 
     /* FORM FIELDS */
@@ -1387,22 +1468,53 @@ export class PropertyPostComponent implements OnInit {
       return;
     }
 
-    const currentImages = [...this.uploadedImages()];
+    const currentCount = this.uploadedImages().length;
+    const remainingSlots = 20 - currentCount;
+    if (remainingSlots <= 0) {
+      this.errorMessage.set('Maximum 20 images reached.');
+      return;
+    }
 
-    for (const file of validFiles) {
-      if (currentImages.length >= 4) {
-        this.errorMessage.set('Maximum 4 images allowed. Exactly 1 to 4 photos are permitted.');
-        break;
-      }
+    const toProcess = validFiles.slice(0, remainingSlots);
+
+    toProcess.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        if (result && this.uploadedImages().length < 4) {
-          this.uploadedImages.update(imgs => [...imgs, result]);
+        if (result) {
+          this.uploadedImages.update(imgs => {
+            if (imgs.length < 20) {
+              return [...imgs, result];
+            }
+            return imgs;
+          });
         }
       };
       reader.readAsDataURL(file);
-    }
+    });
+
+    input.value = '';
+  }
+
+  setCoverPhoto(index: number): void {
+    if (index <= 0 || index >= this.uploadedImages().length) return;
+    this.uploadedImages.update(imgs => {
+      const updated = [...imgs];
+      const selected = updated.splice(index, 1)[0];
+      updated.unshift(selected); // Put as first item (primary cover)
+      return updated;
+    });
+  }
+
+  movePhoto(fromIndex: number, toIndex: number): void {
+    const imgs = this.uploadedImages();
+    if (fromIndex < 0 || fromIndex >= imgs.length || toIndex < 0 || toIndex >= imgs.length) return;
+    this.uploadedImages.update(list => {
+      const updated = [...list];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
   }
 
   replacePhoto(index: number, event: Event): void {
@@ -1423,6 +1535,7 @@ export class PropertyPostComponent implements OnInit {
       }
     };
     reader.readAsDataURL(file);
+    input.value = '';
   }
 
   removePhoto(index: number): void {
@@ -1434,12 +1547,14 @@ export class PropertyPostComponent implements OnInit {
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80'
     ];
     this.uploadedImages.update(imgs => {
       const combined = [...imgs];
       for (const s of samples) {
-        if (combined.length < 4 && !combined.includes(s)) {
+        if (combined.length < 20 && !combined.includes(s)) {
           combined.push(s);
         }
       }
@@ -1450,14 +1565,14 @@ export class PropertyPostComponent implements OnInit {
   async submitProperty(): Promise<void> {
     this.errorMessage.set(null);
 
-    // Validate images (Strictly Min 1, Max 4)
+    // Validate images (Minimum 1, Maximum 20)
     const images = this.uploadedImages();
     if (images.length < 1) {
       this.errorMessage.set('Please upload at least 1 property photograph.');
       return;
     }
-    if (images.length > 4) {
-      this.errorMessage.set('Maximum 4 photographs allowed. Do not upload more than 4 images.');
+    if (images.length > 20) {
+      this.errorMessage.set('Maximum 20 photographs allowed.');
       return;
     }
 

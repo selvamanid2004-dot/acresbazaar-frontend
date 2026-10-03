@@ -138,24 +138,24 @@ interface ImageUploadItem {
 
         <form (ngSubmit)="handleSubmit()" class="submission-form" novalidate>
           <!-- -----------------------------------------------------------
-               SECTION 1: PHOTO UPLOAD (4 to 5 IMAGES REQUIRED)
+               SECTION 1: PHOTO UPLOAD (MULTIPLE PHOTOS)
           ------------------------------------------------------------ -->
           <div class="form-section">
             <div class="section-title-row">
               <div class="section-badge">1</div>
               <div>
                 <h2>Upload Property Photos <span class="req">*</span></h2>
-                <p class="section-hint">Upload <strong>1 to 5 photos</strong>. First photo will be used as the primary cover.</p>
+                <p class="section-hint">Upload <strong>1 to 20 photos</strong>. The first photo will be used as the primary cover.</p>
               </div>
               <div class="photo-counter" [class.valid]="uploadedImages().length >= 1">
-                {{ uploadedImages().length }} / 5 Photos
+                {{ uploadedImages().length }} / 20 Photos
                 <span class="counter-status" *ngIf="uploadedImages().length < 1">(Min 1 required)</span>
                 <span class="counter-status ready" *ngIf="uploadedImages().length >= 1">✓ Ready</span>
               </div>
             </div>
 
-            <!-- Upload Dropzone (if < 5 photos) -->
-            <div *ngIf="uploadedImages().length < 5" class="dropzone" (click)="fileInput.click()">
+            <!-- Upload Dropzone (if < 20 photos) -->
+            <div *ngIf="uploadedImages().length < 20" class="dropzone" (click)="fileInput.click()">
               <input
                 #fileInput
                 type="file"
@@ -166,13 +166,13 @@ interface ImageUploadItem {
               />
               <div class="dropzone-icon">📷</div>
               <h3>Click or drag to upload property photos</h3>
-              <p>Supports JPG, PNG, WEBP. Minimum 1 photo required (up to 5 photos).</p>
-              <button type="button" class="btn-browse">Select Photos from Device</button>
+              <p>Supports JPG, PNG, WEBP. Upload 1 to 20 photos for maximum buyer visibility.</p>
+              <button type="button" class="btn-browse">+ Select Photos from Device</button>
             </div>
 
             <!-- Preset / Sample Images Helper for Convenience -->
             <div class="sample-btn-wrap" style="margin: 12px 0;">
-              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 5" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; background: rgba(212,175,55,0.15); border: 1px solid #D4AF37; color: #D4AF37; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 20" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; background: rgba(212,175,55,0.15); border: 1px solid #D4AF37; color: #D4AF37; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
                 + Load Curated Luxury Photos
               </button>
             </div>
@@ -182,11 +182,12 @@ interface ImageUploadItem {
               <div
                 *ngFor="let img of uploadedImages(); let i = index"
                 class="preview-card"
+                [class.cover-card]="i === 0"
               >
                 <div class="preview-img-wrap">
                   <img [src]="img.dataUrl" [alt]="img.name" class="preview-img" />
                   <span class="index-pill" [class.cover]="i === 0">
-                    {{ i === 0 ? 'Cover Photo' : 'Photo ' + (i + 1) }}
+                    {{ i === 0 ? '★ Primary Cover' : 'Photo ' + (i + 1) }}
                   </span>
                   <button
                     type="button"
@@ -197,8 +198,37 @@ interface ImageUploadItem {
                     ✕
                   </button>
                 </div>
-                <div class="img-meta">
-                  <span class="img-name">{{ img.name }}</span>
+                <div class="img-meta" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.08);">
+                  <button 
+                    type="button" 
+                    *ngIf="i !== 0" 
+                    (click)="setCoverPhoto(i)" 
+                    style="background: rgba(212,175,55,0.2); border: 1px solid #D4AF37; color: #D4AF37; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer;"
+                  >
+                    ⭐ Set Cover
+                  </button>
+                  <span *ngIf="i === 0" style="color: #fbbf24; font-size: 11px; font-weight: 700;">Main Cover</span>
+
+                  <div style="display: flex; gap: 4px;">
+                    <button 
+                      type="button" 
+                      *ngIf="i > 0" 
+                      (click)="moveImage(i, i - 1)" 
+                      style="background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 2px 5px; border-radius: 4px; font-size: 10px; cursor: pointer;"
+                      title="Move Left"
+                    >
+                      ◀
+                    </button>
+                    <button 
+                      type="button" 
+                      *ngIf="i < uploadedImages().length - 1" 
+                      (click)="moveImage(i, i + 1)" 
+                      style="background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 2px 5px; border-radius: 4px; font-size: 10px; cursor: pointer;"
+                      title="Move Right"
+                    >
+                      ▶
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1446,7 +1476,8 @@ export class SellerPropertyNewComponent implements OnInit {
     if (!input.files || input.files.length === 0) return;
 
     const files = Array.from(input.files);
-    const remainingSlots = 5 - this.uploadedImages().length;
+    const remainingSlots = 20 - this.uploadedImages().length;
+    if (remainingSlots <= 0) return;
     const toProcess = files.slice(0, remainingSlots);
 
     toProcess.forEach(file => {
@@ -1480,7 +1511,10 @@ export class SellerPropertyNewComponent implements OnInit {
               name: file.name,
               size: compressedUrl.length
             };
-            this.uploadedImages.update(imgs => [...imgs, item]);
+            this.uploadedImages.update(imgs => {
+              if (imgs.length < 20) return [...imgs, item];
+              return imgs;
+            });
             return;
           }
           const item: ImageUploadItem = {
@@ -1489,7 +1523,10 @@ export class SellerPropertyNewComponent implements OnInit {
             name: file.name,
             size: file.size
           };
-          this.uploadedImages.update(imgs => [...imgs, item]);
+          this.uploadedImages.update(imgs => {
+            if (imgs.length < 20) return [...imgs, item];
+            return imgs;
+          });
         };
         img.src = rawUrl;
       };
@@ -1497,6 +1534,27 @@ export class SellerPropertyNewComponent implements OnInit {
     });
 
     input.value = '';
+  }
+
+  setCoverPhoto(index: number): void {
+    if (index <= 0 || index >= this.uploadedImages().length) return;
+    this.uploadedImages.update(imgs => {
+      const updated = [...imgs];
+      const selected = updated.splice(index, 1)[0];
+      updated.unshift(selected);
+      return updated;
+    });
+  }
+
+  moveImage(fromIndex: number, toIndex: number): void {
+    const imgs = this.uploadedImages();
+    if (fromIndex < 0 || fromIndex >= imgs.length || toIndex < 0 || toIndex >= imgs.length) return;
+    this.uploadedImages.update(list => {
+      const updated = [...list];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
   }
 
   removeImage(index: number): void {
@@ -1508,11 +1566,12 @@ export class SellerPropertyNewComponent implements OnInit {
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80'
     ];
     const current = [...this.uploadedImages()];
     for (const s of samples) {
-      if (current.length < 5 && !current.some(c => c.dataUrl === s)) {
+      if (current.length < 20 && !current.some(c => c.dataUrl === s)) {
         current.push({
           id: Math.random().toString(36).substring(2, 9),
           dataUrl: s,
@@ -1529,12 +1588,12 @@ export class SellerPropertyNewComponent implements OnInit {
 
     // Validation: Minimum 1 photo
     if (this.uploadedImages().length < 1) {
-      this.errorMessage.set('Please upload at least 1 property photo (maximum 5 photos).');
+      this.errorMessage.set('Please upload at least 1 property photo.');
       return;
     }
 
-    if (this.uploadedImages().length > 5) {
-      this.errorMessage.set('Maximum 5 photos allowed. Please remove extra images.');
+    if (this.uploadedImages().length > 20) {
+      this.errorMessage.set('Maximum 20 photos allowed.');
       return;
     }
 

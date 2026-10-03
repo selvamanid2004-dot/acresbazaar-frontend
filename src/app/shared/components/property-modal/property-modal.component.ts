@@ -15,27 +15,89 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
     <div class="modal-backdrop" *ngIf="property" (click)="close()">
       <div class="modal-dialog" (click)="$event.stopPropagation()">
         
-        <!-- Modal Media Banner -->
-        <div class="modal-media-header">
-          <img [src]="property.imageUrl" (error)="onMediaError($event)" [alt]="property.title" class="modal-img" />
+        <!-- Modal Media Slider Banner -->
+        <div class="modal-media-header" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+          <img [src]="currentSlideImage" (error)="onMediaError($event)" [alt]="property.title" class="modal-img" />
           <div class="modal-media-overlay"></div>
 
+          <!-- Close Button -->
           <button type="button" class="close-btn" (click)="close()" aria-label="Close modal">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
 
+          <!-- Badges Row -->
           <div class="modal-badges-row">
             <span *ngIf="property.tier === 'platinum'" class="badge badge-platinum">Platinum Tier</span>
             <span *ngIf="property.isNewLaunch" class="badge badge-emerald">New Launch</span>
             <span class="badge badge-blue">RERA Verified</span>
           </div>
 
+          <!-- Top-Right Controls: Fullscreen Lightbox & Photo Counter -->
+          <div class="slider-top-controls">
+            <button type="button" class="btn-fullscreen-toggle" (click)="openLightbox()" title="View Fullscreen High-Res Photos">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+              <span>Fullscreen</span>
+            </button>
+
+            <div class="slider-counter-badge" *ngIf="sliderImages.length > 0">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span>{{ activeSlideIndex + 1 }} / {{ sliderImages.length }}</span>
+            </div>
+          </div>
+
+          <!-- Previous / Next Slider Arrows -->
+          <button 
+            type="button" 
+            class="slider-nav-btn prev-btn" 
+            *ngIf="sliderImages.length > 1" 
+            (click)="prevSlide($event)" 
+            aria-label="Previous image"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <button 
+            type="button" 
+            class="slider-nav-btn next-btn" 
+            *ngIf="sliderImages.length > 1" 
+            (click)="nextSlide($event)" 
+            aria-label="Next image"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
+          <!-- Bottom Price & Header -->
           <div class="modal-price-header">
             <span class="price-big">{{ property.priceDisplay }}</span>
             <span *ngIf="property.pricePerSqFt" class="price-sqft">{{ property.pricePerSqFt }}</span>
+          </div>
+
+          <!-- Bottom Thumbnails Strip -->
+          <div class="slider-thumbnails-strip" *ngIf="sliderImages.length > 1">
+            <div 
+              *ngFor="let img of sliderImages; let idx = index" 
+              class="thumb-item" 
+              [class.active]="idx === activeSlideIndex"
+              (click)="goToSlide(idx, $event)"
+              [title]="'View Photo ' + (idx + 1)"
+            >
+              <img [src]="img" (error)="onMediaError($event)" [alt]="'Photo ' + (idx + 1)" />
+            </div>
           </div>
         </div>
 
@@ -248,6 +310,59 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
           </div>
         </div>
 
+        <!-- FULLSCREEN LIGHTBOX GALLERY MODAL -->
+        <div *ngIf="showLightbox" class="lightbox-overlay" (click)="closeLightbox()">
+          <div class="lightbox-wrapper" (click)="$event.stopPropagation()">
+            <!-- Top Controls -->
+            <div class="lightbox-top-bar">
+              <span class="lightbox-counter">
+                📷 Photo {{ activeSlideIndex + 1 }} of {{ sliderImages.length }} · {{ property.title }}
+              </span>
+              <button type="button" class="lightbox-close-btn" (click)="closeLightbox()" aria-label="Close Lightbox">
+                ✕
+              </button>
+            </div>
+
+            <!-- Main Stage Image -->
+            <div class="lightbox-stage">
+              <button 
+                type="button" 
+                class="lightbox-arrow prev" 
+                *ngIf="sliderImages.length > 1" 
+                (click)="prevSlide($event)"
+                aria-label="Previous Photo"
+              >
+                ‹
+              </button>
+
+              <img [src]="currentSlideImage" (error)="onMediaError($event)" [alt]="property.title" class="lightbox-main-img" />
+
+              <button 
+                type="button" 
+                class="lightbox-arrow next" 
+                *ngIf="sliderImages.length > 1" 
+                (click)="nextSlide($event)"
+                aria-label="Next Photo"
+              >
+                ›
+              </button>
+            </div>
+
+            <!-- Lightbox Bottom Thumbnails -->
+            <div class="lightbox-thumbs-row" *ngIf="sliderImages.length > 1">
+              <div 
+                *ngFor="let img of sliderImages; let idx = index"
+                class="lightbox-thumb-item"
+                [class.active]="idx === activeSlideIndex"
+                (click)="goToSlide(idx, $event)"
+              >
+                <img [src]="img" (error)="onMediaError($event)" [alt]="'Thumb ' + (idx + 1)" />
+                <span class="lightbox-thumb-num">#{{ idx + 1 }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   `,
@@ -291,33 +406,36 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
 
     .modal-media-header {
       position: relative;
-      height: 280px;
+      height: 310px;
       width: 100%;
       background: var(--slate-900);
       overflow: hidden;
       flex-shrink: 0;
+      user-select: none;
     }
 
     .modal-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.35s ease;
     }
 
     .modal-media-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(7, 13, 30, 0.4) 0%, transparent 40%, rgba(7, 13, 30, 0.85) 100%);
+      background: linear-gradient(180deg, rgba(7, 13, 30, 0.5) 0%, transparent 40%, rgba(7, 13, 30, 0.88) 100%);
+      pointer-events: none;
     }
 
     .close-btn {
       position: absolute;
-      top: 1.25rem;
-      right: 1.25rem;
-      width: 40px;
-      height: 40px;
+      top: 1rem;
+      right: 1rem;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.65);
       color: var(--white);
       display: flex;
       align-items: center;
@@ -334,19 +452,100 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
 
     .modal-badges-row {
       position: absolute;
-      top: 1.25rem;
-      left: 1.25rem;
+      top: 1rem;
+      left: 1rem;
       display: flex;
       gap: 0.5rem;
       z-index: 2;
     }
 
+    .slider-top-controls {
+      position: absolute;
+      top: 1rem;
+      right: 3.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 2;
+    }
+
+    .btn-fullscreen-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.32rem 0.65rem;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-fullscreen-toggle:hover {
+      background: rgba(255, 255, 255, 0.95);
+      color: #0f172a;
+    }
+
+    .slider-counter-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.32rem 0.65rem;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #f1f5f9;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    /* Slider Navigation Arrows */
+    .slider-nav-btn {
+      position: absolute;
+      top: 45%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 8;
+      transition: all 0.2s ease;
+    }
+
+    .slider-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.95);
+      color: #0f172a;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .slider-nav-btn.prev-btn {
+      left: 0.85rem;
+    }
+
+    .slider-nav-btn.next-btn {
+      right: 0.85rem;
+    }
+
     .modal-price-header {
       position: absolute;
-      bottom: 1.25rem;
+      bottom: 3.5rem;
       left: 1.5rem;
       z-index: 2;
       color: var(--white);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
     }
 
     .price-big {
@@ -361,6 +560,214 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       font-size: 0.85rem;
       color: var(--gold-400);
       font-weight: 600;
+    }
+
+    /* Bottom Thumbnail Strip */
+    .slider-thumbnails-strip {
+      position: absolute;
+      bottom: 0.75rem;
+      left: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      gap: 0.45rem;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      z-index: 4;
+      scrollbar-width: none;
+    }
+
+    .slider-thumbnails-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .thumb-item {
+      width: 44px;
+      height: 32px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      flex-shrink: 0;
+      opacity: 0.65;
+      transition: all 0.2s ease;
+      background: #000;
+    }
+
+    .thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumb-item.active {
+      border-color: #fbbf24;
+      opacity: 1;
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+    }
+
+    .thumb-item:hover {
+      opacity: 1;
+    }
+
+    /* Fullscreen Lightbox Styles */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.96);
+      backdrop-filter: blur(12px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      animation: fadeIn 200ms ease;
+    }
+
+    .lightbox-wrapper {
+      width: 100%;
+      max-width: 1100px;
+      height: 92vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .lightbox-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+      padding: 0.5rem 0.25rem 1rem;
+      flex-shrink: 0;
+    }
+
+    .lightbox-counter {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .lightbox-close-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lightbox-close-btn:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      transform: scale(1.1);
+    }
+
+    .lightbox-stage {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #000;
+    }
+
+    .lightbox-main-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .lightbox-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      font-size: 2rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.2s;
+    }
+
+    .lightbox-arrow:hover {
+      background: #fff;
+      color: #000;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .lightbox-arrow.prev {
+      left: 1rem;
+    }
+
+    .lightbox-arrow.next {
+      right: 1rem;
+    }
+
+    .lightbox-thumbs-row {
+      display: flex;
+      gap: 0.5rem;
+      padding-top: 1rem;
+      overflow-x: auto;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .lightbox-thumb-item {
+      position: relative;
+      width: 70px;
+      height: 48px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      opacity: 0.5;
+      transition: all 0.2s;
+    }
+
+    .lightbox-thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .lightbox-thumb-num {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .lightbox-thumb-item.active {
+      border-color: #fbbf24;
+      opacity: 1;
+      transform: scale(1.08);
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.7);
+    }
+
+    .lightbox-thumb-item:hover {
+      opacity: 0.9;
     }
 
     .modal-body-scroll {
@@ -896,8 +1303,18 @@ export class PropertyModalComponent implements OnChanges {
     phone: ''
   };
 
+  // --- DYNAMIC MULTI-IMAGE SLIDER & LIGHTBOX STATE ---
+  sliderImages: string[] = [];
+  activeSlideIndex: number = 0;
+  showLightbox: boolean = false;
+  private touchStartX: number = 0;
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['property'] && this.property) {
+      this.activeSlideIndex = 0;
+      this.showLightbox = false;
+      this.setupSliderImages();
+
       // Check if already booked/contacted
       try {
         const booked: string[] = JSON.parse(localStorage.getItem('aura_booked_property_ids') || '[]');
@@ -913,6 +1330,105 @@ export class PropertyModalComponent implements OnChanges {
       } catch {
         this.isContacted = false;
         this.showOwnerDetails = false;
+      }
+    }
+  }
+
+  setupSliderImages(): void {
+    if (!this.property) {
+      this.sliderImages = [];
+      return;
+    }
+    const imgs: string[] = [];
+    const anyProp = this.property as any;
+
+    // 1. If backend images array of objects, prioritize primary cover first
+    if (Array.isArray(anyProp.images) && anyProp.images.length > 0) {
+      const primary = anyProp.images.find((img: any) => img.isPrimary || img.isCover);
+      if (primary) {
+        const url = primary.imageUrl || primary.url;
+        if (url) imgs.push(url);
+      }
+      anyProp.images.forEach((img: any) => {
+        const url = img.imageUrl || img.url;
+        if (url && !imgs.includes(url)) {
+          imgs.push(url);
+        }
+      });
+    }
+
+    // 2. If galleryImages string array provided
+    if (Array.isArray(this.property.galleryImages) && this.property.galleryImages.length > 0) {
+      this.property.galleryImages.forEach(url => {
+        if (url && typeof url === 'string' && !imgs.includes(url)) {
+          imgs.push(url);
+        }
+      });
+    }
+
+    // 3. If single imageUrl provided and not present, add it at front
+    if (this.property.imageUrl && !imgs.includes(this.property.imageUrl)) {
+      imgs.unshift(this.property.imageUrl);
+    }
+
+    // 4. Default fallback if empty
+    if (imgs.length === 0) {
+      imgs.push('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80');
+    }
+
+    this.sliderImages = imgs;
+  }
+
+  get currentSlideImage(): string {
+    if (this.sliderImages.length === 0) {
+      return this.property?.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+    }
+    return this.sliderImages[this.activeSlideIndex] || this.sliderImages[0];
+  }
+
+  nextSlide(event?: Event): void {
+    if (event) event.stopPropagation();
+    if (this.sliderImages.length <= 1) return;
+    this.activeSlideIndex = (this.activeSlideIndex + 1) % this.sliderImages.length;
+  }
+
+  prevSlide(event?: Event): void {
+    if (event) event.stopPropagation();
+    if (this.sliderImages.length <= 1) return;
+    this.activeSlideIndex = (this.activeSlideIndex - 1 + this.sliderImages.length) % this.sliderImages.length;
+  }
+
+  goToSlide(index: number, event?: Event): void {
+    if (event) event.stopPropagation();
+    if (index >= 0 && index < this.sliderImages.length) {
+      this.activeSlideIndex = index;
+    }
+  }
+
+  openLightbox(): void {
+    this.showLightbox = true;
+  }
+
+  closeLightbox(): void {
+    this.showLightbox = false;
+  }
+
+  onTouchStart(event: TouchEvent): void {
+    if (event.touches && event.touches[0]) {
+      this.touchStartX = event.touches[0].clientX;
+    }
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    if (event.changedTouches && event.changedTouches[0]) {
+      const touchEndX = event.changedTouches[0].clientX;
+      const diff = this.touchStartX - touchEndX;
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) {
+          this.nextSlide();
+        } else {
+          this.prevSlide();
+        }
       }
     }
   }
