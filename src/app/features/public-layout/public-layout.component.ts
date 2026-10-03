@@ -214,13 +214,12 @@ export class PublicLayoutComponent implements OnInit {
   }
 
   onContactAgent(property: Property) {
-    const agentName = property.postedBy?.name || property.dealer?.name || 'Verified Advisor';
-    const agentRole = property.postedBy?.role || 'Partner';
+    const ownerName = property.owner_contact?.name || property.ownerContact?.name || property.sellerName || property.postedBy?.name || 'Property Owner';
     this.notificationService.show(
-      'Inquiry Dispatched',
-      `Connecting you with ${agentName} (${agentRole}) for ${property.title}`,
+      'Owner Contact Unlocked',
+      `Direct verified owner contact details for ${property.title} are displayed below.`,
       'success'
     );
-    this.closeDetailsModal();
+    // Keep the property details modal open without navigating away
   }
 }

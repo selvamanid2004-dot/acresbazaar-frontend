@@ -614,12 +614,26 @@ export class PropertyService {
             shortDescription: p.description || '',
             submissionDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
             submissionStatus: 'APPROVED',
-            ownerName: p.sellerName,
+            ownerName: p.owner_contact?.name || p.ownerContact?.name || p.sellerName || 'Property Owner',
+            sellerName: p.owner_contact?.name || p.ownerContact?.name || p.sellerName,
+            sellerPhone: p.owner_contact?.phone || p.ownerContact?.phone || p.sellerPhone,
+            sellerEmail: p.owner_contact?.email || p.ownerContact?.email || p.sellerEmail,
+            contactPhone: p.owner_contact?.phone || p.ownerContact?.phone || p.sellerPhone,
+            owner_contact: p.owner_contact || p.ownerContact || {
+              name: p.sellerName || 'Property Owner',
+              phone: p.sellerPhone || '',
+              email: p.sellerEmail || ''
+            },
+            ownerContact: p.owner_contact || p.ownerContact || {
+              name: p.sellerName || 'Property Owner',
+              phone: p.sellerPhone || '',
+              email: p.sellerEmail || ''
+            },
             isVerified: true,
             postedBy: {
-              name: p.seller?.name || p.sellerName || 'Verified Partner',
-              role: (p.seller?.role || p.sellerRole || 'PARTNER') === 'DEALER' ? 'Dealer' : 'Owner',
-              phone: p.seller?.mobile || '+91 98450 00000',
+              name: p.owner_contact?.name || p.ownerContact?.name || p.sellerName || 'Property Owner',
+              role: 'Owner',
+              phone: p.owner_contact?.phone || p.ownerContact?.phone || p.sellerPhone || '',
               verified: true
             }
           };
@@ -725,7 +739,21 @@ export class PropertyService {
               shortDescription: p.description || '',
               submissionDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
               submissionStatus: 'APPROVED',
-              ownerName: p.sellerName,
+              ownerName: p.owner_contact?.name || p.ownerContact?.name || p.sellerName || 'Property Owner',
+              sellerName: p.owner_contact?.name || p.ownerContact?.name || p.sellerName,
+              sellerPhone: p.owner_contact?.phone || p.ownerContact?.phone || p.sellerPhone,
+              sellerEmail: p.owner_contact?.email || p.ownerContact?.email || p.sellerEmail,
+              contactPhone: p.owner_contact?.phone || p.ownerContact?.phone || p.sellerPhone,
+              owner_contact: p.owner_contact || p.ownerContact || {
+                name: p.sellerName || 'Property Owner',
+                phone: p.sellerPhone || '',
+                email: p.sellerEmail || ''
+              },
+              ownerContact: p.owner_contact || p.ownerContact || {
+                name: p.sellerName || 'Property Owner',
+                phone: p.sellerPhone || '',
+                email: p.sellerEmail || ''
+              },
               isVerified: true
             };
           });

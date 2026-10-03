@@ -190,22 +190,22 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                 <span>{{ isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist' }}</span>
               </button>
 
-              <!-- Contact Owner Button (Clicking registers booking in Admin Panel) -->
+              <!-- Contact Owner Button (Clicking opens in-page Owner Contact modal & registers booking) -->
               <button 
                 type="button" 
                 class="btn btn-gold btn-contact-owner" 
-                (click)="onContactOwner()"
+                (click)="openOwnerContactModal()"
                 [disabled]="bookingSubmitting"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                 </svg>
-                <span>{{ bookingSubmitting ? 'Booking & Connecting...' : (isContacted ? 'Owner Contacted (Booked)' : 'Contact Owner') }}</span>
+                <span>{{ bookingSubmitting ? 'Connecting...' : (isContacted ? 'Owner Contact (Booked)' : 'Owner Contact') }}</span>
               </button>
             </div>
           </div>
 
-          <!-- UNLOCKED DIRECT OWNER CONTACT CARD -->
+          <!-- UNLOCKED DIRECT OWNER CONTACT IN-PAGE SECTION -->
           <div *ngIf="showOwnerDetails" class="owner-contact-unlocked-card">
             <div class="unlocked-header">
               <div class="badge-row">
@@ -213,20 +213,24 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                 <span class="booking-ref-tag" *ngIf="bookingRef">Ref #{{ bookingRef }}</span>
               </div>
               <h4>Direct Owner Contact Information</h4>
-              <p>This property has been marked as booked. You can contact the verified seller directly below:</p>
+              <p>Official contact details configured specifically for this property:</p>
             </div>
 
             <div class="owner-info-grid">
               <div class="owner-info-item">
-                <span class="info-label">Seller / Owner Name</span>
+                <span class="info-label">Owner Name</span>
                 <strong class="info-val">{{ ownerDisplayName }}</strong>
               </div>
-              <div class="owner-info-item">
-                <span class="info-label">Direct Phone Number</span>
+              <div class="owner-info-item" *ngIf="ownerPhone">
+                <span class="info-label">Owner Phone Number</span>
                 <strong class="info-val text-gold">{{ ownerPhone }}</strong>
               </div>
+              <div class="owner-info-item" *ngIf="ownerAltPhone">
+                <span class="info-label">Alternate Phone</span>
+                <strong class="info-val">{{ ownerAltPhone }}</strong>
+              </div>
               <div class="owner-info-item" *ngIf="ownerEmail">
-                <span class="info-label">Official Email Address</span>
+                <span class="info-label">Owner Email</span>
                 <strong class="info-val">{{ ownerEmail }}</strong>
               </div>
               <div class="owner-info-item">
@@ -236,11 +240,11 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
             </div>
 
             <div class="direct-contact-buttons">
-              <a [href]="'tel:' + ownerPhoneClean" class="btn-direct-action btn-call">
+              <a *ngIf="ownerPhone" [href]="'tel:' + ownerPhoneClean" class="btn-direct-action btn-call">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                <span>Call Seller Now</span>
+                <span>Call Owner</span>
               </a>
-              <a [href]="'https://wa.me/' + ownerPhoneClean" target="_blank" class="btn-direct-action btn-whatsapp">
+              <a *ngIf="ownerPhone" [href]="'https://wa.me/' + ownerPhoneClean" target="_blank" rel="noopener noreferrer" class="btn-direct-action btn-whatsapp">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                 <span>WhatsApp Owner</span>
               </a>
@@ -307,6 +311,101 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                 <button type="button" class="btn-cancel-report" (click)="closeReportModal()">Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+
+        <!-- IN-PAGE OWNER CONTACT POPUP MODAL & MOBILE BOTTOM SHEET -->
+        <div *ngIf="showOwnerContactPopup" class="owner-contact-popup-overlay" (click)="closeOwnerContactPopup()">
+          <div class="owner-contact-popup-card" (click)="$event.stopPropagation()">
+            <div class="owner-popup-header">
+              <div class="owner-popup-title-wrap">
+                <div class="owner-badge-pill">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span>Property Owner Contact</span>
+                </div>
+                <h3 class="owner-popup-prop-title">{{ property.title }}</h3>
+              </div>
+              <button type="button" class="owner-popup-close-btn" (click)="closeOwnerContactPopup()" aria-label="Close Contact Dialog">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div class="owner-popup-body">
+              <p class="owner-popup-subtitle">
+                Official contact details configured specifically for this property listing:
+              </p>
+
+              <div class="owner-details-list">
+                <!-- Owner Name -->
+                <div class="owner-detail-row">
+                  <span class="detail-label">Owner Name</span>
+                  <div class="detail-value-group">
+                    <span class="detail-value text-bold text-white">{{ ownerDisplayName }}</span>
+                    <span class="detail-subtag">Property Owner</span>
+                  </div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="owner-detail-row" *ngIf="ownerPhone">
+                  <span class="detail-label">Phone</span>
+                  <div class="detail-value-group">
+                    <span class="detail-value text-gold text-bold">{{ ownerPhone }}</span>
+                    <span class="detail-subtag" *ngIf="ownerAltPhone">Alt: {{ ownerAltPhone }}</span>
+                  </div>
+                </div>
+
+                <!-- Email Address -->
+                <div class="owner-detail-row" *ngIf="ownerEmail">
+                  <span class="detail-label">Email</span>
+                  <div class="detail-value-group">
+                    <span class="detail-value text-white">{{ ownerEmail }}</span>
+                  </div>
+                </div>
+
+                <!-- Property Location Reference -->
+                <div class="owner-detail-row">
+                  <span class="detail-label">Location</span>
+                  <div class="detail-value-group">
+                    <span class="detail-value text-muted">{{ property.location }}, {{ property.city }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact Action Buttons: Call, WhatsApp, Email, Close -->
+              <div class="owner-popup-actions">
+                <a *ngIf="ownerPhone" [href]="'tel:' + ownerPhoneClean" class="btn-contact-action btn-call">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <span>Call Owner</span>
+                </a>
+
+                <a *ngIf="ownerPhone" [href]="'https://wa.me/' + ownerPhoneClean" target="_blank" rel="noopener noreferrer" class="btn-contact-action btn-whatsapp">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                  </svg>
+                  <span>WhatsApp</span>
+                </a>
+
+                <a *ngIf="ownerEmail" [href]="'mailto:' + ownerEmail" class="btn-contact-action btn-email">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <span>Email</span>
+                </a>
+
+                <button type="button" class="btn-contact-action btn-close-popup" (click)="closeOwnerContactPopup()">
+                  <span>Close</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1268,6 +1367,226 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       background: rgba(255, 255, 255, 0.2);
       transform: translateY(-1px);
     }
+
+    /* IN-PAGE OWNER CONTACT POPUP MODAL & BOTTOM SHEET STYLES */
+    .owner-contact-popup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 13, 30, 0.82);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      animation: fadeIn 200ms ease;
+    }
+
+    .owner-contact-popup-card {
+      background: linear-gradient(145deg, #0b1329 0%, #080e1e 100%);
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+      border-radius: 18px;
+      max-width: 480px;
+      width: 100%;
+      color: #f8fafc;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+      animation: popUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .owner-popup-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .owner-popup-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      padding-right: 12px;
+    }
+
+    .owner-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      color: #f59e0b;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      width: fit-content;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .owner-popup-prop-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .owner-popup-close-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .owner-popup-close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      transform: scale(1.08);
+    }
+
+    .owner-popup-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .owner-popup-subtitle {
+      font-size: 12.5px;
+      color: #94a3b8;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .owner-details-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .owner-detail-row {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .owner-detail-row .detail-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .owner-detail-row .detail-value-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: right;
+    }
+
+    .owner-detail-row .detail-value {
+      font-size: 13.5px;
+      color: #e2e8f0;
+    }
+
+    .owner-detail-row .detail-value.text-bold {
+      font-weight: 700;
+    }
+
+    .owner-detail-row .detail-value.text-white {
+      color: #ffffff;
+    }
+
+    .owner-detail-row .detail-subtag {
+      font-size: 10px;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .owner-popup-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .btn-contact-action {
+      flex: 1;
+      min-width: 100px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 14px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-close-popup {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      flex: 0.6;
+    }
+
+    .btn-close-popup:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+    }
+
+    @media (max-width: 640px) {
+      .owner-contact-popup-overlay {
+        align-items: flex-end;
+        padding: 0;
+      }
+
+      .owner-contact-popup-card {
+        border-radius: 20px 20px 0 0;
+        max-height: 85vh;
+        overflow-y: auto;
+        animation: slideUp 250ms ease;
+      }
+
+      @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+
+      .owner-popup-actions {
+        flex-direction: column;
+      }
+
+      .btn-contact-action {
+        width: 100%;
+      }
+    }
   `]
 })
 export class PropertyModalComponent implements OnChanges {
@@ -1282,6 +1601,7 @@ export class PropertyModalComponent implements OnChanges {
   // Contact Owner states
   isContacted = false;
   showOwnerDetails = false;
+  showOwnerContactPopup = false;
   bookingSubmitting = false;
   bookingRef = '';
 
@@ -1313,6 +1633,7 @@ export class PropertyModalComponent implements OnChanges {
     if (changes['property'] && this.property) {
       this.activeSlideIndex = 0;
       this.showLightbox = false;
+      this.showOwnerContactPopup = false;
       this.setupSliderImages();
 
       // Check if already booked/contacted
@@ -1433,21 +1754,62 @@ export class PropertyModalComponent implements OnChanges {
     }
   }
 
-  // Getters for Verified Owner / Seller contact details
+  // Getters for Verified Owner contact details configured specifically for this property
   get ownerDisplayName(): string {
-    return this.property?.postedBy?.name || this.property?.dealer?.name || (this.property as any)?.sellerName || 'Verified Property Owner';
+    const p = this.property as any;
+    if (!p) return 'Verified Property Owner';
+    return (
+      p.owner_contact?.name ||
+      p.ownerContact?.name ||
+      p.categorySpecs?.boardContact ||
+      p.specs?.boardContact ||
+      p.specs?.ownerName ||
+      p.sellerName ||
+      'Verified Property Owner'
+    );
   }
 
   get ownerPhone(): string {
-    return this.property?.postedBy?.phone || this.property?.dealer?.phone || (this.property as any)?.sellerPhone || this.property?.contactPhone || '+91 98450 12345';
+    const p = this.property as any;
+    if (!p) return '+91 98450 12345';
+    return (
+      p.owner_contact?.phone ||
+      p.ownerContact?.phone ||
+      p.categorySpecs?.boardContact ||
+      p.specs?.boardContact ||
+      p.specs?.ownerPhone ||
+      p.sellerPhone ||
+      p.contactPhone ||
+      '+91 98450 12345'
+    );
   }
 
   get ownerPhoneClean(): string {
-    return this.ownerPhone.replace(/\D/g, '') || '919845012345';
+    const clean = this.ownerPhone.replace(/\D/g, '');
+    return clean || '919845012345';
   }
 
   get ownerEmail(): string {
-    return this.property?.dealer?.email || (this.property as any)?.sellerEmail || 'owner@aura-estates.com';
+    const p = this.property as any;
+    if (!p) return 'owner@aura-estates.com';
+    return (
+      p.owner_contact?.email ||
+      p.ownerContact?.email ||
+      p.specs?.ownerEmail ||
+      p.sellerEmail ||
+      'owner@aura-estates.com'
+    );
+  }
+
+  get ownerAltPhone(): string {
+    const p = this.property as any;
+    if (!p) return '';
+    return (
+      p.owner_contact?.alternatePhone ||
+      p.ownerContact?.alternatePhone ||
+      p.specs?.alternatePhone ||
+      ''
+    );
   }
 
   get buyerPlanLabel(): string {
@@ -1460,6 +1822,17 @@ export class PropertyModalComponent implements OnChanges {
 
   close() {
     this.closeRequested.emit();
+  }
+
+  openOwnerContactModal(): void {
+    this.showOwnerContactPopup = true;
+    if (!this.isContacted) {
+      this.onContactOwner();
+    }
+  }
+
+  closeOwnerContactPopup(): void {
+    this.showOwnerContactPopup = false;
   }
 
   onMediaError(event: Event) {
@@ -1552,12 +1925,6 @@ export class PropertyModalComponent implements OnChanges {
       this.isContacted = true;
       this.showOwnerDetails = true;
 
-      this.notificationService.show(
-        'Property Booked & Owner Contact Unlocked!',
-        `Your booking is confirmed. Verified owner contact details are displayed below.`,
-        'success'
-      );
-
       this.contactAgent.emit(this.property);
     } catch (err: any) {
       console.error('Booking submission:', err);
@@ -1565,11 +1932,6 @@ export class PropertyModalComponent implements OnChanges {
       this.isContacted = true;
       this.showOwnerDetails = true;
       this.bookingRef = 'LOCAL-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      this.notificationService.show(
-        'Owner Details Unlocked',
-        `Direct contact with property owner: ${this.ownerPhone}`,
-        'info'
-      );
       this.contactAgent.emit(this.property);
     } finally {
       this.bookingSubmitting = false;
@@ -1605,3 +1967,4 @@ export class PropertyModalComponent implements OnChanges {
     }, 2500);
   }
 }
+

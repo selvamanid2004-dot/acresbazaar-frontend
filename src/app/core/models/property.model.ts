@@ -77,6 +77,19 @@ export interface Property {
     verified: boolean;
     phone?: string;
   };
+  owner_contact?: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  ownerContact?: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  sellerName?: string;
+  sellerPhone?: string;
+  sellerEmail?: string;
 }
 
 export interface Category {
