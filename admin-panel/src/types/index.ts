@@ -152,6 +152,127 @@ export interface Reward {
   updatedAt?: string;
 }
 
+export interface RewardConfig {
+  id?: string;
+  pointsPerReward: number;
+  rewardAmountInInr: number;
+  pointsPerProperty: number;
+  conversionRateText: string;
+  ratePerPoint: number;
+}
+
+export interface PartnerBankDetail {
+  id?: string;
+  partnerEmail: string;
+  partnerName: string;
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  upiId?: string | null;
+  mobileNumber?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RewardClaim {
+  id: string;
+  claimNumber: string;
+  partnerEmail: string;
+  partnerName: string;
+  partnerPhone?: string | null;
+  partnerRole?: string | null;
+  redeemedPoints: number;
+  rewardAmount: number;
+  conversionRate?: string | null;
+  bankAccountHolder: string;
+  bankAccountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  upiId?: string | null;
+  mobileNumber?: string | null;
+  status: 'PENDING' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'REJECTED';
+  adminNotes?: string | null;
+  rejectionReason?: string | null;
+  paymentReference?: string | null;
+  paymentDate?: string | null;
+  processedByAdminId?: string | null;
+  processedByAdminName?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface PointsLedger {
+  id: string;
+  partnerEmail: string;
+  partnerName?: string | null;
+  partnerRole?: string | null;
+  propertyId?: string | null;
+  propertyTitle?: string | null;
+  claimId?: string | null;
+  transactionType: string;
+  points: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  description: string;
+  adminId?: string | null;
+  adminName?: string | null;
+  createdAt: string;
+}
+
+export interface PartnerWallet {
+  id: string;
+  partnerEmail: string;
+  partnerName?: string | null;
+  partnerPhone?: string | null;
+  partnerRole: string;
+  availablePoints: number;
+  reservedPoints: number;
+  totalEarnedPoints: number;
+  totalRedeemedPoints: number;
+  bankDetail?: PartnerBankDetail | null;
+  transactions?: PointsLedger[];
+  claims?: RewardClaim[];
+}
+
+export interface ClaimsSummary {
+  totalPartnerPointsIssued: number;
+  totalPointsRedeemed: number;
+  pendingClaimsCount: number;
+  totalRewardsPaid: number;
+  totalRewardAmountPaid: number;
+}
+
+export interface PartnerProfileData {
+  partner: {
+    name: string;
+    email: string;
+    mobile?: string;
+    role: string;
+    createdAt?: string;
+  };
+  wallet: {
+    availablePoints: number;
+    reservedPoints: number;
+    totalEarnedPoints: number;
+    totalRedeemedPoints: number;
+  };
+  bankDetail: PartnerBankDetail | null;
+  properties: Array<{
+    id: string;
+    title: string;
+    category: string;
+    location: string;
+    price: number;
+    status: string;
+    planType: string;
+    pointsAwarded: boolean;
+    createdAt: string;
+  }>;
+  ledger: PointsLedger[];
+  claims: RewardClaim[];
+}
+
 export interface Report {
   id: string;
   userId?: string | null;

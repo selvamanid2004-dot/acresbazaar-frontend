@@ -6,11 +6,12 @@ import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { getApiBaseUrl } from '../../../core/services/api-config';
+import { PartnerRewardsWalletComponent } from '../../../shared/components/partner-rewards-wallet/partner-rewards-wallet.component';
 
 @Component({
   selector: 'app-snap-property-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, PartnerRewardsWalletComponent],
   template: `
     <div class="dashboard-page-wrapper">
       
@@ -58,14 +59,17 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
             </div>
             <h1>Welcome, <span class="highlight-name">{{ spotterUser?.name || 'Partner' }}</span></h1>
             <p class="subtitle">
-              Track your uploaded TO-LET boards, check verification status in real time, and earn 100 points per upload to unlock your ₹1,000 cash reward!
+              Upload TO-LET signboards and property boards across your locality. Receive <strong>+20 Points</strong> for every property approved by Admin and claim direct cash payouts to your bank account!
             </p>
           </div>
           <div class="banner-reward-preview">
-            <div class="pts-badge-large">
-              <div class="pts-number">{{ totalPoints }}</div>
-              <div class="pts-text">REWARD POINTS</div>
-            </div>
+            <a routerLink="/snap-property/upload" class="btn-primary-banner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span>+ Snap New Property</span>
+            </a>
           </div>
         </div>
 
@@ -85,21 +89,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
             </div>
           </div>
 
-          <!-- 2. Points Earned -->
-          <div class="stat-card">
-            <div class="stat-icon icon-gold">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="8" r="7"></circle>
-                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-              </svg>
-            </div>
-            <div class="stat-meta">
-              <span class="stat-label">Points Earned (+100/Snap)</span>
-              <span class="stat-val" style="color: #d97706;">{{ totalPoints }} Pts</span>
-            </div>
-          </div>
-
-          <!-- 3. Pending Review -->
+          <!-- 2. Pending Review -->
           <div class="stat-card">
             <div class="stat-icon icon-amber">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -113,7 +103,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
             </div>
           </div>
 
-          <!-- 4. Approved Snaps -->
+          <!-- 3. Approved Snaps -->
           <div class="stat-card">
             <div class="stat-icon icon-emerald">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -126,151 +116,31 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
               <span class="stat-val" style="color: #059669;">{{ approvedCount }}</span>
             </div>
           </div>
-        </div>
 
-        <!-- REWARD SYSTEM & MILESTONE SECTION -->
-        <div class="reward-section-card">
-          <div class="reward-header">
-            <div class="reward-icon-badge">
+          <!-- 4. Rejected Snaps -->
+          <div class="stat-card">
+            <div class="stat-icon icon-red">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
               </svg>
             </div>
-            <div style="flex: 1;">
-              <h2 class="reward-title">Partner Reward Program · 1,000 Points Milestone</h2>
-              <p class="reward-desc">
-                Every property you upload earns you <strong>100 Points</strong>. 
-                Once your score reaches <strong>1,000 Points</strong> (10 uploads), unlock your <strong>₹1,000 Cash Reward</strong> directly disbursed by Admin to your bank account!
-              </p>
+            <div class="stat-meta">
+              <span class="stat-label">Rejected Snaps</span>
+              <span class="stat-val" style="color: #dc2626;">{{ rejectedCount }}</span>
             </div>
-          </div>
-
-          <!-- Progress Bar to 1000 Points -->
-          <div class="milestone-progress-wrap">
-            <div class="progress-labels">
-              <span><strong>Current Score:</strong> {{ totalPoints }} / 1000 Points</span>
-              <span><strong>Target:</strong> 10 Snaps (1,000 Pts) · ₹1,000 Cash</span>
-            </div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
-            </div>
-            <div class="progress-sub-info">
-              <span *ngIf="totalPoints < 1000">
-                🚀 Upload <strong>{{ Math.max(0, 10 - totalSnaps) }}</strong> more TO-LET board(s) to reach 1,000 points and unlock reward payout!
-              </span>
-              <span *ngIf="totalPoints >= 1000" style="color: #059669; font-weight: 700;">
-                🎉 1,000 POINTS MILESTONE ACHIEVED! You are eligible for ₹1,000 cash reward disbursement.
-              </span>
-            </div>
-          </div>
-
-          <!-- Existing Active Claim Banner -->
-          <div class="active-claim-box" *ngIf="existingClaim">
-            <div class="claim-status-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="claim-icon">🏦</span>
-                <span style="font-weight: 700; color: #0f172a; font-size: 1rem;">Reward Payout Claim Status</span>
-              </div>
-              <span class="badge" [ngClass]="{
-                'badge-pending': existingClaim.status === 'PENDING',
-                'badge-approved': existingClaim.status === 'APPROVED',
-                'badge-paid': existingClaim.status === 'PAID',
-                'badge-rejected': existingClaim.status === 'REJECTED'
-              }">
-                {{ existingClaim.status === 'PAID' ? 'PAID · ₹1,000 TRANSFERRED' : existingClaim.status }}
-              </span>
-            </div>
-
-            <div class="claim-details-grid">
-              <div>
-                <span class="detail-label">Beneficiary Name</span>
-                <span class="detail-val">{{ existingClaim.userName }}</span>
-              </div>
-              <div>
-                <span class="detail-label">Milestone Points</span>
-                <span class="detail-val" style="color: #d97706; font-weight: 700;">{{ existingClaim.points }} Pts</span>
-              </div>
-              <div>
-                <span class="detail-label">Reward Amount</span>
-                <span class="detail-val" style="color: #059669; font-weight: 700;">₹{{ existingClaim.amount }}</span>
-              </div>
-              <div>
-                <span class="detail-label">Request Date</span>
-                <span class="detail-val">{{ existingClaim.createdAt | date:'mediumDate' }}</span>
-              </div>
-              <div style="grid-column: span 2;">
-                <span class="detail-label">Bank Account & IFSC Record</span>
-                <span class="detail-val" style="font-family: monospace; font-size: 0.88rem;">{{ existingClaim.reason }}</span>
-              </div>
-            </div>
-
-            <div class="claim-footer-msg" *ngIf="existingClaim.status === 'PENDING'">
-              ⏳ Your bank details have been submitted to the Admin Panel. The admin is verifying your 10 snapped properties and will disburse payment directly to your account.
-            </div>
-            <div class="claim-footer-msg" *ngIf="existingClaim.status === 'PAID'" style="background: #dcfce7; color: #166534;">
-              ✅ Congratulations! Your reward of ₹1,000 has been transferred by Admin. Keep snapping to earn more rewards!
-            </div>
-          </div>
-
-          <!-- Bank Details Form (When 1000 points reached and no active claim) -->
-          <div class="bank-form-container" *ngIf="totalPoints >= 1000 && (!existingClaim || existingClaim.status === 'REJECTED')">
-            <div class="bank-form-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                <line x1="1" y1="10" x2="23" y2="10"></line>
-              </svg>
-              <span>Submit Bank Details to Receive ₹1,000 Reward</span>
-            </div>
-
-            <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 1.25rem;">
-              Please enter your bank account details accurately so the Admin can initiate your ₹1,000 reward transfer.
-            </p>
-
-            <form (ngSubmit)="submitBankDetails()" class="bank-form" novalidate>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label">Account Holder Name <span class="required">*</span></label>
-                  <input type="text" [(ngModel)]="bankData.holderName" name="holderName" placeholder="As per bank passbook" required class="form-control" />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Bank Name <span class="required">*</span></label>
-                  <input type="text" [(ngModel)]="bankData.bankName" name="bankName" placeholder="e.g. State Bank of India, HDFC Bank" required class="form-control" />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Account Number <span class="required">*</span></label>
-                  <input type="password" [(ngModel)]="bankData.accountNo" name="accountNo" placeholder="Enter bank account number" required class="form-control" />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Confirm Account Number <span class="required">*</span></label>
-                  <input type="text" [(ngModel)]="bankData.confirmAccountNo" name="confirmAccountNo" placeholder="Re-enter bank account number" required class="form-control" />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">IFSC Code <span class="required">*</span></label>
-                  <input type="text" [(ngModel)]="bankData.ifsc" name="ifsc" placeholder="e.g. SBIN0001234" required class="form-control" style="text-transform: uppercase;" />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">UPI ID (Optional)</label>
-                  <input type="text" [(ngModel)]="bankData.upiId" name="upiId" placeholder="e.g. yourname@okhdfcbank" class="form-control" />
-                </div>
-              </div>
-
-              <div class="alert-banner error-banner" *ngIf="bankErrorMessage">
-                {{ bankErrorMessage }}
-              </div>
-
-              <button type="submit" class="btn-submit-bank" [disabled]="submittingClaim">
-                <span *ngIf="!submittingClaim">Submit Bank Details & Request ₹1,000 Reward</span>
-                <span *ngIf="submittingClaim">Submitting to Admin Panel...</span>
-              </button>
-            </form>
           </div>
         </div>
+
+        <!-- PARTNER POINTS WALLET & REWARD CLAIM COMPONENT -->
+        <app-partner-rewards-wallet 
+          *ngIf="spotterUser?.email"
+          [userEmail]="spotterUser?.email"
+          [userName]="spotterUser?.name"
+          [userPhone]="spotterUser?.mobile"
+          [userRole]="'SPOTTER'"
+        ></app-partner-rewards-wallet>
 
         <!-- MY SNAPS STATUS SECTION -->
         <div class="my-snaps-section">

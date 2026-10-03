@@ -71,13 +71,13 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </div>
-            <h2>TO-LET Board Uploaded Successfully!</h2>
+            <h2>Property Uploaded Successfully!</h2>
             <div style="display: inline-block; background: #fef3c7; border: 1.5px solid #f59e0b; color: #b45309; padding: 6px 14px; border-radius: 20px; font-weight: 800; margin-bottom: 1rem; font-size: 0.95rem;">
-              +100 REWARD POINTS EARNED 🏆
+              ⏳ STATUS: PENDING ADMIN APPROVAL
             </div>
             <p>
-              Your snap has been transmitted to the <strong>Admin Panel Common People Module</strong>. 
-              Our verification team will review the signboard details and publish it.
+              Your property submission has been sent to the Admin Panel for review. 
+              <strong>Once Admin approves the property, +20 Reward Points will be credited directly to your Points Wallet!</strong>
             </p>
             <div class="success-actions">
               <a routerLink="/snap-property/dashboard" class="btn-primary" style="background: #0f172a;">

@@ -13,7 +13,11 @@ import {
   ChatMessage,
   CalendarEvent, 
   WebsiteSetting,
-  PropertyBooking 
+  PropertyBooking,
+  RewardClaim,
+  RewardConfig,
+  ClaimsSummary,
+  PartnerProfileData
 } from '../types';
 import {
   DEMO_ADMIN_USER,
@@ -790,7 +794,77 @@ export const api = {
     return res.plan || res;
   },
 
-  // Rewards
+  // Rewards & Reward Claims
+  async getRewardConfig(): Promise<RewardConfig> {
+    try {
+      const res: any = await request('/rewards/config');
+      return res.config || { pointsPerReward: 500, rewardAmountInInr: 500, pointsPerProperty: 20, conversionRateText: '500 Points = ₹500', ratePerPoint: 1 };
+    } catch (err: any) {
+      return { pointsPerReward: 500, rewardAmountInInr: 500, pointsPerProperty: 20, conversionRateText: '500 Points = ₹500', ratePerPoint: 1 };
+    }
+  },
+
+  async updateRewardConfig(data: { pointsPerReward?: number; rewardAmountInInr?: number; pointsPerProperty?: number }): Promise<{ config: RewardConfig; message: string }> {
+    const res: any = await request('/rewards/config', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res;
+  },
+
+  async getRewardClaims(query?: { status?: string; partner?: string; search?: string; startDate?: string; endDate?: string }): Promise<{ claims: RewardClaim[]; summary: ClaimsSummary; config: RewardConfig }> {
+    try {
+      const params = new URLSearchParams();
+      if (query?.status && query.status !== 'ALL') params.set('status', query.status);
+      if (query?.partner) params.set('partner', query.partner);
+      if (query?.search) params.set('search', query.search);
+      if (query?.startDate) params.set('startDate', query.startDate);
+      if (query?.endDate) params.set('endDate', query.endDate);
+
+      const q = params.toString() ? `?${params.toString()}` : '';
+      const res: any = await request(`/rewards/claims${q}`);
+      return {
+        claims: res.claims || [],
+        summary: res.summary || {
+          totalPartnerPointsIssued: 0,
+          totalPointsRedeemed: 0,
+          pendingClaimsCount: 0,
+          totalRewardsPaid: 0,
+          totalRewardAmountPaid: 0,
+        },
+        config: res.config || { pointsPerReward: 500, rewardAmountInInr: 500, pointsPerProperty: 20, conversionRateText: '500 Points = ₹500', ratePerPoint: 1 }
+      };
+    } catch (err: any) {
+      if (err.message?.includes('BACKEND_OFFLINE')) {
+        return {
+          claims: [],
+          summary: { totalPartnerPointsIssued: 0, totalPointsRedeemed: 0, pendingClaimsCount: 0, totalRewardsPaid: 0, totalRewardAmountPaid: 0 },
+          config: { pointsPerReward: 500, rewardAmountInInr: 500, pointsPerProperty: 20, conversionRateText: '500 Points = ₹500', ratePerPoint: 1 }
+        };
+      }
+      throw err;
+    }
+  },
+
+  async getPartnerProfile(email: string): Promise<PartnerProfileData> {
+    const res: any = await request(`/rewards/partner-profile/${encodeURIComponent(email)}`);
+    return res;
+  },
+
+  async processRewardClaim(id: string, data: {
+    status: 'PROCESSING' | 'APPROVED' | 'PAID' | 'REJECTED';
+    paymentReference?: string;
+    paymentDate?: string;
+    adminNotes?: string;
+    rejectionReason?: string;
+  }): Promise<{ success: boolean; message: string; claim: RewardClaim }> {
+    const res: any = await request(`/rewards/claims/${id}/process`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res;
+  },
+
   async getRewards(status?: string): Promise<Reward[]> {
     if (isDemoSession()) return DEMO_REWARDS;
     try {

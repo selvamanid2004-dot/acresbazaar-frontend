@@ -6,11 +6,12 @@ import { PropertyService } from '../../../core/services/property.service';
 import { Property } from '../../../core/models/property.model';
 import { SellerAccount } from '../../../core/models/buyer.model';
 import { getApiBaseUrl } from '../../../core/services/api-config';
+import { PartnerRewardsWalletComponent } from '../../../shared/components/partner-rewards-wallet/partner-rewards-wallet.component';
 
 @Component({
   selector: 'app-seller-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, PartnerRewardsWalletComponent],
   template: `
     <div class="dashboard-page">
       <!-- Top Banner / Greeting -->
@@ -142,6 +143,15 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
         </div>
         <a routerLink="/seller/add-property" class="platinum-cta">Post New Platinum Property →</a>
       </div>
+
+      <!-- Partner Points Wallet & Reward Claim Section -->
+      <app-partner-rewards-wallet
+        *ngIf="seller()?.email"
+        [userEmail]="seller()?.email || ''"
+        [userName]="seller()?.fullName || 'Seller Partner'"
+        [userPhone]="seller()?.phone || ''"
+        [userRole]="'SELLER'"
+      ></app-partner-rewards-wallet>
 
       <!-- My Properties Section -->
       <div class="content-section">

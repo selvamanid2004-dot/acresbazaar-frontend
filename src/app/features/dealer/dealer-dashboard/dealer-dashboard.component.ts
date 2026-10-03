@@ -33,10 +33,12 @@ interface DealerRewardSummary {
   history: any[];
 }
 
+import { PartnerRewardsWalletComponent } from '../../../shared/components/partner-rewards-wallet/partner-rewards-wallet.component';
+
 @Component({
   selector: 'app-dealer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PartnerRewardsWalletComponent],
   template: `
     <div class="dashboard-page">
       <!-- Top Banner / Greeting -->
@@ -626,127 +628,13 @@ interface DealerRewardSummary {
       <!-- TAB 5: DEALER REWARDS SYSTEM -->
       <!-- ========================================================================= -->
       <div *ngIf="activeTab() === 'rewards'" class="tab-pane">
-        <div class="rewards-banner">
-          <div class="rewards-hero">
-            <div class="rewards-icon-wrap">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-            </div>
-            <div>
-              <h2>Dealer Reward & Commission Milestone System</h2>
-              <p>Earn reward points every time you list properties or buy inventory under Gold/Premium plans. Every 1,000 points unlocks a ₹1,000 direct commission bonus.</p>
-            </div>
-          </div>
-
-          <!-- Points Display Card -->
-          <div class="points-card">
-            <div class="points-header">
-              <span>AVAILABLE REWARD POINTS</span>
-              <span class="pts-badge">1 Pt = ₹1</span>
-            </div>
-            <div class="points-value">
-              {{ rewardsSummary().availablePoints }}
-              <span class="pts-unit">Points</span>
-            </div>
-            <div class="points-cash">Cash Equivalent: <strong>₹{{ rewardsSummary().availablePoints | number }}</strong></div>
-
-            <!-- Progress to next 1000 Milestone -->
-            <div class="milestone-progress">
-              <div class="progress-labels">
-                <span>Milestone Progress</span>
-                <span>{{ rewardsSummary().availablePoints % 1000 }} / 1000 pts</span>
-              </div>
-              <div class="progress-bar-bg">
-                <div class="progress-bar-fill" [style.width.%]="getProgressPercent()"></div>
-              </div>
-            </div>
-
-            <!-- Claim Button / Status -->
-            <div *ngIf="rewardsSummary().activeClaim" class="claim-active-notice">
-              <span class="status-dot"></span>
-              <span>Active Payout Request Under Review: <strong>{{ rewardsSummary().activeClaim?.rewardTitle }}</strong> ({{ rewardsSummary().activeClaim?.status }})</span>
-            </div>
-
-            <div *ngIf="!rewardsSummary().activeClaim" class="claim-action-wrap">
-              <button 
-                (click)="openClaimModal()" 
-                class="btn-claim-reward" 
-                [disabled]="rewardsSummary().availablePoints < 1000"
-                [title]="rewardsSummary().availablePoints < 1000 ? 'Earn at least 1,000 points to claim reward' : 'Claim ₹1,000 reward'"
-              >
-                Claim ₹1,000 Reward Payout
-              </button>
-              <small *ngIf="rewardsSummary().availablePoints < 1000" class="text-muted">
-                {{ 1000 - (rewardsSummary().availablePoints % 1000) }} more points needed to claim
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <!-- How it works cards -->
-        <div class="rules-grid">
-          <div class="rule-card">
-            <div class="rule-pts">+250 PTS</div>
-            <h4>List a Property for Sale</h4>
-            <p>Every time your agency lists a commercial or residential property for sale on AcresBazaar, earn +250 points upon submission.</p>
-          </div>
-
-          <div class="rule-card highlight">
-            <div class="rule-pts gold">+500 PTS</div>
-            <h4>Buy / Book Property</h4>
-            <p>Book or purchase any property under the Gold Plan or Premium Plan to automatically earn +500 reward points.</p>
-          </div>
-
-          <div class="rule-card">
-            <div class="rule-pts green">₹1,000</div>
-            <h4>Direct Payout</h4>
-            <p>Redeem your points anytime you hit 1,000 points milestone. Payouts are transferred directly to your bank account or UPI.</p>
-          </div>
-        </div>
-
-        <!-- Reward Activity History -->
-        <div class="section-card" style="margin-top: 32px;">
-          <div class="card-header">
-            <h3>Reward Points History</h3>
-            <span class="text-muted">Total Points Earned: {{ rewardsSummary().totalEarned }} pts</span>
-          </div>
-
-          <div *ngIf="rewardsSummary().history.length === 0" class="mini-empty">
-            <p>No reward transactions recorded yet. List a property or book inventory to begin earning points.</p>
-          </div>
-
-          <div *ngIf="rewardsSummary().history.length > 0" class="table-container">
-            <table class="dealer-table">
-              <thead>
-                <tr>
-                  <th>Activity / Reward</th>
-                  <th>Property / Reference</th>
-                  <th>Points</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of rewardsSummary().history">
-                  <td>
-                    <strong>{{ item.rewardTitle }}</strong>
-                  </td>
-                  <td>{{ item.propertyTitle || 'Agency Incentive' }}</td>
-                  <td [ngClass]="item.points > 0 ? 'text-gold font-bold' : 'text-danger font-bold'">
-                    {{ item.points > 0 ? '+' : '' }}{{ item.points }} pts
-                  </td>
-                  <td class="text-muted">{{ item.date | date:'mediumDate' }}</td>
-                  <td>
-                    <span class="status-pill" [ngClass]="item.status.toLowerCase()">
-                      {{ item.status }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <app-partner-rewards-wallet
+          *ngIf="dealer()?.email"
+          [userEmail]="dealer()?.email || ''"
+          [userName]="dealer()?.businessName || dealer()?.fullName || 'Dealer Partner'"
+          [userPhone]="dealer()?.phone || ''"
+          [userRole]="'DEALER'"
+        ></app-partner-rewards-wallet>
       </div>
 
       <!-- ========================================================================= -->
