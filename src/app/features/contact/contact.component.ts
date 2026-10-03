@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NotificationService } from '../../shared/services/notification.service';
 import { NavStateService } from '../../core/services/nav-state.service';
-import { getApiBaseUrl } from '../../core/services/api-config';
+import { getApiBaseUrl, resolveImageUrl } from '../../core/services/api-config';
 
 @Component({
   selector: 'app-contact',
@@ -438,6 +438,13 @@ export class ContactComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadContactSettings();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'aura_settings_updated' || e.key === 'aura_banners_updated') {
+          this.loadContactSettings();
+        }
+      });
+    }
   }
 
   loadContactSettings(): void {
@@ -446,8 +453,9 @@ export class ContactComponent implements OnInit {
       .then(data => {
         if (data?.settings) {
           const s = data.settings;
-          // Always update — clear to '' if deleted, set new URL if present
-          this.contactBannerImage.set(s.contact_banner_img ? `url("${s.contact_banner_img}")` : '');
+          // Always update with fully qualified backend URL
+          const resolved = s.contact_banner_img ? resolveImageUrl(s.contact_banner_img) : '';
+          this.contactBannerImage.set(resolved ? `url("${resolved}")` : '');
           if (s.contact_tag) this.contactTag.set(s.contact_tag);
           if (s.contact_title) this.contactTitle.set(s.contact_title);
           if (s.contact_subtitle) this.contactSubtitle.set(s.contact_subtitle);

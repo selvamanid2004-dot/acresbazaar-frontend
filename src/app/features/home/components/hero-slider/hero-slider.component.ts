@@ -416,6 +416,7 @@ export class HeroSliderComponent implements OnInit, OnDestroy {
   private isPaused = false;
 
   ngOnInit() {
+    this.propertyService.syncHomeSettingsFromBackend();
     this.startAutoSlide();
   }
 

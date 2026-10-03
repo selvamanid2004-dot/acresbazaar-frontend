@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavStateService } from '../../core/services/nav-state.service';
-import { getApiBaseUrl } from '../../core/services/api-config';
+import { getApiBaseUrl, resolveImageUrl } from '../../core/services/api-config';
 
 @Component({
   selector: 'app-about',
@@ -475,6 +475,13 @@ export class AboutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAboutContent();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'aura_settings_updated' || e.key === 'aura_banners_updated') {
+          this.loadAboutContent();
+        }
+      });
+    }
   }
 
   loadAboutContent(): void {
@@ -483,8 +490,9 @@ export class AboutComponent implements OnInit {
       .then(data => {
         if (data?.settings) {
           const bannerUrl = data.settings.about_banner_img;
-          // Always update — clear to '' if deleted (empty string) or set new URL
-          this.aboutBannerImage.set(bannerUrl ? `url("${bannerUrl}")` : '');
+          // Always update with fully qualified backend URL
+          const resolved = bannerUrl ? resolveImageUrl(bannerUrl) : '';
+          this.aboutBannerImage.set(resolved ? `url("${resolved}")` : '');
 
           this.aboutData.set({
             about_tag: data.settings.about_tag || 'COMPANY PROFILE',

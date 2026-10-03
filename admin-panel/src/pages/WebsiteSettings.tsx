@@ -118,6 +118,11 @@ export const WebsiteSettings: React.FC = () => {
       }
 
       await api.updateSettings(payload);
+      localStorage.setItem('aura_settings_updated', Date.now().toString());
+      localStorage.setItem('aura_banners_updated', Date.now().toString());
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'));
+      }
       setSuccessMsg(`CMS changes for ${activeTab.toUpperCase()} saved! Changes are live on the public website.`);
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: any) {
@@ -240,6 +245,7 @@ export const WebsiteSettings: React.FC = () => {
       await api.toggleBannerStatus(banner.id, newStatus);
       setBanners((prev) => prev.map((b) => (b.id === banner.id ? { ...b, status: newStatus as any } : b)));
       localStorage.setItem('aura_banners_updated', Date.now().toString());
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
       setSuccessMsg(`Banner "${banner.title}" marked as ${newStatus}`);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
@@ -253,6 +259,7 @@ export const WebsiteSettings: React.FC = () => {
       await api.deleteBanner(banner.id);
       setBanners((prev) => prev.filter((b) => b.id !== banner.id));
       localStorage.setItem('aura_banners_updated', Date.now().toString());
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
       setSuccessMsg(`Banner "${banner.title}" deleted successfully`);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
@@ -275,6 +282,7 @@ export const WebsiteSettings: React.FC = () => {
     try {
       await api.reorderBanners(orderList);
       localStorage.setItem('aura_banners_updated', Date.now().toString());
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
     } catch (err: any) {
       console.error('Failed to reorder banners', err);
     }
@@ -346,6 +354,8 @@ export const WebsiteSettings: React.FC = () => {
         setSuccessMsg(`✅ New banner created successfully! Live on public website.`);
       }
       localStorage.setItem('aura_banners_updated', Date.now().toString());
+      localStorage.setItem('aura_settings_updated', Date.now().toString());
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
       setShowBannerModal(false);
       setEditingBanner(null);
       setTimeout(() => setSuccessMsg(''), 4000);

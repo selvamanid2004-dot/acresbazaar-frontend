@@ -793,73 +793,80 @@ export class PropertyService {
   }
 
   syncHomeSettingsFromBackend(): void {
-    // 1. Fetch dynamic active banners from database in configured sort order
-    fetch(`${getApiBaseUrl()}/banners/public?_t=${Date.now()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data && Array.isArray(data.banners) && data.banners.length > 0) {
-          const dynamicSlides: HeroSlide[] = data.banners.map((b: any, idx: number) => ({
+    // 1. Fetch dynamic active banners and home settings from database
+    const t = Date.now();
+    Promise.all([
+      fetch(`${getApiBaseUrl()}/banners/public?_t=${t}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${getApiBaseUrl()}/settings/group/home?_t=${t}`).then(r => r.ok ? r.json() : null).catch(() => null)
+    ]).then(([bannerData, homeData]) => {
+      const homeSettings = homeData?.settings || {};
+      const customTitle = homeSettings.hero_title || homeSettings.hero_headline;
+      const customSubtitle = homeSettings.hero_subtitle || homeSettings.hero_subheading;
+      const customBg = homeSettings.hero_image ? resolveImageUrl(homeSettings.hero_image) : null;
+      const customBadge = homeSettings.hero_badge;
+      const customPrice = homeSettings.hero_price_label;
+
+      if (bannerData && Array.isArray(bannerData.banners) && bannerData.banners.length > 0) {
+        const dynamicSlides: HeroSlide[] = bannerData.banners.map((b: any, idx: number) => {
+          let slideTitle = b.title || "Find a Property You'll Love";
+          let slideDesc = b.subtitle || 'Discover premium verified properties in top locations.';
+          let slideImg = resolveImageUrl(b.image) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80';
+          let slideBadge = b.badge || 'Exclusive';
+
+          // If first slide and custom headline provided in CMS settings, overlay it
+          if (idx === 0) {
+            if (customTitle && customTitle !== "Find a Property You'll Love") slideTitle = customTitle;
+            if (customSubtitle) slideDesc = customSubtitle;
+            if (customBg) slideImg = customBg;
+            if (customBadge) slideBadge = customBadge;
+          }
+
+          return {
             id: idx + 1,
             categoryLabel: (b.category || 'FEATURED').toUpperCase(),
-            badge: b.badge || 'Exclusive',
+            badge: slideBadge,
             titlePrefix: '',
-            titleHighlight: b.title || "Find a Property You'll Love",
+            titleHighlight: slideTitle,
             titleSuffix: '',
-            description: b.subtitle || 'Discover premium verified properties in top locations.',
-            priceStarting: 'Starting at Verified Price',
+            description: slideDesc,
+            priceStarting: (idx === 0 && customPrice) ? customPrice : 'Starting at Verified Price',
             location: 'Prime Locations',
-            imageUrl: resolveImageUrl(b.image) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80',
+            imageUrl: slideImg,
             ctaText: b.buttonText || 'Explore Now',
             secondaryCtaText: 'View Properties'
-          }));
-          this.heroSlides.set(dynamicSlides);
-        } else {
-          // Fallback to website_settings home group if no banner records
-          this.fallbackHomeSettings();
+          };
+        });
+        this.heroSlides.set(dynamicSlides);
+      } else if (customTitle || customSubtitle || customBg || customBadge || customPrice) {
+        const current = this.heroSlides();
+        const updated = [...current];
+        if (updated.length > 0) {
+          updated[0] = {
+            ...updated[0],
+            titleHighlight: customTitle || updated[0].titleHighlight,
+            description: customSubtitle || updated[0].description,
+            imageUrl: customBg || updated[0].imageUrl,
+            badge: customBadge || updated[0].badge,
+            priceStarting: customPrice || updated[0].priceStarting
+          };
+          this.heroSlides.set(updated);
         }
-      })
-      .catch(() => {
-        this.fallbackHomeSettings();
-      });
+      }
+    }).catch(err => {
+      console.warn('Could not sync dynamic banners:', err);
+    });
 
     // Listen for real-time banner update events from admin panel
     if (typeof window !== 'undefined') {
+      const handleUpdate = () => this.syncHomeSettingsFromBackend();
       window.addEventListener('storage', (e) => {
-        if (e.key === 'aura_banners_updated') {
-          this.syncHomeSettingsFromBackend();
+        if (e.key === 'aura_banners_updated' || e.key === 'aura_settings_updated') {
+          handleUpdate();
         }
       });
+      window.addEventListener('aura_banners_updated', handleUpdate);
+      window.addEventListener('aura_settings_updated', handleUpdate);
     }
-  }
-
-  private fallbackHomeSettings(): void {
-    fetchJsonCached<any>(`${getApiBaseUrl()}/settings/group/home`, 60000)
-      .then(data => {
-        if (data && data.settings) {
-          const headline = data.settings.hero_title || data.settings.hero_headline;
-          const subtitle = data.settings.hero_subtitle || data.settings.hero_subheading;
-          const bgImg = data.settings.hero_image ? resolveImageUrl(data.settings.hero_image) : null;
-          const badge = data.settings.hero_badge;
-          const price = data.settings.hero_price_label;
-
-          if (headline || subtitle || bgImg || badge || price) {
-            const current = this.heroSlides();
-            const updated = [...current];
-            if (updated.length > 0) {
-              updated[0] = {
-                ...updated[0],
-                titleHighlight: headline || updated[0].titleHighlight,
-                description: subtitle || updated[0].description,
-                imageUrl: bgImg || updated[0].imageUrl,
-                badge: badge || updated[0].badge,
-                priceStarting: price || updated[0].priceStarting
-              };
-              this.heroSlides.set(updated);
-            }
-          }
-        }
-      })
-      .catch(() => {});
   }
 
   // Live Plans from PostgreSQL

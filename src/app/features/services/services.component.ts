@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavStateService } from '../../core/services/nav-state.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { getApiBaseUrl } from '../../core/services/api-config';
+import { getApiBaseUrl, resolveImageUrl } from '../../core/services/api-config';
 
 @Component({
   selector: 'app-services',
@@ -406,6 +406,13 @@ export class ServicesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadServices();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'aura_settings_updated' || e.key === 'aura_banners_updated') {
+          this.loadServices();
+        }
+      });
+    }
   }
 
   loadServices(): void {
@@ -414,8 +421,9 @@ export class ServicesComponent implements OnInit {
       .then(data => {
         if (data?.settings) {
           const bannerUrl = data.settings.service_banner_img;
-          // Always update — clear to '' if deleted, set new URL if present
-          this.servicesBannerImage.set(bannerUrl ? `url("${bannerUrl}")` : '');
+          // Always update with fully qualified backend URL
+          const resolved = bannerUrl ? resolveImageUrl(bannerUrl) : '';
+          this.servicesBannerImage.set(resolved ? `url("${resolved}")` : '');
 
           if (data.settings.services_tag) {
             this.servicesTag.set(data.settings.services_tag);

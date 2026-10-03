@@ -23,16 +23,17 @@ export function resolveImageUrl(url: string | null | undefined): string {
   if (!url || typeof url !== 'string' || !url.trim()) {
     return '';
   }
-  const trimmed = url.trim();
+  let trimmed = url.trim().replace(/\\/g, '/');
   const backendBase = getApiBaseUrl().replace(/\/api$/, '');
 
-  // If relative uploads path
-  if (trimmed.startsWith('/uploads/')) {
-    return `${backendBase}${trimmed}`;
+  // If starts with /uploads/ or uploads/
+  if (trimmed.startsWith('/uploads/') || trimmed.startsWith('uploads/')) {
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `${backendBase}${cleanPath}`;
   }
 
   // If hardcoded localhost URL but running against remote/different origin
-  if (trimmed.includes('localhost:5001/uploads/')) {
+  if (trimmed.includes('localhost:5001/uploads/') || trimmed.includes('localhost:5000/uploads/') || trimmed.includes('localhost:3000/uploads/')) {
     const uploadPath = trimmed.substring(trimmed.indexOf('/uploads/'));
     return `${backendBase}${uploadPath}`;
   }
