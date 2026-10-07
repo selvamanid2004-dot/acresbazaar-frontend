@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, Input } from '@angular/core';
+import { Component, OnInit, inject, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
@@ -533,12 +533,15 @@ export type RoleOption = 'Buyer' | 'Seller' | 'Dealer' | 'Partner';
     }
   `]
 })
-export class CommonRegisterComponent implements OnInit {
+export class CommonRegisterComponent implements OnInit, OnChanges {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
+
+  // Optional Input from wrapper components
+  @Input() role?: RoleOption | string;
 
   // Form Fields
   name = '';
@@ -554,16 +557,26 @@ export class CommonRegisterComponent implements OnInit {
   returnUrl = '';
 
   ngOnInit(): void {
+    if (this.role) {
+      this.setRoleFromParam(this.role);
+    }
+
     this.route.queryParams.subscribe(params => {
       this.returnUrl = params['returnUrl'] || '';
-      if (params['role']) {
+      if (params['role'] && !this.role) {
         this.setRoleFromParam(params['role']);
       }
     });
 
     const dataRole = this.route.snapshot.data['role'];
-    if (dataRole) {
+    if (dataRole && !this.role) {
       this.setRoleFromParam(dataRole);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['role'] && this.role) {
+      this.setRoleFromParam(this.role);
     }
   }
 
