@@ -45,40 +45,47 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
         <div class="container">
           <div class="auth-card-container">
             
-            <!-- Interactive Role Switcher Tabs -->
-            <div class="role-tabs-bar">
-              <button 
-                type="button" 
-                class="role-tab-btn" 
-                [class.active]="currentRole === 'BUYER'" 
-                (click)="switchRole('BUYER')">
-                <span class="tab-icon">👤</span>
-                <span class="tab-label">Buyer</span>
-              </button>
-              <button 
-                type="button" 
-                class="role-tab-btn" 
-                [class.active]="currentRole === 'SELLER'" 
-                (click)="switchRole('SELLER')">
-                <span class="tab-icon">🏠</span>
-                <span class="tab-label">Seller</span>
-              </button>
-              <button 
-                type="button" 
-                class="role-tab-btn" 
-                [class.active]="currentRole === 'DEALER'" 
-                (click)="switchRole('DEALER')">
-                <span class="tab-icon">🏢</span>
-                <span class="tab-label">Dealer</span>
-              </button>
-              <button 
-                type="button" 
-                class="role-tab-btn" 
-                [class.active]="currentRole === 'SPOTTER'" 
-                (click)="switchRole('SPOTTER')">
-                <span class="tab-icon">📸</span>
-                <span class="tab-label">Partner</span>
-              </button>
+            <!-- Role Selection Segment / Interactive Tabs -->
+            <div class="role-selector-wrapper">
+              <div class="role-selector-label">SELECT ACCOUNT TYPE</div>
+              <div class="role-tabs-bar">
+                <button 
+                  type="button" 
+                  class="role-tab-btn" 
+                  [class.active]="currentRole === 'BUYER'" 
+                  (click)="switchRole('BUYER')">
+                  <span class="tab-icon">👤</span>
+                  <span class="tab-label">Buyer</span>
+                  <span class="tab-desc">Search & Buy</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="role-tab-btn" 
+                  [class.active]="currentRole === 'SELLER'" 
+                  (click)="switchRole('SELLER')">
+                  <span class="tab-icon">🏠</span>
+                  <span class="tab-label">Seller</span>
+                  <span class="tab-desc">Post & Sell</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="role-tab-btn" 
+                  [class.active]="currentRole === 'DEALER'" 
+                  (click)="switchRole('DEALER')">
+                  <span class="tab-icon">🏢</span>
+                  <span class="tab-label">Dealer</span>
+                  <span class="tab-desc">Agencies & Hub</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="role-tab-btn" 
+                  [class.active]="currentRole === 'SPOTTER'" 
+                  (click)="switchRole('SPOTTER')">
+                  <span class="tab-icon">📸</span>
+                  <span class="tab-label">Partner</span>
+                  <span class="tab-desc">Spot & Earn</span>
+                </button>
+              </div>
             </div>
 
             <!-- Dynamic Header -->
@@ -86,6 +93,23 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
               <span class="auth-eyebrow" [ngClass]="eyebrowClass">{{ dynamicEyebrow }}</span>
               <h1 class="auth-title">{{ dynamicTitle }}</h1>
               <p class="auth-sub">{{ dynamicSubtitle }}</p>
+            </div>
+
+            <!-- Role Conflict Warning Banner -->
+            <div *ngIf="activeConflictRole" class="alert-banner conflict-banner">
+              <div class="banner-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <div class="banner-body">
+                <div><strong>Active {{ activeConflictRole }} Session:</strong> You are currently signed in as a {{ activeConflictRole }}. Please logout before creating a new account.</div>
+                <button type="button" class="btn-conflict-action" (click)="logoutConflict()">
+                  Logout {{ activeConflictRole }}
+                </button>
+              </div>
             </div>
 
             <!-- Error Banner -->
@@ -106,10 +130,31 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
               <span>{{ successMessage }}</span>
             </div>
 
-            <!-- Common Registration Form -->
+            <!-- Single Consolidated Registration Form -->
             <form (ngSubmit)="onSubmit()" #regForm="ngForm" class="auth-form" novalidate>
               
-              <!-- 1. Full Name / Business Name -->
+              <!-- DEALER SPECIFIC: Business / Agency Name -->
+              <div class="form-group" *ngIf="currentRole === 'DEALER'">
+                <label for="dealerBusinessName" class="form-label">
+                  Agency / Business Legal Name <span class="required">*</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                  </svg>
+                  <input 
+                    type="text" 
+                    id="dealerBusinessName" 
+                    name="dealerBusinessName" 
+                    [(ngModel)]="dealerBusinessName" 
+                    required 
+                    placeholder="e.g. Prestige Realty Advisors / Apex Real Estate" 
+                    class="form-control" />
+                </div>
+              </div>
+
+              <!-- 1. Full Name / Contact Person Name -->
               <div class="form-group">
                 <label for="fullName" class="form-label">
                   {{ nameFieldLabel }} <span class="required">*</span>
@@ -172,10 +217,10 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
                 </div>
               </div>
 
-              <!-- 4. City (Optional / For Spotter & Regional operations) -->
-              <div class="form-group" *ngIf="currentRole === 'SPOTTER' || currentRole === 'DEALER'">
+              <!-- ROLE DYNAMIC FIELD: Location / Operating City -->
+              <div class="form-group" *ngIf="currentRole === 'SELLER' || currentRole === 'DEALER' || currentRole === 'SPOTTER'">
                 <label for="city" class="form-label">
-                  City / Primary Operating Location <span class="required">*</span>
+                  {{ cityFieldLabel }} <span class="required" *ngIf="currentRole === 'SELLER' || currentRole === 'SPOTTER'">*</span>
                 </label>
                 <div class="input-wrap">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
@@ -187,12 +232,98 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
                     id="city" 
                     name="city" 
                     [(ngModel)]="city" 
-                    placeholder="e.g. Chennai, Bangalore, Coimbatore" 
+                    [placeholder]="cityFieldPlaceholder" 
                     class="form-control" />
                 </div>
               </div>
 
-              <!-- 5. Password -->
+              <!-- BUYER SPECIFIC: Preferred Property Category -->
+              <div class="form-group" *ngIf="currentRole === 'BUYER'">
+                <label for="buyerCategory" class="form-label">
+                  Preferred Property Category <span class="optional-tag">(Optional)</span>
+                </label>
+                <div class="input-wrap select-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  </svg>
+                  <select 
+                    id="buyerCategory" 
+                    name="buyerCategory" 
+                    [(ngModel)]="buyerCategory" 
+                    class="form-control form-select">
+                    <option value="">All Residential Categories</option>
+                    <option value="plots">Plots & Land</option>
+                    <option value="villas">Luxury Villas & Estates</option>
+                    <option value="apartments">Premium Apartments</option>
+                    <option value="independent-houses">Independent Houses</option>
+                    <option value="commercial">Commercial Spaces</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- SELLER SPECIFIC: Primary Property Type to List -->
+              <div class="form-group" *ngIf="currentRole === 'SELLER'">
+                <label for="sellerPropertyType" class="form-label">
+                  Primary Property Type to List <span class="optional-tag">(Optional)</span>
+                </label>
+                <div class="input-wrap select-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  </svg>
+                  <select 
+                    id="sellerPropertyType" 
+                    name="sellerPropertyType" 
+                    [(ngModel)]="sellerPropertyType" 
+                    class="form-control form-select">
+                    <option value="Residential Plot / Land">Residential Plot / Land</option>
+                    <option value="Independent Villa / House">Independent Villa / House</option>
+                    <option value="Premium Apartment">Premium Apartment</option>
+                    <option value="Commercial Space">Commercial Space</option>
+                    <option value="Farm Land">Farm Land</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- DEALER SPECIFIC: RERA / Broker License ID -->
+              <div class="form-group" *ngIf="currentRole === 'DEALER'">
+                <label for="dealerRera" class="form-label">
+                  RERA Registration / Broker License No. <span class="optional-tag">(Optional - For Verified Badge)</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  <input 
+                    type="text" 
+                    id="dealerRera" 
+                    name="dealerRera" 
+                    [(ngModel)]="dealerRera" 
+                    placeholder="e.g. TN/AGENT/0123/2026" 
+                    class="form-control" />
+                </div>
+              </div>
+
+              <!-- PARTNER SPECIFIC: UPI ID for Cash Rewards -->
+              <div class="form-group" *ngIf="currentRole === 'SPOTTER'">
+                <label for="partnerUpi" class="form-label">
+                  UPI ID for Reward Payouts <span class="optional-tag">(Optional - Add now or later)</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
+                  <input 
+                    type="text" 
+                    id="partnerUpi" 
+                    name="partnerUpi" 
+                    [(ngModel)]="partnerUpi" 
+                    placeholder="e.g. yourname@oksbi / yourname@okhdfcbank" 
+                    class="form-control" />
+                </div>
+              </div>
+
+              <!-- 4. Password -->
               <div class="form-group">
                 <label for="password" class="form-label">
                   Password <span class="required">*</span>
@@ -210,7 +341,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
                     required 
                     placeholder="Create a strong password (min. 6 chars)" 
                     class="form-control" />
-                  <button type="button" class="btn-toggle-pwd" (click)="showPassword = !showPassword">
+                  <button type="button" class="btn-toggle-pwd" (click)="showPassword = !showPassword" aria-label="Toggle password visibility">
                     <svg *ngIf="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                       <circle cx="12" cy="12" r="3"></circle>
@@ -223,7 +354,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
                 </div>
               </div>
 
-              <!-- 6. Confirm Password -->
+              <!-- 5. Confirm Password -->
               <div class="form-group">
                 <label for="confirmPassword" class="form-label">
                   Confirm Password <span class="required">*</span>
@@ -241,7 +372,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
                     required 
                     placeholder="Re-enter your password" 
                     class="form-control" />
-                  <button type="button" class="btn-toggle-pwd" (click)="showConfirmPassword = !showConfirmPassword">
+                  <button type="button" class="btn-toggle-pwd" (click)="showConfirmPassword = !showConfirmPassword" aria-label="Toggle confirm password visibility">
                     <svg *ngIf="!showConfirmPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                       <circle cx="12" cy="12" r="3"></circle>
@@ -258,7 +389,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
               <div class="form-check-group">
                 <label class="check-label">
                   <input type="checkbox" name="agreeTerms" [(ngModel)]="agreeTerms" required />
-                  <span>I agree to the <a routerLink="/services" target="_blank">Platform Terms & Guidelines</a></span>
+                  <span>I agree to the <a routerLink="/services" target="_blank">Platform Terms & Guidelines</a> and confirm provided details are accurate.</span>
                 </label>
               </div>
 
@@ -268,7 +399,13 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
                 class="btn-auth-submit" 
                 [disabled]="isSubmitting">
                 <span *ngIf="!isSubmitting">{{ submitButtonText }}</span>
-                <span *ngIf="isSubmitting">Creating {{ currentRoleName }} Account...</span>
+                <span *ngIf="isSubmitting" class="submitting-spinner">
+                  <svg class="spin-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+                  </svg>
+                  Creating {{ currentRoleName }} Account...
+                </span>
               </button>
             </form>
 
@@ -292,7 +429,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       background: radial-gradient(circle at top center, #1e293b 0%, #0b0f19 70%, #05070c 100%);
       color: #f8fafc;
       min-height: 100vh;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     .container {
@@ -363,67 +500,102 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
     }
 
     .auth-card-section {
-      padding: 3rem 0 5rem;
+      padding: 2.5rem 0 5rem;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .auth-card-container {
-      max-width: 520px;
+      max-width: 560px;
+      width: 100%;
       margin: 0 auto;
       background: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      padding: 2.5rem 2.25rem;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(245, 158, 11, 0.05);
+      border: 1.5px solid rgba(245, 158, 11, 0.2);
+      border-radius: 24px;
+      padding: 2.25rem 2rem;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 30px rgba(245, 158, 11, 0.06);
+    }
+
+    .role-selector-wrapper {
+      margin-bottom: 24px;
+    }
+
+    .role-selector-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #d4af37;
+      margin-bottom: 8px;
+      text-align: center;
     }
 
     .role-tabs-bar {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      gap: 8px;
       background: rgba(255, 255, 255, 0.04);
-      padding: 4px;
-      border-radius: 12px;
-      margin-bottom: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .role-tab-btn {
       background: none;
-      border: none;
+      border: 1px solid transparent;
       color: #94a3b8;
-      padding: 8px 4px;
-      border-radius: 8px;
+      padding: 10px 4px 8px;
+      border-radius: 10px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
-      font-size: 11.5px;
+      gap: 2px;
+      font-size: 12px;
       font-weight: 700;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
+      user-select: none;
     }
 
     .role-tab-btn:hover {
       color: #fff;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .role-tab-btn.active {
       background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #0b0f19;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     .tab-icon {
-      font-size: 14px;
+      font-size: 16px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .tab-label {
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .tab-desc {
+      font-size: 9.5px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    .role-tab-btn.active .tab-desc {
+      color: #0b0f19;
+      font-weight: 700;
+      opacity: 0.9;
     }
 
     .auth-header {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
     }
 
     .auth-eyebrow {
@@ -485,6 +657,43 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       margin-bottom: 1.5rem;
     }
 
+    .conflict-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fde68a;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+    }
+
+    .banner-icon-wrap {
+      margin-top: 2px;
+    }
+
+    .banner-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-conflict-action {
+      align-self: flex-start;
+      background: #f59e0b;
+      color: #0b0f19;
+      border: none;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-conflict-action:hover {
+      background: #fbbf24;
+    }
+
     .error-banner {
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.3);
@@ -500,7 +709,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
     .auth-form {
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 1.15rem;
     }
 
     .form-group {
@@ -513,10 +722,19 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       font-size: 0.83rem;
       font-weight: 700;
       color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
     }
 
     .required {
       color: #ef4444;
+    }
+
+    .optional-tag {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #94a3b8;
     }
 
     .input-wrap {
@@ -538,6 +756,7 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       position: absolute;
       left: 0.85rem;
       color: #64748b;
+      pointer-events: none;
     }
 
     .form-control {
@@ -548,6 +767,25 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       color: #fff;
       font-size: 0.9rem;
       outline: none;
+      font-family: inherit;
+    }
+
+    .form-control::placeholder {
+      color: #475569;
+    }
+
+    .form-select {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+    }
+
+    .form-select option {
+      background: #111827;
+      color: #f8fafc;
     }
 
     .btn-toggle-pwd {
@@ -573,12 +811,13 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       font-size: 0.82rem;
       color: #94a3b8;
       cursor: pointer;
-      line-height: 1.35;
+      line-height: 1.4;
     }
 
     .check-label input {
       margin-top: 0.15rem;
       accent-color: #f59e0b;
+      cursor: pointer;
     }
 
     .check-label a {
@@ -604,6 +843,10 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
       transition: all 0.2s ease;
       margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
 
     .btn-auth-submit:hover:not(:disabled) {
@@ -614,6 +857,21 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
     .btn-auth-submit:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+    }
+
+    .submitting-spinner {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .spin-svg {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
     .auth-card-footer {
@@ -639,6 +897,16 @@ export type RegisterRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
     .auth-switch-link:hover {
       text-decoration: underline;
     }
+
+    @media (max-width: 600px) {
+      .role-tabs-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .auth-card-container {
+        padding: 1.5rem 1.15rem;
+      }
+    }
   `]
 })
 export class CommonRegisterComponent implements OnInit, OnChanges {
@@ -660,9 +928,16 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     confirmPassword: '',
     role: 'BUYER'
   };
-  city = '';
-  agreeTerms = true;
 
+  // Role-Specific Dynamic Fields
+  city = '';
+  dealerBusinessName = '';
+  dealerRera = '';
+  buyerCategory = '';
+  sellerPropertyType = 'Residential Plot / Land';
+  partnerUpi = '';
+
+  agreeTerms = true;
   showPassword = false;
   showConfirmPassword = false;
   isSubmitting = false;
@@ -701,12 +976,18 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
       return;
     }
 
+    const queryRole = this.route.snapshot.queryParams['role'];
+    if (queryRole) {
+      this.setRole(queryRole);
+      return;
+    }
+
     const url = this.router.url.toLowerCase();
     if (url.includes('/seller/') || url.includes('/sellers/')) {
       this.currentRole = 'SELLER';
     } else if (url.includes('/dealer/') || url.includes('/dealers/')) {
       this.currentRole = 'DEALER';
-    } else if (url.includes('/snap-property/') || url.includes('/spotter/') || url.includes('/spotters/') || url.includes('/register/common')) {
+    } else if (url.includes('/snap-property/') || url.includes('/spotter/') || url.includes('/spotters/') || url.includes('/partner') || url.includes('/register/common')) {
       this.currentRole = 'SPOTTER';
     } else {
       this.currentRole = 'BUYER';
@@ -717,7 +998,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     const r = (roleString || '').toUpperCase().trim();
     if (r === 'SELLER') this.currentRole = 'SELLER';
     else if (r === 'DEALER') this.currentRole = 'DEALER';
-    else if (r === 'SPOTTER' || r === 'COMMON_PEOPLE' || r === 'COMMON') this.currentRole = 'SPOTTER';
+    else if (r === 'SPOTTER' || r === 'PARTNER' || r === 'COMMON_PEOPLE' || r === 'COMMON') this.currentRole = 'SPOTTER';
     else this.currentRole = 'BUYER';
   }
 
@@ -725,6 +1006,19 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     this.currentRole = role;
     this.errorMessage = '';
     this.successMessage = '';
+  }
+
+  get activeConflictRole(): string | null {
+    const active = this.authService.getActiveRole();
+    if (!active) return null;
+    const currentDisplay = this.currentRoleName;
+    if (active.toLowerCase() === currentDisplay.toLowerCase()) return null;
+    return active;
+  }
+
+  logoutConflict(): void {
+    this.authService.logoutCurrentRole();
+    this.errorMessage = '';
   }
 
   goBack(): void {
@@ -751,10 +1045,10 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
 
   get dynamicEyebrow(): string {
     switch (this.currentRole) {
-      case 'SELLER': return 'SELLER ONBOARDING';
-      case 'DEALER': return 'DEALER & AGENCY ONBOARDING';
+      case 'SELLER': return 'SELLER ONBOARDING PORTAL';
+      case 'DEALER': return 'DEALER & AGENCY NETWORK';
       case 'SPOTTER': return 'COMMUNITY PARTNER · SPOTTER';
-      default: return 'BUYER ONBOARDING';
+      default: return 'VERIFIED BUYER ONBOARDING';
     }
   }
 
@@ -774,31 +1068,54 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
   get dynamicSubtitle(): string {
     switch (this.currentRole) {
       case 'SELLER': return 'List residential plots, villas, and apartments directly to thousands of active verified buyers nationwide.';
-      case 'DEALER': return 'Join India\'s premier luxury real estate network. Access builder inventory and earn rewards.';
+      case 'DEALER': return 'Join India\'s premier luxury real estate network. Access builder inventory and showcase exclusive properties.';
       case 'SPOTTER': return 'Spot TO-LET boards or property signboards in your neighborhood, snap photos, and earn ₹1,000 cash rewards!';
       default: return 'Register to unlock verified property dossiers, exact addresses, and direct owner/dealer contacts.';
     }
   }
 
   get nameFieldLabel(): string {
-    return this.currentRole === 'DEALER' ? 'Full Name / Agency Business Name' : 'Full Name';
+    switch (this.currentRole) {
+      case 'DEALER': return 'Authorized Contact Person Name';
+      case 'SELLER': return 'Owner / Full Legal Name';
+      case 'SPOTTER': return 'Full Name / Partner Name';
+      default: return 'Full Name';
+    }
   }
 
   get nameFieldPlaceholder(): string {
     switch (this.currentRole) {
       case 'SELLER': return 'e.g. Ramesh Kumar (Property Owner)';
-      case 'DEALER': return 'e.g. Horizon Realty Advisors / Amit Shah';
-      case 'SPOTTER': return 'e.g. Ramesh Kumar (Community Partner)';
+      case 'DEALER': return 'e.g. Amit Shah (Managing Partner)';
+      case 'SPOTTER': return 'e.g. Priya Sundaram (Community Partner)';
       default: return 'e.g. Rahul Sharma';
+    }
+  }
+
+  get cityFieldLabel(): string {
+    switch (this.currentRole) {
+      case 'SELLER': return 'Property Location / City';
+      case 'DEALER': return 'Primary Operating Cities / Region';
+      case 'SPOTTER': return 'Operating City / Neighborhood';
+      default: return 'City / Location';
+    }
+  }
+
+  get cityFieldPlaceholder(): string {
+    switch (this.currentRole) {
+      case 'SELLER': return 'e.g. Chennai, Bangalore, Coimbatore';
+      case 'DEALER': return 'e.g. Chennai & Metro Regions';
+      case 'SPOTTER': return 'e.g. Anna Nagar, Chennai';
+      default: return 'e.g. Chennai';
     }
   }
 
   get submitButtonText(): string {
     switch (this.currentRole) {
-      case 'SELLER': return 'Register as Seller';
-      case 'DEALER': return 'Register as Verified Dealer';
-      case 'SPOTTER': return 'Register as Partner & Start Snapping';
-      default: return 'Create Buyer Account';
+      case 'SELLER': return 'Register as Seller & Post Property →';
+      case 'DEALER': return 'Register as Verified Dealer →';
+      case 'SPOTTER': return 'Register as Partner & Start Snapping →';
+      default: return 'Create Buyer Account →';
     }
   }
 
@@ -816,8 +1133,29 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     this.errorMessage = '';
     this.successMessage = '';
 
+    // Check active conflict session
+    if (this.activeConflictRole) {
+      this.errorMessage = `You are currently logged in as a ${this.activeConflictRole}. Please logout of that account first.`;
+      return;
+    }
+
     if (!this.formData.fullName?.trim() || !this.formData.mobile?.trim() || !this.formData.email?.trim() || !this.formData.password) {
       this.errorMessage = 'Please complete all required fields.';
+      return;
+    }
+
+    if (this.currentRole === 'DEALER' && !this.dealerBusinessName.trim()) {
+      this.errorMessage = 'Please enter your Agency / Business Legal Name.';
+      return;
+    }
+
+    if (this.currentRole === 'SELLER' && !this.city.trim()) {
+      this.errorMessage = 'Please enter the Property Location / City.';
+      return;
+    }
+
+    if (this.currentRole === 'SPOTTER' && !this.city.trim()) {
+      this.errorMessage = 'Please enter your Operating City / Neighborhood.';
       return;
     }
 
@@ -868,14 +1206,17 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
         });
 
         if (res.success) {
-          this.successMessage = 'Seller account created successfully! Redirecting to Seller Login...';
-          setTimeout(() => this.router.navigate(['/seller/login']), 800);
+          // Automatically log seller in for seamless onboarding
+          await this.authService.loginSeller(this.formData.email.trim(), this.formData.password);
+          this.successMessage = 'Seller account created successfully! Redirecting to Seller Dashboard...';
+          setTimeout(() => this.router.navigate(['/seller/categories']), 800);
         } else {
           this.errorMessage = res.message;
         }
       } else if (this.currentRole === 'DEALER') {
+        const businessName = this.dealerBusinessName.trim() || this.formData.fullName.trim();
         const res = await this.authService.registerDealer({
-          businessName: this.formData.fullName.trim(),
+          businessName: businessName,
           fullName: this.formData.fullName.trim(),
           mobile: this.formData.mobile.trim(),
           email: this.formData.email.trim(),
@@ -884,8 +1225,13 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
         });
 
         if (res.success) {
-          this.successMessage = 'Dealer account created successfully! Redirecting to Dealer Login...';
-          setTimeout(() => this.router.navigate(['/dealer/login']), 800);
+          // Automatically log dealer in for seamless onboarding
+          await this.authService.loginDealer({
+            email: this.formData.email.trim(),
+            password: this.formData.password
+          });
+          this.successMessage = 'Dealer account created successfully! Redirecting to Dealer Dashboard...';
+          setTimeout(() => this.router.navigate(['/dealer/dashboard']), 800);
         } else {
           this.errorMessage = res.message;
         }
@@ -909,6 +1255,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
                 email: res.user?.email || this.formData.email,
                 mobile: res.user?.mobile || this.formData.mobile,
                 city: this.city,
+                upi: this.partnerUpi,
                 role: 'COMMON_PEOPLE'
               },
               expiresAt: Date.now() + 86400000 * 30

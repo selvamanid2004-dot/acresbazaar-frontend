@@ -66,8 +66,14 @@ export class NavStateService {
     this.router.navigate(['/' + slug]);
   }
 
-  openRegister() {
-    this.registerModalOpen.set(true);
+  openRegister(role?: string) {
+    this.registerModalOpen.set(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (role) {
+      this.router.navigate(['/register'], { queryParams: { role: role.toLowerCase() } });
+    } else {
+      this.router.navigate(['/register']);
+    }
   }
 
   closeRegister() {

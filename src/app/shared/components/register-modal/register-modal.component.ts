@@ -29,7 +29,7 @@ import { Router, RouterModule } from '@angular/router';
         <div class="modal-body">
           <div class="options-grid">
             <!-- 1. Buyer -->
-            <a [routerLink]="'/register/buyer'" class="selection-card buyer-card" (click)="selectOption('/register/buyer', $event)">
+            <a [routerLink]="'/register'" [queryParams]="{ role: 'buyer' }" class="selection-card buyer-card" (click)="selectOption('/register?role=buyer', $event)">
               <div class="card-icon-wrap buyer-accent">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -48,7 +48,7 @@ import { Router, RouterModule } from '@angular/router';
             </a>
 
             <!-- 2. Seller -->
-            <a [routerLink]="'/seller/register'" class="selection-card seller-card" (click)="selectOption('/seller/register', $event)">
+            <a [routerLink]="'/register'" [queryParams]="{ role: 'seller' }" class="selection-card seller-card" (click)="selectOption('/register?role=seller', $event)">
               <div class="card-icon-wrap seller-accent">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -68,7 +68,7 @@ import { Router, RouterModule } from '@angular/router';
             </a>
 
             <!-- 3. Dealer -->
-            <a [routerLink]="'/dealer/register'" class="selection-card dealer-card" (click)="selectOption('/dealer/register', $event)">
+            <a [routerLink]="'/register'" [queryParams]="{ role: 'dealer' }" class="selection-card dealer-card" (click)="selectOption('/register?role=dealer', $event)">
               <div class="card-icon-wrap dealer-accent">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect width="16" height="20" x="4" y="2" rx="2" ry="2"></rect>
@@ -91,8 +91,8 @@ import { Router, RouterModule } from '@angular/router';
               </div>
             </a>
 
-            <!-- 4. Common People -->
-            <a [routerLink]="'/register/common'" class="selection-card common-card" (click)="selectOption('/register/common', $event)">
+            <!-- 4. Partner / Common People -->
+            <a [routerLink]="'/register'" [queryParams]="{ role: 'partner' }" class="selection-card common-card" (click)="selectOption('/register?role=partner', $event)">
               <div class="card-icon-wrap common-accent">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -101,13 +101,13 @@ import { Router, RouterModule } from '@angular/router';
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
               </div>
-              <div class="card-badge common-badge">CITIZEN & SCOUT</div>
-              <h3 class="card-title">4. Common People</h3>
+              <div class="card-badge common-badge">COMMUNITY PARTNER</div>
+              <h3 class="card-title">4. Partner</h3>
               <p class="card-desc">
                 For everyday citizens, scouts, and public seekers. Spot local property boards, earn cash rewards, and browse deals.
               </p>
               <div class="card-action">
-                <span>Register as Common People</span>
+                <span>Register as Partner</span>
                 <span class="arrow">→</span>
               </div>
             </a>

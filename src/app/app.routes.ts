@@ -112,6 +112,11 @@ export const routes: Routes = [
         data: { role: 'SPOTTER' } 
       },
       { 
+        path: 'register/partner', 
+        loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent), 
+        data: { role: 'SPOTTER' } 
+      },
+      { 
         path: 'register/seller', 
         loadComponent: () => import('./features/auth/common-register/common-register.component').then(m => m.CommonRegisterComponent),
         data: { role: 'SELLER' }

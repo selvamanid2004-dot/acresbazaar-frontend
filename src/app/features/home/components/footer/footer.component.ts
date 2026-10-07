@@ -79,7 +79,7 @@ import { getApiBaseUrl, resolveImageUrl, fetchJsonCached } from '../../../../cor
             <h4 class="col-head">For Sellers</h4>
             <ul class="col-links">
               <li><a href="#" (click)="onPostProp($event)">Snap Property (Spot & Earn)</a></li>
-              <li><a href="#" (click)="onRegister($event)">Seller Registration</a></li>
+              <li><a href="#" (click)="onRegister($event, 'seller')">Seller Registration</a></li>
               <li><a href="#" (click)="onLink($event, 'Manage Properties')">Manage Properties</a></li>
             </ul>
           </div>
@@ -89,7 +89,7 @@ import { getApiBaseUrl, resolveImageUrl, fetchJsonCached } from '../../../../cor
             <h4 class="col-head">For Dealers</h4>
             <ul class="col-links">
               <li><a href="#dealers" (click)="onDealer($event)">Dealer Hub (Buy / Sell)</a></li>
-              <li><a href="#" (click)="onRegister($event)">Dealer Registration</a></li>
+              <li><a href="#" (click)="onRegister($event, 'dealer')">Dealer Registration</a></li>
               <li><a href="#" (click)="onPostProp($event)">Post Property</a></li>
             </ul>
           </div>
@@ -377,9 +377,9 @@ export class FooterComponent {
     this.navStateService.openDealerFlow();
   }
 
-  onRegister(event: Event) {
+  onRegister(event: Event, role?: string) {
     event.preventDefault();
-    this.navStateService.openRegister();
+    this.navStateService.openRegister(role);
   }
 
   onPostProp(event: Event) {
