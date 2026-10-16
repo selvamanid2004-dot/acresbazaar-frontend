@@ -14,13 +14,22 @@ import { Property } from '../../../core/models/property.model';
         
         <div class="media-overlay"></div>
 
-        <!-- Image Count Badge -->
-        <div class="image-count-badge" *ngIf="imageCount > 0" title="Property has multiple photos">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-            <circle cx="12" cy="13" r="4"></circle>
-          </svg>
-          <span>{{ imageCount }} {{ imageCount === 1 ? 'Photo' : 'Photos' }}</span>
+        <!-- Media Counter Badges (Photos & Videos) -->
+        <div class="media-badges-group">
+          <div class="video-tour-badge" *ngIf="hasVideos" title="Property includes video walkthrough">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>{{ videoCount > 1 ? videoCount + ' Videos' : 'Video' }}</span>
+          </div>
+
+          <div class="image-count-badge" *ngIf="imageCount > 0" title="Property has photos">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span>{{ imageCount }}</span>
+          </div>
         </div>
 
         <!-- Top Badges -->
@@ -42,6 +51,14 @@ import { Property } from '../../../core/models/property.model';
 
           <span *ngIf="property.specs.reraApproved" class="badge badge-blue">
             RERA
+          </span>
+
+          <span *ngIf="property.detailsVisible === false || property.isDetailsLocked === true" class="badge badge-amber-locked">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Details Locked
           </span>
         </div>
 
@@ -235,6 +252,15 @@ import { Property } from '../../../core/models/property.model';
       background-color: #EFF6FF;
       color: #1D4ED8;
       border: 1px solid #BFDBFE;
+    }
+
+    .badge-amber-locked {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: #ffffff;
+      border: 1px solid #fbbf24;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(180, 83, 9, 0.35);
+      gap: 4px;
     }
 
     .bookmark-btn {
@@ -437,23 +463,51 @@ import { Property } from '../../../core/models/property.model';
       flex-shrink: 0;
     }
 
-    .image-count-badge {
+    .media-badges-group {
       position: absolute;
       bottom: 0.85rem;
-      left: 1rem;
+      right: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      z-index: 2;
+    }
+
+    .video-tour-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      padding: 0.3rem 0.65rem;
+      padding: 0.25rem 0.55rem;
       border-radius: 20px;
-      background: rgba(7, 13, 30, 0.78);
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
       backdrop-filter: blur(6px);
       color: #ffffff;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid rgba(254, 202, 202, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      animation: videoPulse 3s infinite;
+    }
+
+    @keyframes videoPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .image-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 20px;
+      background: rgba(7, 13, 30, 0.82);
+      backdrop-filter: blur(6px);
+      color: #ffffff;
+      font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.02em;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      z-index: 2;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
       transition: transform 0.2s ease, background 0.2s ease;
     }
@@ -516,6 +570,24 @@ export class PropertyCardComponent {
       return anyProp.imageCount;
     }
     return 1;
+  }
+
+  get hasVideos(): boolean {
+    if (!this.property) return false;
+    const anyProp = this.property as any;
+    if (this.property.hasVideos) return true;
+    if (Array.isArray(this.property.videos) && this.property.videos.length > 0) return true;
+    if (Array.isArray(anyProp.categorySpecs?.videos) && anyProp.categorySpecs.videos.length > 0) return true;
+    return false;
+  }
+
+  get videoCount(): number {
+    if (!this.property) return 0;
+    const anyProp = this.property as any;
+    if (Array.isArray(this.property.videos)) return this.property.videos.length;
+    if (typeof this.property.videoCount === 'number') return this.property.videoCount;
+    if (Array.isArray(anyProp.categorySpecs?.videos)) return anyProp.categorySpecs.videos.length;
+    return 0;
   }
 
   toggleBookmark(event: Event) {

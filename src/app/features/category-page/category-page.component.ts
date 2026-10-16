@@ -152,8 +152,8 @@ import { AuthService } from '../../core/services/auth.service';
               <!-- Card Content Area: Unlocked or Locked -->
               <div class="card-body-box">
 
-                <!-- 1. UNLOCKED VIEW (when isGoldUnlocked is true) -->
-                <div class="unlocked-details" *ngIf="isGoldUnlocked; else goldLockedTpl">
+                <!-- 1. UNLOCKED VIEW (when isPropertyUnlocked is true) -->
+                <div class="unlocked-details" *ngIf="isPropertyUnlocked(prop, 'gold'); else goldLockedTpl">
                   <div class="unlocked-header">
                     <div class="revealed-price-group">
                       <div class="price-val">{{ prop.priceDisplay }}</div>
@@ -319,8 +319,8 @@ import { AuthService } from '../../core/services/auth.service';
               <!-- Card Content Area: Unlocked or Locked -->
               <div class="card-body-box">
 
-                <!-- 1. UNLOCKED VIEW (when isPlatinumUnlocked is true) -->
-                <div class="unlocked-details" *ngIf="isPlatinumUnlocked; else platLockedTpl">
+                <!-- 1. UNLOCKED VIEW (when isPropertyUnlocked is true) -->
+                <div class="unlocked-details" *ngIf="isPropertyUnlocked(prop, 'platinum'); else platLockedTpl">
                   <div class="unlocked-header">
                     <div class="revealed-price-group">
                       <div class="price-val plat-price-val">{{ prop.priceDisplay }}</div>
@@ -1574,6 +1574,15 @@ export class CategoryPageComponent implements OnInit, OnDestroy {
     if (!this.authService.isAuthenticated()) return false;
     const mem = this.authService.activeMembership() || this.navStateService.activeMembership();
     return mem === 'platinum';
+  }
+
+  isPropertyUnlocked(prop: Property, tier: 'gold' | 'platinum'): boolean {
+    const hasPlanAccess = tier === 'gold' ? this.isGoldUnlocked : this.isPlatinumUnlocked;
+    if (prop.detailsVisible === false || prop.isDetailsLocked === true) {
+      // Locked by Admin: Users must follow the plan-selection and subscription flow to access locked details
+      return hasPlanAccess;
+    }
+    return hasPlanAccess;
   }
 
   ngOnInit() {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Property } from '../../../core/models/property.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { NavStateService } from '../../../core/services/nav-state.service';
 import { NotificationService } from '../../services/notification.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { getApiBaseUrl } from '../../../core/services/api-config';
@@ -17,8 +18,24 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
         
         <!-- Modal Media Slider Banner -->
         <div class="modal-media-header" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
-          <img [src]="currentSlideImage" (error)="onMediaError($event)" [alt]="property.title" class="modal-img" />
-          <div class="modal-media-overlay"></div>
+          <ng-container *ngIf="currentMediaItem as mediaItem">
+            <video 
+              *ngIf="mediaItem.type === 'video'" 
+              [src]="mediaItem.url" 
+              controls 
+              playsinline 
+              class="modal-video"
+              preload="metadata"
+            ></video>
+            <img 
+              *ngIf="mediaItem.type !== 'video'" 
+              [src]="currentSlideImage" 
+              (error)="onMediaError($event)" 
+              [alt]="property.title" 
+              class="modal-img" 
+            />
+            <div class="modal-media-overlay" *ngIf="mediaItem.type !== 'video'"></div>
+          </ng-container>
 
           <!-- Close Button -->
           <button type="button" class="close-btn" (click)="close()" aria-label="Close modal">
@@ -30,14 +47,16 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
 
           <!-- Badges Row -->
           <div class="modal-badges-row">
+            <span *ngIf="isPropertyDetailsLocked" class="badge badge-amber-locked">🔒 Details Locked</span>
             <span *ngIf="property.tier === 'platinum'" class="badge badge-platinum">Platinum Tier</span>
             <span *ngIf="property.isNewLaunch" class="badge badge-emerald">New Launch</span>
             <span class="badge badge-blue">RERA Verified</span>
+            <span *ngIf="hasVideos" class="badge badge-red-video">🎥 Video Tour Available</span>
           </div>
 
-          <!-- Top-Right Controls: Fullscreen Lightbox & Photo Counter -->
+          <!-- Top-Right Controls: Fullscreen Lightbox & Media Counter -->
           <div class="slider-top-controls">
-            <button type="button" class="btn-fullscreen-toggle" (click)="openLightbox()" title="View Fullscreen High-Res Photos">
+            <button type="button" class="btn-fullscreen-toggle" (click)="openLightbox()" title="View Fullscreen High-Res Gallery">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                 <polyline points="15 3 21 3 21 9"></polyline>
                 <polyline points="9 21 3 21 3 15"></polyline>
@@ -47,12 +66,10 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
               <span>Fullscreen</span>
             </button>
 
-            <div class="slider-counter-badge" *ngIf="sliderImages.length > 0">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                <circle cx="12" cy="13" r="4"></circle>
-              </svg>
-              <span>{{ activeSlideIndex + 1 }} / {{ sliderImages.length }}</span>
+            <div class="slider-counter-badge" *ngIf="sliderMedia.length > 0">
+              <span *ngIf="currentMediaItem?.type === 'video'" class="media-type-tag vid-tag">🎥 VIDEO</span>
+              <span *ngIf="currentMediaItem?.type !== 'video'" class="media-type-tag img-tag">📷 PHOTO</span>
+              <span>{{ activeSlideIndex + 1 }} / {{ sliderMedia.length }}</span>
             </div>
           </div>
 
@@ -60,9 +77,9 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
           <button 
             type="button" 
             class="slider-nav-btn prev-btn" 
-            *ngIf="sliderImages.length > 1" 
+            *ngIf="sliderMedia.length > 1" 
             (click)="prevSlide($event)" 
-            aria-label="Previous image"
+            aria-label="Previous media"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="15 18 9 12 15 6"></polyline>
@@ -72,9 +89,9 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
           <button 
             type="button" 
             class="slider-nav-btn next-btn" 
-            *ngIf="sliderImages.length > 1" 
+            *ngIf="sliderMedia.length > 1" 
             (click)="nextSlide($event)" 
-            aria-label="Next image"
+            aria-label="Next media"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="9 18 15 12 9 6"></polyline>
@@ -82,21 +99,28 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
           </button>
 
           <!-- Bottom Price & Header -->
-          <div class="modal-price-header">
+          <div class="modal-price-header" *ngIf="currentMediaItem?.type !== 'video'">
             <span class="price-big">{{ property.priceDisplay }}</span>
             <span *ngIf="property.pricePerSqFt" class="price-sqft">{{ property.pricePerSqFt }}</span>
           </div>
 
           <!-- Bottom Thumbnails Strip -->
-          <div class="slider-thumbnails-strip" *ngIf="sliderImages.length > 1">
+          <div class="slider-thumbnails-strip" *ngIf="sliderMedia.length > 1">
             <div 
-              *ngFor="let img of sliderImages; let idx = index" 
+              *ngFor="let item of sliderMedia; let idx = index" 
               class="thumb-item" 
               [class.active]="idx === activeSlideIndex"
+              [class.thumb-is-video]="item.type === 'video'"
               (click)="goToSlide(idx, $event)"
-              [title]="'View Photo ' + (idx + 1)"
+              [title]="item.type === 'video' ? 'Play Video ' + (idx + 1) : 'View Photo ' + (idx + 1)"
             >
-              <img [src]="img" (error)="onMediaError($event)" [alt]="'Photo ' + (idx + 1)" />
+              <img *ngIf="item.type !== 'video'" [src]="item.url" (error)="onMediaError($event)" [alt]="'Photo ' + (idx + 1)" />
+              <div *ngIf="item.type === 'video'" class="thumb-video-chip">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>VID</span>
+              </div>
             </div>
           </div>
         </div>
@@ -116,47 +140,124 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
 
           <p class="modal-desc">{{ property.shortDescription }}</p>
 
-          <!-- Specifications Matrix -->
-          <h3 class="specs-title">Property Highlights & Dimensions</h3>
-          <div class="modal-specs-grid">
-            <div class="spec-card">
-              <span class="spec-name">Property Type</span>
-              <strong class="spec-value">{{ property.type | uppercase }}</strong>
+          <!-- Property Gallery & Video Tours Section -->
+          <div class="property-gallery-section" *ngIf="sliderMedia.length > 0">
+            <div class="gallery-sec-header">
+              <div class="gallery-title-group">
+                <h3 class="gallery-sec-title">Property Gallery & Video Tours</h3>
+                <span class="gallery-counts-badge">
+                  <span *ngIf="photoCount > 0">📷 {{ photoCount }} {{ photoCount === 1 ? 'Photo' : 'Photos' }}</span>
+                  <span *ngIf="photoCount > 0 && videoCount > 0" class="counts-dot">•</span>
+                  <span *ngIf="videoCount > 0" class="badge-vids">🎥 {{ videoCount }} {{ videoCount === 1 ? 'Video Tour' : 'Videos' }}</span>
+                </span>
+              </div>
+              <button type="button" class="btn-open-gallery-all" (click)="openLightbox()">
+                <span>View Full Gallery ({{ sliderMedia.length }})</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </button>
             </div>
 
-            <div class="spec-card" *ngIf="getFormattedArea()">
-              <span class="spec-name">Super Built-Up Area</span>
-              <strong class="spec-value">{{ getFormattedArea() }}</strong>
+            <!-- Unified Media Grid: Photos and Videos together -->
+            <div class="unified-media-grid">
+              <div 
+                *ngFor="let m of sliderMedia; let idx = index" 
+                class="media-grid-item"
+                [class.active-item]="idx === activeSlideIndex"
+                [class.video-card-item]="m.type === 'video'"
+                (click)="goToSlide(idx, $event); scrollToMediaTop()"
+                [title]="m.type === 'video' ? 'Play Video Tour ' + (idx + 1) : 'View High-Res Photo ' + (idx + 1)"
+              >
+                <img *ngIf="m.type !== 'video'" [src]="m.url" (error)="onMediaError($event)" [alt]="'Photo ' + (idx + 1)" class="grid-img" />
+                <div *ngIf="m.type === 'video'" class="grid-video-preview">
+                  <div class="video-play-pulse">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </div>
+                  <span class="video-preview-title">Video Tour</span>
+                  <span class="video-preview-sub">Click to Play</span>
+                </div>
+                <div class="media-type-corner-tag" [class.is-vid]="m.type === 'video'">
+                  <span *ngIf="m.type === 'video'">▶ VIDEO</span>
+                  <span *ngIf="m.type !== 'video'">PHOTO {{ idx + 1 }}</span>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div class="spec-card" *ngIf="getFormattedBhk() !== '—'">
-              <span class="spec-name">Bedrooms / BHK</span>
-              <strong class="spec-value">{{ getFormattedBhk() }}</strong>
+          <!-- LOCKED PROPERTY DETAILS WHEN VISIBILITY IS OFF -->
+          <div class="modal-locked-details-card" *ngIf="isPropertyDetailsLocked">
+            <div class="locked-card-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
             </div>
-
-            <div class="spec-card" *ngIf="property.specs.baths || property.specs.bathrooms">
-              <span class="spec-name">Bathrooms</span>
-              <strong class="spec-value">{{ property.specs.baths || property.specs.bathrooms }} Baths</strong>
+            <div class="locked-card-badge">DETAILS LOCKED BY ADMIN</div>
+            <h3 class="locked-card-heading">Property Details & Specifications Are Locked</h3>
+            <p class="locked-card-desc">
+              The administrator has set detailed specifications, exact dimensions, verified legal documents, and direct seller contact details to locked for this property. 
+              Please select or activate a membership plan to unlock instant access.
+            </p>
+            <div class="locked-card-actions">
+              <button type="button" class="btn btn-unlock-membership-cta" (click)="openPlanSubscription()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                </svg>
+                <span>Unlock Property Details ({{ targetMembershipTierName }})</span>
+              </button>
             </div>
+          </div>
 
-            <div class="spec-card" *ngIf="getFormattedPlot()">
-              <span class="spec-name">Plot Dimensions</span>
-              <strong class="spec-value">{{ getFormattedPlot() }}</strong>
-            </div>
+          <!-- Specifications Matrix (Visible when not locked) -->
+          <div *ngIf="!isPropertyDetailsLocked">
+            <h3 class="specs-title">Property Highlights & Dimensions</h3>
+            <div class="modal-specs-grid">
+              <div class="spec-card">
+                <span class="spec-name">Property Type</span>
+                <strong class="spec-value">{{ property.type | uppercase }}</strong>
+              </div>
 
-            <div class="spec-card" *ngIf="property.specs.facing">
-              <span class="spec-name">Vastu / Orientation</span>
-              <strong class="spec-value">{{ property.specs.facing }}</strong>
-            </div>
+              <div class="spec-card" *ngIf="getFormattedArea()">
+                <span class="spec-name">Super Built-Up Area</span>
+                <strong class="spec-value">{{ getFormattedArea() }}</strong>
+              </div>
 
-            <div class="spec-card">
-              <span class="spec-name">Construction Status</span>
-              <strong class="spec-value text-emerald">{{ property.specs.status || 'Ready for Registration' }}</strong>
-            </div>
+              <div class="spec-card" *ngIf="getFormattedBhk() !== '—'">
+                <span class="spec-name">Bedrooms / BHK</span>
+                <strong class="spec-value">{{ getFormattedBhk() }}</strong>
+              </div>
 
-            <div class="spec-card">
-              <span class="spec-name">Legal Title Check</span>
-              <strong class="spec-value text-gold">100% Clear & RERA Certified</strong>
+              <div class="spec-card" *ngIf="property.specs.baths || property.specs.bathrooms">
+                <span class="spec-name">Bathrooms</span>
+                <strong class="spec-value">{{ property.specs.baths || property.specs.bathrooms }} Baths</strong>
+              </div>
+
+              <div class="spec-card" *ngIf="getFormattedPlot()">
+                <span class="spec-name">Plot Dimensions</span>
+                <strong class="spec-value">{{ getFormattedPlot() }}</strong>
+              </div>
+
+              <div class="spec-card" *ngIf="property.specs.facing">
+                <span class="spec-name">Vastu / Orientation</span>
+                <strong class="spec-value">{{ property.specs.facing }}</strong>
+              </div>
+
+              <div class="spec-card">
+                <span class="spec-name">Construction Status</span>
+                <strong class="spec-value text-emerald">{{ property.specs.status || 'Ready for Registration' }}</strong>
+              </div>
+
+              <div class="spec-card">
+                <span class="spec-name">Legal Title Check</span>
+                <strong class="spec-value text-gold">100% Clear & RERA Certified</strong>
+              </div>
             </div>
           </div>
 
@@ -200,13 +301,13 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                 </svg>
-                <span>{{ bookingSubmitting ? 'Connecting...' : (isContacted ? 'Owner Contact (Booked)' : 'Owner Contact') }}</span>
+                <span>{{ isPropertyDetailsLocked ? 'Unlock to View Owner Contact' : (bookingSubmitting ? 'Connecting...' : (isContacted ? 'Owner Contact (Booked)' : 'Owner Contact')) }}</span>
               </button>
             </div>
           </div>
 
           <!-- UNLOCKED DIRECT OWNER CONTACT IN-PAGE SECTION -->
-          <div *ngIf="showOwnerDetails" class="owner-contact-unlocked-card">
+          <div *ngIf="showOwnerDetails && !isPropertyDetailsLocked" class="owner-contact-unlocked-card">
             <div class="unlocked-header">
               <div class="badge-row">
                 <span class="badge badge-emerald">✓ BOOKING CONFIRMED</span>
@@ -415,47 +516,72 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
             <!-- Top Controls -->
             <div class="lightbox-top-bar">
               <span class="lightbox-counter">
-                📷 Photo {{ activeSlideIndex + 1 }} of {{ sliderImages.length }} · {{ property.title }}
+                <span *ngIf="currentMediaItem?.type === 'video'">🎥 Video Tour {{ activeSlideIndex + 1 }} of {{ sliderMedia.length }}</span>
+                <span *ngIf="currentMediaItem?.type !== 'video'">📷 Photo {{ activeSlideIndex + 1 }} of {{ sliderMedia.length }}</span>
+                · {{ property.title }}
               </span>
               <button type="button" class="lightbox-close-btn" (click)="closeLightbox()" aria-label="Close Lightbox">
                 ✕
               </button>
             </div>
 
-            <!-- Main Stage Image -->
+            <!-- Main Stage Image / Video -->
             <div class="lightbox-stage">
               <button 
                 type="button" 
                 class="lightbox-arrow prev" 
-                *ngIf="sliderImages.length > 1" 
+                *ngIf="sliderMedia.length > 1" 
                 (click)="prevSlide($event)"
-                aria-label="Previous Photo"
+                aria-label="Previous Media"
               >
                 ‹
               </button>
 
-              <img [src]="currentSlideImage" (error)="onMediaError($event)" [alt]="property.title" class="lightbox-main-img" />
+              <ng-container *ngIf="currentMediaItem as mediaItem">
+                <video 
+                  *ngIf="mediaItem.type === 'video'" 
+                  [src]="mediaItem.url" 
+                  controls 
+                  autoplay 
+                  playsinline 
+                  class="lightbox-main-video"
+                ></video>
+                <img 
+                  *ngIf="mediaItem.type !== 'video'" 
+                  [src]="currentSlideImage" 
+                  (error)="onMediaError($event)" 
+                  [alt]="property.title" 
+                  class="lightbox-main-img" 
+                />
+              </ng-container>
 
               <button 
                 type="button" 
                 class="lightbox-arrow next" 
-                *ngIf="sliderImages.length > 1" 
+                *ngIf="sliderMedia.length > 1" 
                 (click)="nextSlide($event)"
-                aria-label="Next Photo"
+                aria-label="Next Media"
               >
                 ›
               </button>
             </div>
 
             <!-- Lightbox Bottom Thumbnails -->
-            <div class="lightbox-thumbs-row" *ngIf="sliderImages.length > 1">
+            <div class="lightbox-thumbs-row" *ngIf="sliderMedia.length > 1">
               <div 
-                *ngFor="let img of sliderImages; let idx = index"
+                *ngFor="let item of sliderMedia; let idx = index"
                 class="lightbox-thumb-item"
                 [class.active]="idx === activeSlideIndex"
+                [class.is-vid-thumb]="item.type === 'video'"
                 (click)="goToSlide(idx, $event)"
               >
-                <img [src]="img" (error)="onMediaError($event)" [alt]="'Thumb ' + (idx + 1)" />
+                <img *ngIf="item.type !== 'video'" [src]="item.url" (error)="onMediaError($event)" [alt]="'Thumb ' + (idx + 1)" />
+                <div *ngIf="item.type === 'video'" class="lightbox-vid-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>VID</span>
+                </div>
                 <span class="lightbox-thumb-num">#{{ idx + 1 }}</span>
               </div>
             </div>
@@ -520,6 +646,15 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       transition: transform 0.35s ease;
     }
 
+    .modal-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      position: relative;
+      z-index: 2;
+    }
+
     .modal-media-overlay {
       position: absolute;
       inset: 0;
@@ -556,6 +691,30 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       display: flex;
       gap: 0.5rem;
       z-index: 2;
+    }
+
+    .badge-red-video {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #ffffff;
+      border: 1px solid rgba(254, 202, 202, 0.4);
+    }
+
+    .media-type-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .media-type-tag.vid-tag {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .media-type-tag.img-tag {
+      background: rgba(255, 255, 255, 0.2);
+      color: #f1f5f9;
     }
 
     .slider-top-controls {
@@ -707,6 +866,25 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
 
     .thumb-item:hover {
       opacity: 1;
+    }
+
+    .thumb-item.thumb-is-video {
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-color: rgba(239, 68, 68, 0.6);
+    }
+
+    .thumb-video-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      color: #f87171;
+      font-size: 8px;
+      font-weight: 800;
     }
 
     /* Fullscreen Lightbox Styles */
@@ -869,6 +1047,196 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       opacity: 0.9;
     }
 
+    .lightbox-main-video {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      z-index: 5;
+      background: #000;
+    }
+
+    .lightbox-thumb-item.is-vid-thumb {
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-color: rgba(239, 68, 68, 0.6);
+    }
+
+    .lightbox-vid-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #f87171;
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .property-gallery-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 2rem;
+    }
+
+    .gallery-sec-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .gallery-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .gallery-sec-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--navy-950);
+      margin: 0;
+    }
+
+    .gallery-counts-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .gallery-counts-badge .counts-dot {
+      color: #94a3b8;
+    }
+
+    .gallery-counts-badge .badge-vids {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .btn-open-gallery-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--navy-950);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-open-gallery-all:hover {
+      background: var(--navy-950);
+      color: #ffffff;
+      border-color: var(--navy-950);
+    }
+
+    .unified-media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .media-grid-item {
+      position: relative;
+      height: 95px;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: #0f172a;
+      transition: all 0.2s;
+    }
+
+    .media-grid-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .media-grid-item.active-item {
+      border-color: #f59e0b;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    .media-grid-item.video-card-item {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+      border: 2px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .grid-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .grid-video-preview {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      gap: 2px;
+    }
+
+    .video-play-pulse {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(220, 38, 38, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(220, 38, 38, 0.6);
+    }
+
+    .video-preview-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fca5a5;
+    }
+
+    .video-preview-sub {
+      font-size: 0.62rem;
+      color: #94a3b8;
+    }
+
+    .media-type-corner-tag {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #f1f5f9;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .media-type-corner-tag.is-vid {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
     .modal-body-scroll {
       padding: 2rem 2.25rem;
       overflow-y: auto;
@@ -897,6 +1265,89 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
       color: var(--slate-600);
       line-height: 1.65;
       margin-bottom: 2rem;
+    }
+
+    .badge-amber-locked {
+      background: linear-gradient(135deg, #d97706, #b45309) !important;
+      color: #ffffff !important;
+      border: 1px solid #fbbf24 !important;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(180, 83, 9, 0.4);
+    }
+
+    .modal-locked-details-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(254, 243, 199, 0.3) 100%);
+      border: 1.5px dashed #f59e0b;
+      border-radius: var(--radius-lg, 14px);
+      padding: 1.75rem 1.5rem;
+      text-align: center;
+      margin-bottom: 2.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.1);
+    }
+
+    .locked-card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #fef3c7;
+      color: #d97706;
+      border: 2px solid #fde68a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.85rem;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+    }
+
+    .locked-card-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #b45309;
+      background: #fef3c7;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 0.5rem;
+      border: 1px solid #fcd34d;
+    }
+
+    .locked-card-heading {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--navy-950, #0f172a);
+      margin: 0 0 0.5rem 0;
+    }
+
+    .locked-card-desc {
+      font-size: 0.9rem;
+      color: var(--slate-600, #475569);
+      max-width: 520px;
+      margin: 0 0 1.25rem 0;
+      line-height: 1.55;
+    }
+
+    .btn-unlock-membership-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #d4af37 0%, #b89628 100%);
+      color: #0b132b;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.85rem 1.75rem;
+      border-radius: var(--radius-md, 8px);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(212, 175, 55, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .btn-unlock-membership-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.55);
     }
 
     .specs-title {
@@ -1595,6 +2046,7 @@ export class PropertyModalComponent implements OnChanges {
   @Output() contactAgent = new EventEmitter<Property>();
 
   private authService = inject(AuthService);
+  private navStateService = inject(NavStateService);
   private notificationService = inject(NotificationService);
   private wishlistService = inject(WishlistService);
 
@@ -1623,11 +2075,34 @@ export class PropertyModalComponent implements OnChanges {
     phone: ''
   };
 
-  // --- DYNAMIC MULTI-IMAGE SLIDER & LIGHTBOX STATE ---
+  // --- DYNAMIC MULTI-MEDIA SLIDER & LIGHTBOX STATE (Photos + Videos) ---
+  sliderMedia: { url: string; type: 'image' | 'video'; title?: string }[] = [];
   sliderImages: string[] = [];
   activeSlideIndex: number = 0;
   showLightbox: boolean = false;
   private touchStartX: number = 0;
+
+  get currentMediaItem(): { url: string; type: 'image' | 'video'; title?: string } | null {
+    if (this.sliderMedia.length === 0) return null;
+    return this.sliderMedia[this.activeSlideIndex] || this.sliderMedia[0];
+  }
+
+  get photoCount(): number {
+    return this.sliderMedia.filter(m => m.type === 'image').length;
+  }
+
+  get videoCount(): number {
+    return this.sliderMedia.filter(m => m.type === 'video').length;
+  }
+
+  get hasVideos(): boolean {
+    return this.videoCount > 0;
+  }
+
+  scrollToMediaTop(): void {
+    const dialog = document.querySelector('.modal-body-scroll');
+    if (dialog) dialog.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['property'] && this.property) {
@@ -1657,50 +2132,90 @@ export class PropertyModalComponent implements OnChanges {
 
   setupSliderImages(): void {
     if (!this.property) {
+      this.sliderMedia = [];
       this.sliderImages = [];
       return;
     }
+    const media: { url: string; type: 'image' | 'video'; title?: string }[] = [];
     const imgs: string[] = [];
     const anyProp = this.property as any;
 
-    // 1. If backend images array of objects, prioritize primary cover first
-    if (Array.isArray(anyProp.images) && anyProp.images.length > 0) {
-      const primary = anyProp.images.find((img: any) => img.isPrimary || img.isCover);
-      if (primary) {
-        const url = primary.imageUrl || primary.url;
-        if (url) imgs.push(url);
-      }
+    // 1. Collect videos (max 2 videos per property)
+    const rawVideos: string[] = [];
+    if (Array.isArray(this.property.videos)) {
+      rawVideos.push(...this.property.videos);
+    }
+    if (Array.isArray(anyProp.categorySpecs?.videos)) {
+      anyProp.categorySpecs.videos.forEach((v: string) => {
+        if (v && !rawVideos.includes(v)) rawVideos.push(v);
+      });
+    }
+    if (Array.isArray(anyProp.images)) {
       anyProp.images.forEach((img: any) => {
-        const url = img.imageUrl || img.url;
-        if (url && !imgs.includes(url)) {
-          imgs.push(url);
+        const u = img.imageUrl || img.url;
+        if (u && (img.mediaType === 'VIDEO' || img.type === 'VIDEO') && !rawVideos.includes(u)) {
+          rawVideos.push(u);
         }
       });
     }
 
-    // 2. If galleryImages string array provided
+    // 2. Primary cover image
+    let primaryCover = '';
+    if (Array.isArray(anyProp.images) && anyProp.images.length > 0) {
+      const primary = anyProp.images.find((img: any) => (img.isPrimary || img.isCover) && img.mediaType !== 'VIDEO');
+      if (primary) {
+        primaryCover = primary.imageUrl || primary.url || '';
+      }
+    }
+    if (!primaryCover && this.property.imageUrl) {
+      primaryCover = this.property.imageUrl;
+    }
+
+    if (primaryCover) {
+      media.push({ url: primaryCover, type: 'image', title: 'Cover Photo' });
+      imgs.push(primaryCover);
+    }
+
+    // 3. Insert videos right after primary cover (or first if no cover)
+    rawVideos.slice(0, 2).forEach((vidUrl, i) => {
+      if (vidUrl && typeof vidUrl === 'string') {
+        media.push({ url: vidUrl, type: 'video', title: `Video Tour ${i + 1}` });
+      }
+    });
+
+    // 4. Additional gallery images
+    if (Array.isArray(anyProp.images) && anyProp.images.length > 0) {
+      anyProp.images.forEach((img: any) => {
+        const url = img.imageUrl || img.url;
+        if (url && img.mediaType !== 'VIDEO' && !imgs.includes(url)) {
+          imgs.push(url);
+          media.push({ url, type: 'image', title: 'Property Photo' });
+        }
+      });
+    }
+
     if (Array.isArray(this.property.galleryImages) && this.property.galleryImages.length > 0) {
       this.property.galleryImages.forEach(url => {
         if (url && typeof url === 'string' && !imgs.includes(url)) {
           imgs.push(url);
+          media.push({ url, type: 'image', title: 'Property Photo' });
         }
       });
     }
 
-    // 3. If single imageUrl provided and not present, add it at front
-    if (this.property.imageUrl && !imgs.includes(this.property.imageUrl)) {
-      imgs.unshift(this.property.imageUrl);
+    if (media.length === 0) {
+      const fallback = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+      media.push({ url: fallback, type: 'image', title: 'Property Photo' });
+      imgs.push(fallback);
     }
 
-    // 4. Default fallback if empty
-    if (imgs.length === 0) {
-      imgs.push('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80');
-    }
-
-    this.sliderImages = imgs;
+    this.sliderMedia = media;
+    this.sliderImages = imgs.length > 0 ? imgs : [media[0].url];
   }
 
   get currentSlideImage(): string {
+    const item = this.currentMediaItem;
+    if (item && item.type === 'image') return item.url;
     if (this.sliderImages.length === 0) {
       return this.property?.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
     }
@@ -1709,19 +2224,19 @@ export class PropertyModalComponent implements OnChanges {
 
   nextSlide(event?: Event): void {
     if (event) event.stopPropagation();
-    if (this.sliderImages.length <= 1) return;
-    this.activeSlideIndex = (this.activeSlideIndex + 1) % this.sliderImages.length;
+    if (this.sliderMedia.length <= 1) return;
+    this.activeSlideIndex = (this.activeSlideIndex + 1) % this.sliderMedia.length;
   }
 
   prevSlide(event?: Event): void {
     if (event) event.stopPropagation();
-    if (this.sliderImages.length <= 1) return;
-    this.activeSlideIndex = (this.activeSlideIndex - 1 + this.sliderImages.length) % this.sliderImages.length;
+    if (this.sliderMedia.length <= 1) return;
+    this.activeSlideIndex = (this.activeSlideIndex - 1 + this.sliderMedia.length) % this.sliderMedia.length;
   }
 
   goToSlide(index: number, event?: Event): void {
     if (event) event.stopPropagation();
-    if (index >= 0 && index < this.sliderImages.length) {
+    if (index >= 0 && index < this.sliderMedia.length) {
       this.activeSlideIndex = index;
     }
   }
@@ -1820,11 +2335,49 @@ export class PropertyModalComponent implements OnChanges {
     return (this.property?.tier || 'PLATINUM').toUpperCase();
   }
 
+  get isPropertyDetailsLocked(): boolean {
+    if (!this.property) return false;
+    // Check if Admin disabled visibility (detailsVisible === false / isDetailsLocked === true)
+    if (this.property.detailsVisible === false || this.property.isDetailsLocked === true) {
+      if (this.isContacted) return false;
+      const mem = this.authService.activeMembership() || this.navStateService.activeMembership();
+      const propTier = (this.property.tier || 'platinum').toLowerCase();
+      if (propTier === 'gold') {
+        return !(mem === 'gold' || mem === 'platinum');
+      } else {
+        return mem !== 'platinum';
+      }
+    }
+    return false; // ON – Show Property Details according to existing website rules
+  }
+
+  get targetMembershipTier(): 'gold' | 'platinum' {
+    if (!this.property) return 'gold';
+    return (this.property.tier || '').toLowerCase() === 'platinum' ? 'platinum' : 'gold';
+  }
+
+  get targetMembershipTierName(): string {
+    return this.targetMembershipTier === 'platinum' ? 'Platinum Plan' : 'Gold Plan';
+  }
+
+  openPlanSubscription(): void {
+    this.navStateService.openMembershipModal(this.targetMembershipTier, this.property);
+  }
+
   close() {
     this.closeRequested.emit();
   }
 
   openOwnerContactModal(): void {
+    if (this.isPropertyDetailsLocked) {
+      this.notificationService.show(
+        'Details Locked',
+        'Owner contact details are locked for this listing. Please select a membership plan to unlock direct access.',
+        'info'
+      );
+      this.openPlanSubscription();
+      return;
+    }
     this.showOwnerContactPopup = true;
     if (!this.isContacted) {
       this.onContactOwner();

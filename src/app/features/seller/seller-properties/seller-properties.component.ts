@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { getApiBaseUrl } from '../../../core/services/api-config';
@@ -18,13 +19,14 @@ export interface SellerPropertyItem {
   created_at: string;
   image_urls?: string[];
   images?: any[];
+  videos?: string[];
   category_specs?: Record<string, any>;
 }
 
 @Component({
   selector: 'app-seller-properties',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="seller-props-page">
       <!-- Top Bar -->
@@ -166,6 +168,9 @@ export interface SellerPropertyItem {
 
               <div class="specs-chips">
                 <span class="spec-chip" *ngIf="prop.property_size">{{ prop.property_size }}</span>
+                <span class="spec-chip video-chip" *ngIf="getPropVideos(prop).length > 0">
+                  🎥 {{ getPropVideos(prop).length }} Video{{ getPropVideos(prop).length > 1 ? 's' : '' }}
+                </span>
                 <ng-container *ngIf="prop.category_specs as specs">
                   <span class="spec-chip" *ngIf="specs['bedrooms']">{{ specs['bedrooms'] }}</span>
                   <span class="spec-chip" *ngIf="specs['dimensions']">{{ specs['dimensions'] }}</span>
@@ -198,6 +203,19 @@ export interface SellerPropertyItem {
                 </span>
               </div>
 
+              <!-- Edit Details & Videos Button -->
+              <button
+                type="button"
+                class="btn-edit-property"
+                (click)="openEditModal(prop)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                <span>Edit Details & Videos</span>
+              </button>
+
               <!-- View Live Link (Only if Approved) -->
               <a
                 *ngIf="prop.status === 'APPROVED'"
@@ -208,6 +226,123 @@ export interface SellerPropertyItem {
                 View Live on Website →
               </a>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT PROPERTY MODAL -->
+      <div *ngIf="editingProperty()" class="edit-modal-backdrop" (click)="closeEditModal()">
+        <div class="edit-modal-dialog" (click)="$event.stopPropagation()">
+          <div class="edit-modal-header">
+            <div class="edit-header-title">
+              <span class="edit-badge">SELLER PROPERTY MANAGEMENT</span>
+              <h2>Edit Property Details & Video Tours</h2>
+            </div>
+            <button type="button" class="btn-close-edit" (click)="closeEditModal()">✕</button>
+          </div>
+
+          <div class="edit-modal-body">
+            <div *ngIf="editSuccessMessage()" class="alert-success-box">
+              ✓ {{ editSuccessMessage() }}
+            </div>
+            <div *ngIf="editErrorMessage()" class="alert-error-box">
+              ⚠ {{ editErrorMessage() }}
+            </div>
+
+            <!-- Basic Details -->
+            <div class="edit-form-grid">
+              <div class="form-group-edit full-span">
+                <label>Property Title *</label>
+                <input type="text" [(ngModel)]="editFormData.title" class="edit-input" placeholder="Property Title" />
+              </div>
+
+              <div class="form-group-edit">
+                <label>Price Display (e.g. ₹ 1.25 Cr) *</label>
+                <input type="text" [(ngModel)]="editFormData.priceDisplay" class="edit-input" placeholder="Price Display" />
+              </div>
+
+              <div class="form-group-edit">
+                <label>Property Sizing / Area</label>
+                <input type="text" [(ngModel)]="editFormData.property_size" class="edit-input" placeholder="e.g. 2400 sq.ft" />
+              </div>
+
+              <div class="form-group-edit">
+                <label>Area / Locality *</label>
+                <input type="text" [(ngModel)]="editFormData.location" class="edit-input" placeholder="Locality" />
+              </div>
+
+              <div class="form-group-edit">
+                <label>City *</label>
+                <input type="text" [(ngModel)]="editFormData.city" class="edit-input" placeholder="City" />
+              </div>
+
+              <div class="form-group-edit full-span">
+                <label>Description</label>
+                <textarea rows="3" [(ngModel)]="editFormData.description" class="edit-input" placeholder="Property Description"></textarea>
+              </div>
+            </div>
+
+            <!-- Property Video Tours Management Section -->
+            <div class="edit-videos-section">
+              <div class="edit-sec-head">
+                <div>
+                  <h3 class="edit-sec-title">Property Video Tours</h3>
+                  <p class="edit-sec-sub">Upload walkthrough videos for this property. Videos are integrated directly in the public Gallery section.</p>
+                </div>
+                <span class="video-counter-chip" [class.ready]="editVideos().length > 0">
+                  {{ editVideos().length }} / 2 Videos
+                </span>
+              </div>
+
+              <!-- Clear Limits Banner -->
+              <div class="video-limits-banner">
+                <div class="limits-icon">🎥</div>
+                <div class="limits-text">
+                  <strong>Video Upload Guidelines & Limits:</strong>
+                  <span>Maximum <strong>2 videos</strong> per property • Maximum allowed file size: <strong>50 MB per video</strong> • Formats: <strong>MP4, WebM, MOV</strong></span>
+                </div>
+              </div>
+
+              <!-- Upload Button / Dropzone (if < 2 videos) -->
+              <div *ngIf="editVideos().length < 2" class="edit-video-dropzone" (click)="editVideoInput.click()">
+                <input
+                  #editVideoInput
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime,video/*"
+                  (change)="onEditVideoSelected($event)"
+                  style="display: none;"
+                />
+                <span class="upload-icon">📹</span>
+                <span class="upload-title">Click to upload video (Max 50 MB)</span>
+                <span class="upload-sub">Allowed: MP4, WebM, MOV • Limit: 2 videos per property</span>
+              </div>
+
+              <div *ngIf="editVideos().length >= 2" class="edit-limit-reached">
+                ✓ Maximum limit reached: 2 of 2 videos uploaded for this property.
+              </div>
+
+              <!-- Video Previews in Modal -->
+              <div *ngIf="editVideos().length > 0" class="edit-videos-grid">
+                <div *ngFor="let vidUrl of editVideos(); let vi = index" class="edit-video-card">
+                  <div class="edit-video-box">
+                    <video [src]="vidUrl" controls playsinline preload="metadata" class="edit-video-player"></video>
+                    <span class="edit-vid-tag">Video Tour #{{ vi + 1 }}</span>
+                    <button type="button" class="btn-remove-edit-vid" (click)="removeEditVideo(vi)" title="Remove Video">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="edit-modal-footer">
+            <button type="button" class="btn-cancel-edit" (click)="closeEditModal()">
+              Cancel
+            </button>
+            <button type="button" class="btn-save-edit" (click)="savePropertyEdit()" [disabled]="isSavingEdit()">
+              {{ isSavingEdit() ? 'Saving Changes...' : 'Save Property & Videos' }}
+            </button>
           </div>
         </div>
       </div>
@@ -692,6 +827,412 @@ export interface SellerPropertyItem {
         align-items: flex-start;
       }
     }
+
+    .video-chip {
+      background: rgba(220, 38, 38, 0.15) !important;
+      border: 1px solid rgba(239, 68, 68, 0.4) !important;
+      color: #FCA5A5 !important;
+      font-weight: 700 !important;
+    }
+
+    .btn-edit-property {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      color: #D4AF37;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 6px;
+    }
+
+    .btn-edit-property:hover {
+      background: #D4AF37;
+      color: #0B1118;
+      border-color: #D4AF37;
+    }
+
+    /* Edit Modal Styles */
+    .edit-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 13, 30, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      animation: fadeIn 200ms ease;
+    }
+
+    .edit-modal-dialog {
+      background: #111A24;
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: 16px;
+      max-width: 680px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+      animation: popUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .edit-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .edit-header-title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .edit-badge {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #D4AF37;
+      letter-spacing: 0.08em;
+    }
+
+    .edit-header-title h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0;
+    }
+
+    .btn-close-edit {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94A3B8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-close-edit:hover {
+      background: rgba(239, 68, 68, 0.85);
+      color: #FFFFFF;
+      border-color: #EF4444;
+    }
+
+    .edit-modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .alert-success-box {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6EE7B7;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .alert-error-box {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #FCA5A5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .edit-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .full-span {
+      grid-column: span 2;
+    }
+
+    .form-group-edit {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group-edit label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .edit-input {
+      background: #0B1118;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #F8FAFC;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .edit-input:focus {
+      border-color: #D4AF37;
+    }
+
+    .edit-videos-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .edit-sec-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .edit-sec-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0;
+    }
+
+    .edit-sec-sub {
+      font-size: 0.78rem;
+      color: #94A3B8;
+      margin: 2px 0 0;
+    }
+
+    .video-counter-chip {
+      font-size: 0.76rem;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #FCD34D;
+    }
+
+    .video-counter-chip.ready {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6EE7B7;
+    }
+
+    .video-limits-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(220, 38, 38, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .video-limits-banner .limits-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .video-limits-banner .limits-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.8rem;
+      color: #E2E8F0;
+    }
+
+    .video-limits-banner .limits-text strong {
+      color: #F87171;
+    }
+
+    .edit-video-dropzone {
+      border: 2px dashed rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.03);
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .edit-video-dropzone:hover {
+      border-color: #EF4444;
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .upload-icon {
+      font-size: 1.5rem;
+    }
+
+    .upload-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .upload-sub {
+      font-size: 0.72rem;
+      color: #94A3B8;
+    }
+
+    .edit-limit-reached {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .edit-videos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .edit-video-card {
+      background: #0B1118;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .edit-video-box {
+      position: relative;
+      height: 140px;
+      background: #000;
+    }
+
+    .edit-video-player {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .edit-vid-tag {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(220, 38, 38, 0.9);
+      color: #FFFFFF;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .btn-remove-edit-vid {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
+      z-index: 5;
+    }
+
+    .btn-remove-edit-vid:hover {
+      background: #EF4444;
+      transform: scale(1.1);
+    }
+
+    .edit-modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .btn-cancel-edit {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #94A3B8;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel-edit:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #FFFFFF;
+    }
+
+    .btn-save-edit {
+      background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
+      border: none;
+      color: #0B1118;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-save-edit:hover {
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.35);
+      transform: translateY(-1px);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes popUp {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
   `]
 })
 export class SellerPropertiesComponent implements OnInit {
@@ -702,6 +1243,13 @@ export class SellerPropertiesComponent implements OnInit {
   loading = signal(true);
   selectedFilter = signal<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
   sellerName = signal('Seller');
+
+  editingProperty = signal<any | null>(null);
+  editFormData: any = {};
+  editVideos = signal<string[]>([]);
+  isSavingEdit = signal(false);
+  editErrorMessage = signal<string | null>(null);
+  editSuccessMessage = signal<string | null>(null);
 
   filteredProperties = computed(() => {
     const list = this.properties();
@@ -866,5 +1414,180 @@ export class SellerPropertiesComponent implements OnInit {
   logout(): void {
     this.authService.logoutSeller();
     this.router.navigate(['/seller/login']);
+  }
+
+  getPropVideos(prop: any): string[] {
+    if (Array.isArray(prop.videos) && prop.videos.length > 0) return prop.videos;
+    if (Array.isArray(prop.category_specs?.videos) && prop.category_specs.videos.length > 0) return prop.category_specs.videos;
+    if (Array.isArray(prop.categorySpecs?.videos) && prop.categorySpecs.videos.length > 0) return prop.categorySpecs.videos;
+    return [];
+  }
+
+  openEditModal(prop: any): void {
+    this.editErrorMessage.set(null);
+    this.editSuccessMessage.set(null);
+    this.editingProperty.set(prop);
+    this.editFormData = {
+      title: prop.title || '',
+      price: prop.price || '',
+      priceDisplay: prop.priceDisplay || prop.price || '',
+      property_size: prop.property_size || prop.category_specs?.builtUpArea || prop.category_specs?.plotArea || '',
+      location: prop.location || prop.locality || '',
+      city: prop.city || '',
+      description: prop.description || prop.shortDescription || ''
+    };
+    const vids = this.getPropVideos(prop);
+    this.editVideos.set([...vids]);
+  }
+
+  closeEditModal(): void {
+    this.editingProperty.set(null);
+    this.editErrorMessage.set(null);
+    this.editSuccessMessage.set(null);
+  }
+
+  onEditVideoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const maxVideos = 2;
+    const maxSizeBytes = 50 * 1024 * 1024; // 50MB
+
+    if (this.editVideos().length >= maxVideos) {
+      this.editErrorMessage.set('Maximum 2 videos allowed per property.');
+      input.value = '';
+      return;
+    }
+
+    if (file.size > maxSizeBytes) {
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      this.editErrorMessage.set(`File "${file.name}" (${mb} MB) exceeds the maximum allowed video size of 50 MB.`);
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      this.editVideos.update(vids => {
+        if (vids.length < maxVideos) {
+          return [...vids, dataUrl];
+        }
+        return vids;
+      });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  removeEditVideo(index: number): void {
+    this.editVideos.update(vids => vids.filter((_, i) => i !== index));
+  }
+
+  async savePropertyEdit(): Promise<void> {
+    const prop = this.editingProperty();
+    if (!prop) return;
+
+    if (!this.editFormData.title?.trim() || !this.editFormData.priceDisplay?.trim() || !this.editFormData.location?.trim() || !this.editFormData.city?.trim()) {
+      this.editErrorMessage.set('Please fill out all required fields (Title, Price, Location, City).');
+      return;
+    }
+
+    if (this.editVideos().length > 2) {
+      this.editErrorMessage.set('Maximum 2 videos allowed per property.');
+      return;
+    }
+
+    this.isSavingEdit.set(true);
+    this.editErrorMessage.set(null);
+    this.editSuccessMessage.set(null);
+
+    const propId = prop.id || prop.property_id;
+    const seller = this.authService.currentSeller();
+    const sellerId = (seller as any)?.seller_id || seller?.id || '';
+
+    try {
+      const cleanPrice = parseFloat(String(this.editFormData.priceDisplay).replace(/[^0-9.]/g, '')) || 0;
+      const res = await fetch(`${getApiBaseUrl()}/properties/${propId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: this.editFormData.title.trim(),
+          price: cleanPrice,
+          priceDisplay: this.editFormData.priceDisplay.trim(),
+          location: this.editFormData.location.trim(),
+          city: this.editFormData.city.trim(),
+          description: this.editFormData.description?.trim() || '',
+          sellerId: sellerId,
+          videos: this.editVideos()
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to save property updates');
+      }
+
+      this.editSuccessMessage.set('Property details and video tours updated successfully!');
+
+      // Update in local signals list
+      this.properties.update(list => list.map(item => {
+        const idMatch = (item.property_id === propId || (item as any).id === propId);
+        if (idMatch) {
+          return {
+            ...item,
+            title: this.editFormData.title.trim(),
+            price: this.editFormData.priceDisplay.trim(),
+            location: this.editFormData.location.trim(),
+            city: this.editFormData.city.trim(),
+            property_size: this.editFormData.property_size || item.property_size,
+            videos: this.editVideos(),
+            category_specs: {
+              ...(item.category_specs || {}),
+              videos: this.editVideos()
+            }
+          };
+        }
+        return item;
+      }));
+
+      // Update local storage
+      try {
+        const stored = localStorage.getItem('aura_seller_properties');
+        if (stored) {
+          const list = JSON.parse(stored);
+          const updated = list.map((item: any) => {
+            if (item.property_id === propId || item.id === propId) {
+              return {
+                ...item,
+                title: this.editFormData.title.trim(),
+                price: this.editFormData.priceDisplay.trim(),
+                priceDisplay: this.editFormData.priceDisplay.trim(),
+                location: this.editFormData.location.trim(),
+                city: this.editFormData.city.trim(),
+                videos: this.editVideos(),
+                category_specs: {
+                  ...(item.category_specs || {}),
+                  videos: this.editVideos()
+                }
+              };
+            }
+            return item;
+          });
+          localStorage.setItem('aura_seller_properties', JSON.stringify(updated));
+        }
+      } catch {}
+
+      setTimeout(() => {
+        this.closeEditModal();
+      }, 1500);
+    } catch (err: any) {
+      this.editErrorMessage.set(err.message || 'Error saving changes. Please try again.');
+    } finally {
+      this.isSavingEdit.set(false);
+    }
   }
 }

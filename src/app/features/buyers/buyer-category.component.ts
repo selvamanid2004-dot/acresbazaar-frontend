@@ -190,14 +190,15 @@ import { AuthService } from '../../core/services/auth.service';
                 <img [src]="prop.imageUrl" (error)="onImgError($event, prop.category)" alt="Property image" class="prop-img" loading="lazy" />
                 <div class="media-badges-overlay">
                   <span class="plan-pill-tag gold-pill-tag">Gold Property</span>
+                  <span class="plan-pill-tag locked-pill-tag" *ngIf="prop.detailsVisible === false || prop.isDetailsLocked === true">🔒 Details Locked</span>
                 </div>
               </div>
 
               <!-- 2. Card Content Area: Strict Locked State vs Unlocked State -->
               <div class="card-body-box">
 
-                <!-- UNLOCKED VIEW (when isGoldUnlocked is true) -->
-                <div class="unlocked-details" *ngIf="isGoldUnlocked; else goldLockedTpl">
+                <!-- UNLOCKED VIEW (when isPropertyUnlocked is true) -->
+                <div class="unlocked-details" *ngIf="isPropertyUnlocked(prop, 'gold'); else goldLockedTpl">
                   <div class="unlocked-header">
                     <div class="revealed-price-group">
                       <div class="price-val">{{ prop.priceDisplay }}</div>
@@ -330,14 +331,15 @@ import { AuthService } from '../../core/services/auth.service';
                 <img [src]="prop.imageUrl" (error)="onImgError($event, prop.category)" alt="Property image" class="prop-img" loading="lazy" />
                 <div class="media-badges-overlay">
                   <span class="plan-pill-tag plat-pill-tag">Platinum Property</span>
+                  <span class="plan-pill-tag locked-pill-tag" *ngIf="prop.detailsVisible === false || prop.isDetailsLocked === true">🔒 Details Locked</span>
                 </div>
               </div>
 
               <!-- 2. Card Content Area: Strict Locked State vs Unlocked State -->
               <div class="card-body-box">
 
-                <!-- UNLOCKED VIEW (when isPlatinumUnlocked is true) -->
-                <div class="unlocked-details" *ngIf="isPlatinumUnlocked; else platLockedTpl">
+                <!-- UNLOCKED VIEW (when isPropertyUnlocked is true) -->
+                <div class="unlocked-details" *ngIf="isPropertyUnlocked(prop, 'platinum'); else platLockedTpl">
                   <div class="unlocked-header">
                     <div class="revealed-price-group">
                       <div class="price-val plat-price-val">{{ prop.priceDisplay }}</div>
@@ -1046,6 +1048,12 @@ import { AuthService } from '../../core/services/auth.service';
       color: #FFFFFF;
     }
 
+    .locked-pill-tag {
+      background: #d97706;
+      color: #FFFFFF;
+      font-weight: 800;
+    }
+
     /* Card Body Box */
     .card-body-box {
       padding: 1.75rem 1.5rem;
@@ -1561,6 +1569,15 @@ export class BuyerCategoryComponent implements OnInit, OnDestroy {
     if (!this.authService.isAuthenticated()) return false;
     const mem = this.authService.activeMembership() || this.navStateService.activeMembership();
     return mem === 'platinum';
+  }
+
+  isPropertyUnlocked(prop: Property, tier: 'gold' | 'platinum'): boolean {
+    const hasPlanAccess = tier === 'gold' ? this.isGoldUnlocked : this.isPlatinumUnlocked;
+    if (prop.detailsVisible === false || prop.isDetailsLocked === true) {
+      // Locked by Admin: Users must follow the plan-selection and subscription flow to access locked details
+      return hasPlanAccess;
+    }
+    return hasPlanAccess;
   }
 
   get backButtonLabel(): string {

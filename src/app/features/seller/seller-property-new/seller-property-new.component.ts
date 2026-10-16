@@ -12,6 +12,14 @@ interface ImageUploadItem {
   size: number;
 }
 
+interface VideoUploadItem {
+  id: string;
+  dataUrl: string;
+  name: string;
+  size: number;
+  sizeDisplay: string;
+}
+
 @Component({
   selector: 'app-seller-property-new',
   standalone: true,
@@ -93,6 +101,10 @@ interface ImageUploadItem {
               <div class="summary-item">
                 <span class="item-label">Photos Uploaded</span>
                 <span class="item-value">{{ uploadedImages().length }} Photos</span>
+              </div>
+              <div class="summary-item">
+                <span class="item-label">Videos Uploaded</span>
+                <span class="item-value">{{ uploadedVideos().length }} Video(s)</span>
               </div>
             </div>
           </div>
@@ -229,6 +241,72 @@ interface ImageUploadItem {
                       ▶
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- -----------------------------------------------------------
+               SECTION 1B: PROPERTY VIDEO TOURS (OPTIONAL - MAX 2 VIDEOS)
+          ------------------------------------------------------------ -->
+          <div class="form-section">
+            <div class="section-title-row">
+              <div class="section-badge video-badge">1B</div>
+              <div>
+                <h2>Property Video Tours <span class="opt-label">(Optional • Maximum 2 Videos)</span></h2>
+                <p class="section-hint">
+                  Showcase a dynamic video walkthrough of your property. Videos are integrated directly with photos in the public Gallery section.
+                </p>
+              </div>
+              <div class="photo-counter" [class.valid]="uploadedVideos().length > 0">
+                {{ uploadedVideos().length }} / 2 Videos
+                <span class="counter-status ready" *ngIf="uploadedVideos().length > 0">✓ {{ uploadedVideos().length }} Uploaded</span>
+              </div>
+            </div>
+
+            <!-- Prominent Limits Notice Banner (Requirement 3 & 4) -->
+            <div class="video-limits-banner">
+              <div class="limits-icon">🎥</div>
+              <div class="limits-text">
+                <strong>Video Upload Guidelines & Limits:</strong>
+                <span>• Maximum <strong>2 videos</strong> per property &nbsp;|&nbsp; • Maximum allowed file size: <strong>50 MB per video</strong> &nbsp;|&nbsp; • Supported formats: <strong>MP4, WebM, MOV</strong></span>
+              </div>
+            </div>
+
+            <!-- Video Upload Dropzone (if < 2 videos) -->
+            <div *ngIf="uploadedVideos().length < 2" class="dropzone video-dropzone" (click)="videoFileInput.click()">
+              <input
+                #videoFileInput
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,video/*"
+                (change)="onVideoFilesSelected($event)"
+                style="display: none;"
+              />
+              <div class="dropzone-icon">📹</div>
+              <h3>Click to select video walkthrough from your device</h3>
+              <p>Maximum allowed file size: <strong>50 MB</strong> per video • Limit: <strong>2 videos</strong> per property</p>
+              <button type="button" class="btn-browse btn-browse-video">
+                + Select Video File (Max 50 MB)
+              </button>
+            </div>
+
+            <div *ngIf="uploadedVideos().length >= 2" class="video-limit-reached-banner">
+              <span>✓ Maximum limit reached: 2 of 2 property videos uploaded.</span>
+            </div>
+
+            <!-- Video Previews Grid -->
+            <div *ngIf="uploadedVideos().length > 0" class="video-previews-grid">
+              <div *ngFor="let vid of uploadedVideos(); let vi = index" class="video-preview-card">
+                <div class="video-player-box">
+                  <video [src]="vid.dataUrl" controls playsinline preload="metadata" class="seller-card-video"></video>
+                  <span class="video-badge-tag">Video Tour #{{ vi + 1 }}</span>
+                  <button type="button" (click)="removeVideo(vi)" class="btn-remove-video" title="Remove Video">
+                    ✕
+                  </button>
+                </div>
+                <div class="video-meta-bar">
+                  <span class="video-name" [title]="vid.name">{{ vid.name }}</span>
+                  <span class="video-size-badge">{{ vid.sizeDisplay }} (Limit: 50MB)</span>
                 </div>
               </div>
             </div>
@@ -972,6 +1050,162 @@ interface ImageUploadItem {
       pointer-events: none;
     }
 
+    /* Video Upload Section Styles */
+    .video-limits-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(220, 38, 38, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .video-limits-banner .limits-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .video-limits-banner .limits-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.85rem;
+      color: #E2E8F0;
+    }
+
+    .video-limits-banner .limits-text strong {
+      color: #F87171;
+    }
+
+    .video-badge {
+      background: linear-gradient(135deg, #DC2626, #991B1B) !important;
+      color: #FFFFFF !important;
+    }
+
+    .opt-label {
+      font-size: 0.85rem;
+      color: #94A3B8;
+      font-weight: 500;
+    }
+
+    .video-dropzone {
+      border: 2px dashed rgba(239, 68, 68, 0.4) !important;
+      background: rgba(239, 68, 68, 0.02) !important;
+    }
+
+    .video-dropzone:hover {
+      border-color: #EF4444 !important;
+      background: rgba(239, 68, 68, 0.06) !important;
+    }
+
+    .btn-browse-video {
+      background: linear-gradient(135deg, #DC2626, #B91C1C) !important;
+      color: #FFFFFF !important;
+      pointer-events: none;
+    }
+
+    .video-limit-reached-banner {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .video-previews-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .video-preview-card {
+      background: #111A24;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .video-player-box {
+      position: relative;
+      height: 180px;
+      background: #000;
+    }
+
+    .seller-card-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .video-badge-tag {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(220, 38, 38, 0.9);
+      color: #FFFFFF;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-remove-video {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      z-index: 5;
+    }
+
+    .btn-remove-video:hover {
+      background: #EF4444;
+      transform: scale(1.1);
+    }
+
+    .video-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #0F172A;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .video-name {
+      font-size: 0.8rem;
+      color: #E2E8F0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+
+    .video-size-badge {
+      font-size: 0.72rem;
+      color: #94A3B8;
+      font-weight: 600;
+    }
+
     /* Previews Grid */
     .previews-grid {
       display: grid;
@@ -1361,6 +1595,7 @@ export class SellerPropertyNewComponent implements OnInit {
   errorMessage = signal<string | null>(null);
 
   uploadedImages = signal<ImageUploadItem[]>([]);
+  uploadedVideos = signal<VideoUploadItem[]>([]);
 
   submittedData: any = null;
 
@@ -1658,6 +1893,62 @@ export class SellerPropertyNewComponent implements OnInit {
     this.uploadedImages.set(current);
   }
 
+  onVideoFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const files = Array.from(input.files);
+    const maxVideos = 2;
+    const maxSizeBytes = 50 * 1024 * 1024; // 50MB per video limit
+
+    const remainingSlots = maxVideos - this.uploadedVideos().length;
+    if (remainingSlots <= 0) {
+      this.errorMessage.set('Maximum 2 videos allowed per property.');
+      input.value = '';
+      return;
+    }
+
+    const toProcess = files.slice(0, remainingSlots);
+
+    toProcess.forEach(file => {
+      // Validate video file size: 50MB
+      if (file.size > maxSizeBytes) {
+        const mb = (file.size / (1024 * 1024)).toFixed(1);
+        this.errorMessage.set(`File "${file.name}" (${mb} MB) exceeds the maximum allowed video size of 50 MB.`);
+        return;
+      }
+
+      const sizeDisplay = file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        const item: VideoUploadItem = {
+          id: Math.random().toString(36).substring(2, 9),
+          dataUrl,
+          name: file.name,
+          size: file.size,
+          sizeDisplay
+        };
+        this.uploadedVideos.update(vids => {
+          if (vids.length < maxVideos) {
+            return [...vids, item];
+          }
+          return vids;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    input.value = '';
+  }
+
+  removeVideo(index: number): void {
+    this.uploadedVideos.update(vids => vids.filter((_, i) => i !== index));
+  }
+
   async handleSubmit(): Promise<void> {
     this.errorMessage.set(null);
 
@@ -1736,8 +2027,12 @@ export class SellerPropertyNewComponent implements OnInit {
             sellerName: sellerNameStr,
             sellerPhone: sellerPhoneStr,
             sellerEmail: sellerEmailStr,
-            categorySpecs,
-            images: this.uploadedImages().map(img => img.dataUrl)
+            categorySpecs: {
+              ...categorySpecs,
+              videos: this.uploadedVideos().map(v => v.dataUrl)
+            },
+            images: this.uploadedImages().map(img => img.dataUrl),
+            videos: this.uploadedVideos().map(v => v.dataUrl)
           })
         });
 
@@ -1770,7 +2065,11 @@ export class SellerPropertyNewComponent implements OnInit {
         status: 'PENDING',
         created_at: new Date().toISOString(),
         image_urls: this.uploadedImages(),
-        category_specs: categorySpecs,
+        category_specs: {
+          ...categorySpecs,
+          videos: this.uploadedVideos().map(v => v.dataUrl)
+        },
+        videos: this.uploadedVideos().map(v => v.dataUrl),
         seller_id: sellerIdStr,
         seller_name: sellerNameStr,
         seller_phone: sellerPhoneStr,

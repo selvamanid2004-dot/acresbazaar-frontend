@@ -55,6 +55,11 @@ export interface Property {
   description?: string;
   imageUrl: string;
   galleryImages?: string[];
+  videos?: string[];
+  videoCount?: number;
+  hasVideos?: boolean;
+  detailsVisible?: boolean;
+  isDetailsLocked?: boolean;
   badges?: string[];
   isNewLaunch?: boolean;
   isFeatured?: boolean;
