@@ -72,12 +72,17 @@ export interface Property {
   sellerContact?: string | null;
   legalDocsInfo?: string | null;
   isPublished: boolean;
+  detailsVisible?: boolean;
+  isDetailsLocked?: boolean;
   featured: boolean;
   ownerId?: string | null;
   owner?: Customer | null;
   sellerRole?: string | null;
   dealerCompany?: string | null;
   images: PropertyImage[];
+  videos?: string[];
+  videoCount?: number;
+  hasVideos?: boolean;
   createdAt: string;
   updatedAt: string;
 }

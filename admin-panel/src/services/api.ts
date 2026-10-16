@@ -449,6 +449,9 @@ export const api = {
         const sellerDisplayPhone = p.sellerPhone || p.seller?.mobile || '';
         const sellerDisplayEmail = p.sellerEmail || p.seller?.email || '';
 
+        const detailsVisible = p.detailsVisible !== undefined ? p.detailsVisible : (parsedSpecs.detailsVisible !== undefined ? parsedSpecs.detailsVisible : (parsedSpecs.isDetailsLocked !== undefined ? !parsedSpecs.isDetailsLocked : true));
+        const isDetailsLocked = !detailsVisible;
+
         return {
           id: p.id,
           title: p.title,
@@ -462,6 +465,8 @@ export const api = {
           status: p.status,
           planType: p.planType || 'PLATINUM',
           isPublished: p.status === 'APPROVED',
+          detailsVisible,
+          isDetailsLocked,
           featured: false,
           sellerId: p.sellerId || p.seller?.id,
           sellerName: sellerDisplayName,
@@ -483,6 +488,9 @@ export const api = {
             isCover: img.isPrimary,
             order: img.displayOrder
           })),
+          videos: p.videos || parsedSpecs.videos || [],
+          videoCount: (p.videos || parsedSpecs.videos || []).length,
+          hasVideos: (p.videos || parsedSpecs.videos || []).length > 0,
           createdAt: p.createdAt,
           updatedAt: p.updatedAt || p.createdAt
         };
@@ -519,6 +527,9 @@ export const api = {
         const sellerDisplayPhone = p.sellerPhone || p.seller?.mobile || '';
         const sellerDisplayEmail = p.sellerEmail || p.seller?.email || '';
 
+        const detailsVisible = p.detailsVisible !== undefined ? p.detailsVisible : (parsedSpecs.detailsVisible !== undefined ? parsedSpecs.detailsVisible : (parsedSpecs.isDetailsLocked !== undefined ? !parsedSpecs.isDetailsLocked : true));
+        const isDetailsLocked = !detailsVisible;
+
         return {
           id: p.id,
           title: p.title,
@@ -532,6 +543,8 @@ export const api = {
           status: p.status,
           planType: p.planType || 'PLATINUM',
           isPublished: p.status === 'APPROVED',
+          detailsVisible,
+          isDetailsLocked,
           featured: false,
           sellerId: p.sellerId || p.seller?.id,
           sellerName: sellerDisplayName,
@@ -574,6 +587,9 @@ export const api = {
     const sellerDisplayPhone = p.sellerPhone || p.seller?.mobile || '';
     const sellerDisplayEmail = p.sellerEmail || p.seller?.email || '';
 
+    const detailsVisible = p.detailsVisible !== undefined ? p.detailsVisible : (parsedSpecs.detailsVisible !== undefined ? parsedSpecs.detailsVisible : (parsedSpecs.isDetailsLocked !== undefined ? !parsedSpecs.isDetailsLocked : true));
+    const isDetailsLocked = !detailsVisible;
+
     return {
       id: p.id,
       title: p.title,
@@ -587,6 +603,8 @@ export const api = {
       status: p.status,
       planType: p.planType || 'PLATINUM',
       isPublished: p.status === 'APPROVED',
+      detailsVisible,
+      isDetailsLocked,
       featured: false,
       sellerId: p.sellerId || p.seller?.id,
       sellerName: sellerDisplayName,
@@ -608,6 +626,9 @@ export const api = {
         isCover: img.isPrimary,
         order: img.displayOrder
       })),
+      videos: p.videos || parsedSpecs.videos || [],
+      videoCount: (p.videos || parsedSpecs.videos || []).length,
+      hasVideos: (p.videos || parsedSpecs.videos || []).length > 0,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt || p.createdAt
     };
@@ -675,6 +696,22 @@ export const api = {
     return this.updatePropertyStatus(id, status);
   },
 
+  async togglePropertyVisibility(id: string, detailsVisible: boolean): Promise<Property> {
+    if (isDemoSession()) {
+      const p = DEMO_PROPERTIES.find(item => item.id === id);
+      if (p) {
+        p.detailsVisible = detailsVisible;
+        p.isDetailsLocked = !detailsVisible;
+      }
+      return p || DEMO_PROPERTIES[0];
+    }
+    const res: any = await request(`/properties/${id}/visibility`, {
+      method: 'PATCH',
+      body: JSON.stringify({ detailsVisible }),
+    });
+    return res.property || res;
+  },
+
   async deleteProperty(id: string): Promise<{ success: boolean }> {
     if (isDemoSession()) return { success: true };
     return request(`/properties/${id}`, {
@@ -708,6 +745,42 @@ export const api = {
       method: 'DELETE',
     });
     return res.property || res;
+  },
+
+  async uploadPropertyVideo(propertyId: string, videoUrlOrBase64: string): Promise<any> {
+    if (isDemoSession()) return { success: true, videos: [videoUrlOrBase64] };
+    return request(`/properties/${propertyId}/videos`, {
+      method: 'POST',
+      body: JSON.stringify({ videoUrl: videoUrlOrBase64 }),
+    });
+  },
+
+  async uploadPropertyVideoFile(propertyId: string, file: File): Promise<any> {
+    if (isDemoSession()) return { success: true, videos: ['/uploads/demo.mp4'] };
+    const formData = new FormData();
+    formData.append('video', file);
+    const token = localStorage.getItem('admin_token');
+    const res = await fetch(`${API_BASE}/properties/${propertyId}/videos/upload`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      let msg = 'Failed to upload video';
+      try { const d = await res.json(); msg = d.message || msg; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
+  },
+
+  async deletePropertyVideo(propertyId: string, videoUrl: string): Promise<any> {
+    if (isDemoSession()) return { success: true, videos: [] };
+    return request(`/properties/${propertyId}/videos`, {
+      method: 'DELETE',
+      body: JSON.stringify({ videoUrl }),
+    });
   },
 
   async addPropertyImages(propertyId: string, images: string[]): Promise<Property> {

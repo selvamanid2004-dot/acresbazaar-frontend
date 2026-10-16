@@ -22,7 +22,15 @@ import {
   Image as ImageIcon,
   ZoomIn,
   Tag,
-  Check
+  Check,
+  Video,
+  Film,
+  Upload,
+  Play,
+  Lock,
+  Unlock,
+  EyeOff,
+  Shield
 } from 'lucide-react';
 import { Property, Category } from '../types';
 import { api, resolveImageUrl } from '../services/api';
@@ -59,6 +67,55 @@ export const Properties: React.FC = () => {
   const [approvalProperty, setApprovalProperty] = useState<Property | null>(null);
   const [selectedApprovalTier, setSelectedApprovalTier] = useState<'GOLD' | 'PLATINUM'>('GOLD');
   const [approving, setApproving] = useState<boolean>(false);
+  const [uploadingVideo, setUploadingVideo] = useState<boolean>(false);
+
+  const handleAdminVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !viewProperty) return;
+
+    // Requirement 4: Max 50MB file size limit enforced
+    const MAX_SIZE_BYTES = 50 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      alert(`Video file size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds the maximum allowed limit of 50 MB. Please upload a smaller video.`);
+      e.target.value = '';
+      return;
+    }
+
+    // Requirement 3: Maximum 2 videos per property
+    const currentVideos = viewProperty.videos || [];
+    if (currentVideos.length >= 2) {
+      alert('This property already has the maximum allowed 2 videos. Please remove an existing video before adding a new one.');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadingVideo(true);
+    try {
+      await api.uploadPropertyVideoFile(viewProperty.id, file);
+      const updated = await api.getProperty(viewProperty.id);
+      setViewProperty(updated);
+      fetchProperties();
+      alert('Video uploaded successfully!');
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload video');
+    } finally {
+      setUploadingVideo(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleAdminVideoDelete = async (videoUrl: string) => {
+    if (!viewProperty) return;
+    if (!window.confirm('Are you sure you want to delete this property video?')) return;
+    try {
+      await api.deletePropertyVideo(viewProperty.id, videoUrl);
+      const updated = await api.getProperty(viewProperty.id);
+      setViewProperty(updated);
+      fetchProperties();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete video');
+    }
+  };
 
   const formatSpecKey = (key: string): string => {
     return key
@@ -157,6 +214,31 @@ export const Properties: React.FC = () => {
       fetchProperties();
     } catch (err: any) {
       alert(err.message || 'Publish toggle failed');
+    }
+  };
+
+  const [togglingVisibilityId, setTogglingVisibilityId] = useState<string | null>(null);
+
+  const handleToggleVisibility = async (id: string, currentVisible: boolean) => {
+    const nextVisibility = !currentVisible;
+    setTogglingVisibilityId(id);
+    try {
+      await api.togglePropertyVisibility(id, nextVisibility);
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === id ? { ...p, detailsVisible: nextVisibility, isDetailsLocked: !nextVisibility } : p
+        )
+      );
+      if (viewProperty && viewProperty.id === id) {
+        setViewProperty((prev) =>
+          prev ? { ...prev, detailsVisible: nextVisibility, isDetailsLocked: !nextVisibility } : null
+        );
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update property details visibility');
+      fetchProperties();
+    } finally {
+      setTogglingVisibilityId(null);
     }
   };
 
@@ -290,7 +372,7 @@ export const Properties: React.FC = () => {
                 <th>Submitted By</th>
                 <th>Plan Tier</th>
                 <th>Status</th>
-                <th>Published</th>
+                <th>Details Visibility</th>
                 <th style={{ textAlign: 'right' }}>Admin Actions</th>
               </tr>
             </thead>
@@ -322,8 +404,13 @@ export const Properties: React.FC = () => {
                           <div style={{ fontWeight: 600, color: '#fff', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {p.title}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            ID: {p.id.slice(0, 8)}...
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>ID: {p.id.slice(0, 8)}...</span>
+                            {p.videos && p.videos.length > 0 && (
+                              <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                🎥 {p.videos.length} {p.videos.length === 1 ? 'Vid' : 'Vids'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -377,15 +464,62 @@ export const Properties: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <button
-                        className={`btn btn-sm ${p.isPublished ? 'btn-success' : 'btn-secondary'}`}
-                        style={{ fontSize: '11px', padding: '4px 8px' }}
-                        title={p.isPublished ? 'Click to unpublish' : 'Click to publish on Public Website'}
-                        onClick={() => handleTogglePublish(p.id, p.isPublished)}
-                      >
-                        <Globe size={12} />
-                        <span>{p.isPublished ? 'Published' : 'Hidden'}</span>
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleVisibility(p.id, p.detailsVisible !== false)}
+                          disabled={togglingVisibilityId === p.id}
+                          title={
+                            p.detailsVisible !== false
+                              ? 'Property Details are currently ON (Visible). Click to Lock details (OFF).'
+                              : 'Property Details are currently OFF (Locked). Click to Show details (ON).'
+                          }
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            borderRadius: '16px',
+                            fontSize: '11.5px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            border: p.detailsVisible !== false
+                              ? '1px solid rgba(16, 185, 129, 0.45)'
+                              : '1px solid rgba(245, 158, 11, 0.45)',
+                            background: p.detailsVisible !== false
+                              ? 'rgba(16, 185, 129, 0.15)'
+                              : 'rgba(245, 158, 11, 0.15)',
+                            color: p.detailsVisible !== false ? '#10b981' : '#f59e0b',
+                            boxShadow: p.detailsVisible !== false
+                              ? '0 2px 8px rgba(16, 185, 129, 0.2)'
+                              : '0 2px 8px rgba(245, 158, 11, 0.15)'
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: '10px',
+                              height: '10px',
+                              borderRadius: '50%',
+                              background: p.detailsVisible !== false ? '#10b981' : '#f59e0b',
+                              display: 'inline-block',
+                              boxShadow: p.detailsVisible !== false ? '0 0 6px #10b981' : 'none'
+                            }}
+                          />
+                          {p.detailsVisible !== false ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <Eye size={12} /> ON (Visible)
+                            </span>
+                          ) : (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <Lock size={12} /> OFF (Locked)
+                            </span>
+                          )}
+                        </button>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', paddingLeft: '4px' }}>
+                          {p.detailsVisible !== false ? 'Details Visible' : 'Locked • Plan Req.'}
+                        </span>
+                      </div>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '4px' }}>
@@ -494,15 +628,20 @@ export const Properties: React.FC = () => {
                   }`}>
                     {viewProperty.status}
                   </span>
-                  {viewProperty.isPublished ? (
-                    <span className="badge badge-approved" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Globe size={11} /> Live on Website
-                    </span>
-                  ) : (
-                    <span className="badge" style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-muted)' }}>
-                      Hidden / Draft
-                    </span>
-                  )}
+                  <span
+                    className="badge"
+                    style={{
+                      backgroundColor: viewProperty.detailsVisible !== false ? 'rgba(16, 185, 129, 0.18)' : 'rgba(245, 158, 11, 0.18)',
+                      color: viewProperty.detailsVisible !== false ? '#10b981' : '#f59e0b',
+                      border: viewProperty.detailsVisible !== false ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {viewProperty.detailsVisible !== false ? <Eye size={11} /> : <Lock size={11} />}
+                    Details: {viewProperty.detailsVisible !== false ? 'Visible (ON)' : 'Locked (OFF)'}
+                  </span>
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>{viewProperty.title}</div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
@@ -516,6 +655,104 @@ export const Properties: React.FC = () => {
             </div>
 
             <div className="modal-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* PROPERTY DETAILS VISIBILITY CONTROL BANNER */}
+              <div style={{
+                background: viewProperty.detailsVisible !== false
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95))'
+                  : 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.95))',
+                border: viewProperty.detailsVisible !== false
+                  ? '1px solid rgba(16, 185, 129, 0.35)'
+                  : '1px solid rgba(245, 158, 11, 0.35)',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '14px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 300px' }}>
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: viewProperty.detailsVisible !== false ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                    color: viewProperty.detailsVisible !== false ? '#10b981' : '#f59e0b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    {viewProperty.detailsVisible !== false ? <Eye size={22} /> : <Lock size={22} />}
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#fff', margin: 0 }}>
+                        Property Details Visibility Control
+                      </h4>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: viewProperty.detailsVisible !== false ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                        color: viewProperty.detailsVisible !== false ? '#10b981' : '#f59e0b',
+                        border: viewProperty.detailsVisible !== false ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)'
+                      }}>
+                        {viewProperty.detailsVisible !== false ? 'CURRENT: ON (VISIBLE)' : 'CURRENT: OFF (LOCKED)'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+                      {viewProperty.detailsVisible !== false
+                        ? 'Property details are visible on website according to standard display rules.'
+                        : 'Property details remain locked on the website. Website users must follow subscription plans to access locked details.'}
+                      <br />
+                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                        * Independent control: Property approval and visibility locking work separately.
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleToggleVisibility(viewProperty.id, viewProperty.detailsVisible !== false)}
+                  disabled={togglingVisibilityId === viewProperty.id}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '9px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    border: 'none',
+                    background: viewProperty.detailsVisible !== false
+                      ? 'linear-gradient(135deg, #10b981, #059669)'
+                      : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: '#fff',
+                    boxShadow: viewProperty.detailsVisible !== false
+                      ? '0 4px 14px rgba(16, 185, 129, 0.35)'
+                      : '0 4px 14px rgba(245, 158, 11, 0.35)'
+                  }}
+                >
+                  {viewProperty.detailsVisible !== false ? (
+                    <>
+                      <Lock size={15} />
+                      <span>Switch to OFF (Lock Details)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Unlock size={15} />
+                      <span>Switch to ON (Show Details)</span>
+                    </>
+                  )}
+                </button>
+              </div>
               
               {/* 1. SELLER & SUBMITTER CONTACT DOSSIER */}
               <div style={{
@@ -858,6 +1095,159 @@ export const Properties: React.FC = () => {
                 ) : (
                   <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-input)', borderRadius: '10px' }}>
                     No photos uploaded for this property
+                  </div>
+                )}
+              </div>
+
+              {/* 6. UPLOADED VIDEOS (MAX 2 VIDEOS PER PROPERTY, MAX 50MB SIZE) */}
+              <div style={{ marginTop: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Video size={16} style={{ color: '#38bdf8' }} />
+                    <span>Property Videos ({viewProperty.videos?.length || 0} / 2)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', fontSize: '11px', fontWeight: 700 }}>
+                      Max: 2 Videos • Max File Size: 50MB
+                    </span>
+                  </div>
+                </div>
+
+                {/* Video Cards Grid */}
+                {viewProperty.videos && viewProperty.videos.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginBottom: '14px' }}>
+                    {viewProperty.videos.map((vidUrl, vIdx) => (
+                      <div 
+                        key={vIdx}
+                        style={{
+                          background: '#0f172a',
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#000' }}>
+                          <video 
+                            src={resolveImageUrl(vidUrl)} 
+                            controls 
+                            preload="metadata"
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          />
+                          <span style={{
+                            position: 'absolute',
+                            top: '8px',
+                            left: '8px',
+                            background: 'rgba(0,0,0,0.75)',
+                            color: '#38bdf8',
+                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '4px'
+                          }}>
+                            🎥 Video #{vIdx + 1}
+                          </span>
+                        </div>
+                        <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(15, 23, 42, 0.95)' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
+                            {vidUrl.split('/').pop()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleAdminVideoDelete(vidUrl)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              color: '#f87171',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Trash2 size={12} />
+                            Delete Video
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-input)', borderRadius: '10px', marginBottom: '12px', fontSize: '13px' }}>
+                    No walkthrough or drone videos uploaded for this property yet.
+                  </div>
+                )}
+
+                {/* Upload Video Control (Admin Only, Max 2 Videos) */}
+                {(viewProperty.videos?.length || 0) < 2 ? (
+                  <div style={{
+                    border: '2px dashed rgba(56, 189, 248, 0.35)',
+                    borderRadius: '10px',
+                    padding: '16px',
+                    background: 'rgba(56, 189, 248, 0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <Film size={24} style={{ color: '#38bdf8' }} />
+                    <div>
+                      <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#fff' }}>
+                        Add Property Video (Admin Upload)
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Upload property walkthrough or drone tour video. <strong>Maximum 50MB per video file</strong>. Supported: MP4, WebM, MOV.
+                      </div>
+                    </div>
+                    <label style={{
+                      background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                      color: '#fff',
+                      padding: '8px 18px',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: uploadingVideo ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      marginTop: '6px'
+                    }}>
+                      <Upload size={14} />
+                      <span>{uploadingVideo ? 'Uploading Video...' : '+ Select Video File (Max 50MB)'}</span>
+                      <input 
+                        type="file" 
+                        accept="video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v"
+                        disabled={uploadingVideo}
+                        onChange={handleAdminVideoUpload}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                      Allowed limit: {2 - (viewProperty.videos?.length || 0)} more video(s) allowed (Max 2 videos total)
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '10px 14px',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    borderRadius: '8px',
+                    color: '#10b981',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <Check size={14} />
+                    <span>Maximum 2 videos reached (2/2). Delete an existing video above if you wish to upload a new one.</span>
                   </div>
                 )}
               </div>
