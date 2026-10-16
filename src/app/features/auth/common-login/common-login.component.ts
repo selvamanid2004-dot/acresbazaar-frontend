@@ -7,6 +7,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { getApiBaseUrl } from '../../../core/services/api-config';
 
+export type RoleOption = 'Buyer' | 'Seller' | 'Dealer' | 'Partner';
 export type AuthRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
 
 @Component({
@@ -14,399 +15,420 @@ export type AuthRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <div class="auth-page-container">
-      <div class="auth-card">
-        
-        <!-- Interactive Role Switcher Tabs -->
-        <div class="role-tabs-bar">
-          <button 
-            type="button" 
-            class="role-tab-btn" 
-            [class.active]="currentRole === 'BUYER'" 
-            (click)="switchRole('BUYER')">
-            <span class="tab-icon">👤</span>
-            <span class="tab-label">Buyer</span>
-          </button>
-          <button 
-            type="button" 
-            class="role-tab-btn" 
-            [class.active]="currentRole === 'SELLER'" 
-            (click)="switchRole('SELLER')">
-            <span class="tab-icon">🏠</span>
-            <span class="tab-label">Seller</span>
-          </button>
-          <button 
-            type="button" 
-            class="role-tab-btn" 
-            [class.active]="currentRole === 'DEALER'" 
-            (click)="switchRole('DEALER')">
-            <span class="tab-icon">🏢</span>
-            <span class="tab-label">Dealer</span>
-          </button>
-          <button 
-            type="button" 
-            class="role-tab-btn" 
-            [class.active]="currentRole === 'SPOTTER'" 
-            (click)="switchRole('SPOTTER')">
-            <span class="tab-icon">📸</span>
-            <span class="tab-label">Partner</span>
-          </button>
-        </div>
-
-        <!-- Dynamic Brand / Header -->
-        <div class="auth-header">
-          <div class="role-badge" [ngClass]="roleBadgeClass">
-            <span class="badge-icon">{{ roleIcon }}</span>
-            <span>{{ roleBadgeText }}</span>
-          </div>
-          <div class="logo-mark">
-            <span class="gold-text">ACRES</span><span class="white-text">Bazaar</span>
-          </div>
-          <h1 class="dynamic-auth-title">{{ dynamicTitle }}</h1>
-          <p class="subtitle">{{ dynamicSubtitle }}</p>
-        </div>
-
-        <!-- Role Conflict Warning -->
-        <div *ngIf="activeConflictRole" class="alert-box conflict">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
-          <div style="flex: 1;">
-            <div><strong>Active {{ activeConflictRole }} Session:</strong> You are already logged in as a {{ activeConflictRole }}. Please logout first before logging in as a {{ currentRoleName }}.</div>
-            <button type="button" class="btn-conflict-logout" (click)="logoutConflict()">Logout {{ activeConflictRole }}</button>
-          </div>
-        </div>
-
-        <!-- Global Error Alert -->
-        <div *ngIf="errorMessage()" class="alert-box error">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <span>{{ errorMessage() }}</span>
-        </div>
-
-        <!-- Global Success Alert -->
-        <div *ngIf="successMessage()" class="alert-box success">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-          <span>{{ successMessage() }}</span>
-        </div>
-
-        <!-- Common Login Form -->
-        <form (ngSubmit)="handleLogin()" #loginForm="ngForm" class="auth-form" novalidate>
-          
-          <!-- Email / Username Field -->
-          <div class="form-group">
-            <label for="email">{{ emailLabel }}</label>
-            <div class="input-wrapper" [class.error]="emailCtrl.invalid && (emailCtrl.touched || submitted)">
-              <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
+    <div class="auth-page-wrapper">
+      
+      <!-- Top Navigation Bar -->
+      <section class="auth-nav-bar">
+        <div class="container">
+          <div class="nav-bar-inner">
+            <button type="button" class="btn-back" (click)="goBack()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                [(ngModel)]="email"
-                #emailCtrl="ngModel"
-                required
-                email
-                [placeholder]="emailPlaceholder"
-                autocomplete="email"
-              />
-            </div>
-            <div class="field-error" *ngIf="emailCtrl.invalid && (emailCtrl.touched || submitted)">
-              <span *ngIf="emailCtrl.errors?.['required']">Email address is required</span>
-              <span *ngIf="emailCtrl.errors?.['email']">Please enter a valid email address</span>
-            </div>
-          </div>
+              <span>Back</span>
+            </button>
 
-          <!-- Password Field -->
-          <div class="form-group">
-            <div class="label-with-link">
-              <label for="password">Password</label>
-              <a *ngIf="currentRole === 'BUYER'" [routerLink]="['/forgot-password']" [queryParams]="{ returnUrl: returnUrl() }" class="forgot-link">
-                Forgot Password?
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+              <ol class="breadcrumb-list">
+                <li><a routerLink="/" class="crumb-link">Home</a></li>
+                <li class="crumb-sep">/</li>
+                <li><span class="crumb-current">Login</span></li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+      </section>
+
+      <!-- Login Form Card Section -->
+      <section class="auth-card-section">
+        <div class="container">
+          <div class="auth-card-container">
+            
+            <!-- Header -->
+            <div class="auth-header">
+              <span class="auth-eyebrow">WELCOME BACK</span>
+              <h1 class="auth-title">Login</h1>
+              <p class="auth-sub">Enter your credentials to access your account</p>
+            </div>
+
+            <!-- Role Conflict Warning -->
+            <div class="alert-banner warning-banner" *ngIf="activeConflictRole">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <div class="conflict-content">
+                <span><strong>Active {{ activeConflictRole }} Session:</strong> You are already logged in as a {{ activeConflictRole }}. Please logout first before logging in as a {{ selectedRole }}.</span>
+                <button type="button" class="btn-conflict-logout" (click)="logoutConflict()">Logout {{ activeConflictRole }}</button>
+              </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div class="alert-banner error-banner" *ngIf="errorMessage()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ errorMessage() }}</span>
+            </div>
+
+            <!-- Success Banner -->
+            <div class="alert-banner success-banner" *ngIf="successMessage()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>{{ successMessage() }}</span>
+            </div>
+
+            <!-- Single Common Login Form -->
+            <form (ngSubmit)="handleLogin()" #loginForm="ngForm" class="auth-form" novalidate>
+              
+              <!-- 1. Email ID -->
+              <div class="form-group">
+                <label for="email" class="form-label">
+                  Email ID <span class="required">*</span>
+                </label>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    [(ngModel)]="email" 
+                    required 
+                    [placeholder]="emailPlaceholder" 
+                    class="form-control" 
+                    autocomplete="email" />
+                </div>
+              </div>
+
+              <!-- 2. Password -->
+              <div class="form-group">
+                <div class="label-with-link">
+                  <label for="password" class="form-label">
+                    Password <span class="required">*</span>
+                  </label>
+                  <a *ngIf="selectedRole === 'Buyer'" [routerLink]="['/forgot-password']" [queryParams]="{ returnUrl: returnUrl() }" class="forgot-link">
+                    Forgot Password?
+                  </a>
+                </div>
+                <div class="input-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <input 
+                    [type]="showPassword() ? 'text' : 'password'" 
+                    id="password" 
+                    name="password" 
+                    [(ngModel)]="password" 
+                    required 
+                    placeholder="Enter your password" 
+                    class="form-control" 
+                    autocomplete="current-password" />
+                  <button type="button" class="btn-toggle-pwd" (click)="togglePasswordVisibility()" aria-label="Toggle password visibility">
+                    <svg *ngIf="!showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg *ngIf="showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Role Dropdown with four options: Buyer, Seller, Dealer, Partner -->
+              <div class="form-group">
+                <label for="role" class="form-label">
+                  Role <span class="required">*</span>
+                </label>
+                <div class="input-wrap select-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                  </svg>
+                  <select 
+                    id="role" 
+                    name="role" 
+                    [(ngModel)]="selectedRole" 
+                    (ngModelChange)="onRoleChange($event)" 
+                    required 
+                    class="form-control form-select">
+                    <option value="Buyer">Buyer</option>
+                    <option value="Seller">Seller</option>
+                    <option value="Dealer">Dealer</option>
+                    <option value="Partner">Partner</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <button 
+                type="submit" 
+                class="btn-auth-submit" 
+                [disabled]="isSubmitting() || !!activeConflictRole">
+                <span *ngIf="!isSubmitting()">Login</span>
+                <span *ngIf="isSubmitting()" class="submitting-spinner">
+                  <svg class="spin-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+                  </svg>
+                  Logging in...
+                </span>
+              </button>
+            </form>
+
+            <!-- Bottom Switch to Register -->
+            <div class="auth-card-footer">
+              <span>Don't have an account?</span>
+              <a [routerLink]="registerLink" [queryParams]="registerQueryParams" class="auth-switch-link">
+                Register as {{ selectedRole }} →
               </a>
             </div>
-            <div class="input-wrapper" [class.error]="passwordCtrl.invalid && (passwordCtrl.touched || submitted)">
-              <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-              <input
-                id="password"
-                name="password"
-                [type]="showPassword() ? 'text' : 'password'"
-                [(ngModel)]="password"
-                #passwordCtrl="ngModel"
-                required
-                placeholder="••••••••"
-                autocomplete="current-password"
-              />
-              <button
-                type="button"
-                class="toggle-password"
-                (click)="togglePasswordVisibility()"
-                tabindex="-1"
-                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-              >
-                <svg *ngIf="!showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg *ngIf="showPassword()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-            <div class="field-error" *ngIf="passwordCtrl.invalid && (passwordCtrl.touched || submitted)">
-              <span *ngIf="passwordCtrl.errors?.['required']">Password is required</span>
-            </div>
+
           </div>
-
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            class="btn-submit"
-            [class.submitting]="isSubmitting()"
-            [disabled]="isSubmitting() || !!activeConflictRole"
-          >
-            <span *ngIf="!isSubmitting()">{{ submitButtonText }}</span>
-            <span *ngIf="isSubmitting()" class="spinner-label">
-              <span class="spinner"></span>
-              Authenticating {{ currentRoleName }}...
-            </span>
-          </button>
-        </form>
-
-        <!-- Dynamic Switch to Register Link -->
-        <div class="auth-footer">
-          <p>
-            Don't have a {{ currentRoleName }} account?
-            <a [routerLink]="registerLink" [queryParams]="registerQueryParams" class="register-link">
-              Register as {{ currentRoleName }} →
-            </a>
-          </p>
         </div>
+      </section>
 
-      </div>
     </div>
   `,
   styles: [`
     :host {
       display: block;
-      min-height: 100vh;
       background: radial-gradient(circle at top center, #1e293b 0%, #0b0f19 70%, #05070c 100%);
       color: #f8fafc;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    .auth-page-container {
-      min-height: calc(100vh - 80px);
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .auth-nav-bar {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(11, 15, 25, 0.6);
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-bar-inner {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .breadcrumb-list {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.85rem;
+    }
+
+    .crumb-link {
+      color: #94a3b8;
+      text-decoration: none;
+    }
+
+    .crumb-link:hover {
+      color: #f59e0b;
+    }
+
+    .crumb-sep {
+      color: #64748b;
+    }
+
+    .crumb-current {
+      color: #f8fafc;
+      font-weight: 700;
+    }
+
+    .auth-card-section {
+      padding: 3rem 0 5rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px 20px;
     }
 
-    .auth-card {
-      background: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      padding: 32px 36px;
-      width: 100%;
+    .auth-card-container {
       max-width: 480px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(245, 158, 11, 0.05);
-      position: relative;
-    }
-
-    .role-tabs-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.04);
-      padding: 4px;
-      border-radius: 12px;
-      margin-bottom: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .role-tab-btn {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      padding: 8px 4px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      font-size: 11.5px;
-      font-weight: 700;
-      transition: all 0.15s ease;
-    }
-
-    .role-tab-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .role-tab-btn.active {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #0b0f19;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-    }
-
-    .tab-icon {
-      font-size: 14px;
+      width: 100%;
+      margin: 0 auto;
+      background: #111827;
+      border: 1.5px solid rgba(245, 158, 11, 0.2);
+      border-radius: 20px;
+      padding: 2.25rem 2rem;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 30px rgba(245, 158, 11, 0.06);
     }
 
     .auth-header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 2rem;
     }
 
-    .role-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 11px;
+    .auth-eyebrow {
+      display: inline-block;
+      font-size: 0.72rem;
       font-weight: 800;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 12px;
-    }
-
-    .role-badge.buyer-badge {
-      background: rgba(59, 130, 246, 0.15);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-
-    .role-badge.seller-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
       background: rgba(245, 158, 11, 0.15);
       color: #fbbf24;
       border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
-    .role-badge.dealer-badge {
-      background: rgba(168, 85, 247, 0.15);
-      color: #c084fc;
-      border: 1px solid rgba(168, 85, 247, 0.3);
-    }
-
-    .role-badge.spotter-badge {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    .logo-mark {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
-    }
-
-    .gold-text { color: #f59e0b; }
-    .white-text { color: #f8fafc; }
-
-    .dynamic-auth-title {
-      font-size: 22px;
+    .auth-title {
+      font-size: 1.75rem;
       font-weight: 800;
       color: #fff;
-      margin: 0 0 6px;
-      letter-spacing: -0.01em;
+      margin: 0 0 0.5rem;
     }
 
-    .subtitle {
-      font-size: 13px;
+    .auth-sub {
+      font-size: 0.88rem;
       color: #94a3b8;
       margin: 0;
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
-    .alert-box {
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-size: 12.5px;
+    .alert-banner {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 18px;
-      line-height: 1.4;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
     }
 
-    .alert-box.conflict {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      color: #fcd34d;
-    }
-
-    .btn-conflict-logout {
-      margin-top: 6px;
-      background: #f59e0b;
-      color: #000;
-      border: none;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 11.5px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .alert-box.error {
-      background: rgba(239, 68, 68, 0.1);
+    .error-banner {
+      background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.3);
       color: #f87171;
     }
 
-    .alert-box.success {
-      background: rgba(16, 185, 129, 0.1);
+    .success-banner {
+      background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.3);
       color: #34d399;
     }
 
-    .form-group {
-      margin-bottom: 18px;
+    .warning-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
     }
 
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
+    .conflict-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .btn-conflict-logout {
+      align-self: flex-start;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-conflict-logout:hover {
+      background: #f59e0b;
+      color: #0b0f19;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .form-label {
+      font-size: 0.84rem;
+      font-weight: 700;
       color: #e2e8f0;
-      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
     }
 
     .label-with-link {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
     }
 
     .forgot-link {
-      font-size: 12px;
       color: #f59e0b;
-      text-decoration: none;
+      font-size: 0.8rem;
       font-weight: 600;
+      text-decoration: none;
+      transition: color 0.15s ease;
     }
 
     .forgot-link:hover {
       text-decoration: underline;
+      color: #fbbf24;
     }
 
-    .input-wrapper {
+    .required {
+      color: #ef4444;
+    }
+
+    .input-wrap {
       position: relative;
       display: flex;
       align-items: center;
@@ -416,113 +438,130 @@ export type AuthRoleType = 'BUYER' | 'SELLER' | 'DEALER' | 'SPOTTER';
       transition: all 0.2s ease;
     }
 
-    .input-wrapper:focus-within {
+    .input-wrap:focus-within {
       border-color: #f59e0b;
       box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
     }
 
-    .input-wrapper.error {
-      border-color: #ef4444;
-    }
-
-    .input-icon {
+    .field-icon {
       position: absolute;
-      left: 12px;
+      left: 0.85rem;
       color: #64748b;
+      pointer-events: none;
     }
 
-    .input-wrapper input {
+    .form-control {
       width: 100%;
-      padding: 12px 14px 12px 38px;
+      padding: 0.75rem 0.85rem 0.75rem 2.4rem;
       background: transparent;
       border: none;
       color: #fff;
-      font-size: 14px;
+      font-size: 0.9rem;
       outline: none;
+      font-family: inherit;
     }
 
-    .toggle-password {
+    .form-control::placeholder {
+      color: #475569;
+    }
+
+    .form-select {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+    }
+
+    .form-select option {
+      background: #111827;
+      color: #f8fafc;
+    }
+
+    .btn-toggle-pwd {
       background: none;
       border: none;
       color: #64748b;
-      padding: 8px 12px;
+      padding: 0.6rem 0.85rem;
       cursor: pointer;
     }
 
-    .toggle-password:hover {
+    .btn-toggle-pwd:hover {
       color: #fff;
     }
 
-    .field-error {
-      color: #f87171;
-      font-size: 11.5px;
-      margin-top: 4px;
-    }
-
-    .btn-submit {
+    .btn-auth-submit {
       width: 100%;
-      padding: 13px;
+      padding: 0.85rem;
       background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #0b0f19;
       border: none;
       border-radius: 10px;
-      font-size: 14.5px;
+      font-size: 0.95rem;
       font-weight: 800;
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
       transition: all 0.2s ease;
-      margin-top: 8px;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
 
-    .btn-submit:hover:not(:disabled) {
+    .btn-auth-submit:hover:not(:disabled) {
       background: linear-gradient(135deg, #fbbf24, #f59e0b);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
     }
 
-    .btn-submit:disabled {
+    .btn-auth-submit:disabled {
       opacity: 0.6;
       cursor: not-allowed;
     }
 
-    .spinner-label {
-      display: flex;
+    .submitting-spinner {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      gap: 0.5rem;
     }
 
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(0, 0, 0, 0.2);
-      border-top-color: #000;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
+    .spin-svg {
+      animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
+      from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
 
-    .auth-footer {
+    .auth-card-footer {
       text-align: center;
-      margin-top: 22px;
-      padding-top: 18px;
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 13px;
+      font-size: 0.85rem;
       color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
 
-    .register-link {
+    .auth-switch-link {
       color: #f59e0b;
       text-decoration: none;
       font-weight: 700;
-      margin-left: 4px;
     }
 
-    .register-link:hover {
+    .auth-switch-link:hover {
       text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      .auth-card-container {
+        padding: 1.75rem 1.25rem;
+      }
     }
   `]
 })
@@ -533,26 +572,25 @@ export class CommonLoginComponent implements OnInit, OnChanges {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
 
-  // Optional Input from parent component
-  @Input() role?: AuthRoleType | string;
+  // Optional Input from wrapper components
+  @Input() role?: RoleOption | AuthRoleType | string;
 
-  // Form State
+  // Form Fields
   email = '';
   password = '';
-  submitted = false;
+  selectedRole: RoleOption = 'Buyer';
+
   showPassword = signal(false);
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
   returnUrl = signal<string>('/');
 
-  // Role State
-  currentRole: AuthRoleType = 'BUYER';
   activeConflictRole: string | null = null;
 
   ngOnInit(): void {
     if (this.role) {
-      this.setRole(this.role);
+      this.setRoleFromParam(this.role);
     } else {
       this.detectRoleFromContext();
     }
@@ -562,16 +600,21 @@ export class CommonLoginComponent implements OnInit, OnChanges {
         this.returnUrl.set(params['returnUrl']);
       }
       if (params['role'] && !this.role) {
-        this.setRole(params['role']);
+        this.setRoleFromParam(params['role']);
       }
     });
+
+    const dataRole = this.route.snapshot.data['role'];
+    if (dataRole && !this.role) {
+      this.setRoleFromParam(dataRole);
+    }
 
     this.checkConflictAndRedirect();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['role'] && this.role) {
-      this.setRole(this.role);
+      this.setRoleFromParam(this.role);
       this.checkConflictAndRedirect();
     }
   }
@@ -580,63 +623,81 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     // 1. From route data
     const dataRole = this.route.snapshot.data['role'];
     if (dataRole) {
-      this.setRole(dataRole);
+      this.setRoleFromParam(dataRole);
       return;
     }
 
     // 2. From URL path
     const url = this.router.url.toLowerCase();
     if (url.includes('/seller/') || url.includes('/sellers/')) {
-      this.currentRole = 'SELLER';
+      this.selectedRole = 'Seller';
     } else if (url.includes('/dealer/') || url.includes('/dealers/')) {
-      this.currentRole = 'DEALER';
-    } else if (url.includes('/snap-property/') || url.includes('/spotter/') || url.includes('/spotters/')) {
-      this.currentRole = 'SPOTTER';
+      this.selectedRole = 'Dealer';
+    } else if (url.includes('/snap-property/') || url.includes('/spotter/') || url.includes('/spotters/') || url.includes('/partner/')) {
+      this.selectedRole = 'Partner';
     } else {
-      this.currentRole = 'BUYER';
+      this.selectedRole = 'Buyer';
     }
   }
 
-  setRole(roleString: string): void {
+  setRoleFromParam(roleString: string): void {
     const r = (roleString || '').toUpperCase().trim();
-    if (r === 'SELLER') this.currentRole = 'SELLER';
-    else if (r === 'DEALER') this.currentRole = 'DEALER';
-    else if (r === 'SPOTTER' || r === 'COMMON_PEOPLE' || r === 'COMMON') this.currentRole = 'SPOTTER';
-    else this.currentRole = 'BUYER';
+    if (r === 'SELLER') this.selectedRole = 'Seller';
+    else if (r === 'DEALER') this.selectedRole = 'Dealer';
+    else if (r === 'SPOTTER' || r === 'PARTNER' || r === 'COMMON_PEOPLE' || r === 'COMMON') this.selectedRole = 'Partner';
+    else this.selectedRole = 'Buyer';
   }
 
-  switchRole(role: AuthRoleType): void {
-    this.currentRole = role;
+  setRole(roleString: string): void {
+    this.setRoleFromParam(roleString);
+  }
+
+  onRoleChange(newRole: RoleOption): void {
+    this.selectedRole = newRole;
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.checkConflictAndRedirect();
+  }
+
+  switchRole(role: AuthRoleType | RoleOption): void {
+    this.setRoleFromParam(String(role));
+    this.onRoleChange(this.selectedRole);
+  }
+
+  goBack(): void {
+    if (this.returnUrl() && this.returnUrl() !== '/') {
+      this.router.navigateByUrl(this.returnUrl());
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 
   checkConflictAndRedirect(): void {
     this.activeConflictRole = null;
 
     // If already logged in as this exact role, redirect to corresponding dashboard
-    if (this.currentRole === 'BUYER' && this.authService.isAuthenticated()) {
+    if (this.selectedRole === 'Buyer' && this.authService.isAuthenticated()) {
       this.router.navigateByUrl(this.returnUrl());
       return;
     }
-    if (this.currentRole === 'SELLER' && this.authService.isSellerAuthenticated()) {
+    if (this.selectedRole === 'Seller' && this.authService.isSellerAuthenticated()) {
       this.router.navigate(['/seller/categories']);
       return;
     }
-    if (this.currentRole === 'DEALER' && this.authService.isDealerAuthenticated()) {
+    if (this.selectedRole === 'Dealer' && this.authService.isDealerAuthenticated()) {
       this.router.navigate(['/dealer/dashboard']);
       return;
     }
-    if (this.currentRole === 'SPOTTER' && this.authService.isSpotterAuthenticated()) {
+    if (this.selectedRole === 'Partner' && this.authService.isSpotterAuthenticated()) {
       this.router.navigate(['/snap-property/dashboard']);
       return;
     }
 
     // Check for role conflicts
     const activeRole = this.authService.getActiveRole();
-    if (activeRole && activeRole.toUpperCase() !== this.currentRole && !(activeRole === 'Spotter' && this.currentRole === 'SPOTTER')) {
-      this.activeConflictRole = activeRole;
+    const normalizedActiveRole = activeRole === 'Spotter' ? 'Partner' : activeRole;
+    if (normalizedActiveRole && normalizedActiveRole.toLowerCase() !== this.selectedRole.toLowerCase()) {
+      this.activeConflictRole = normalizedActiveRole;
     }
   }
 
@@ -651,119 +712,67 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     this.showPassword.set(!this.showPassword());
   }
 
-  // Dynamic Getters for UI
+  get currentRole(): AuthRoleType {
+    switch (this.selectedRole) {
+      case 'Seller': return 'SELLER';
+      case 'Dealer': return 'DEALER';
+      case 'Partner': return 'SPOTTER';
+      default: return 'BUYER';
+    }
+  }
+
   get currentRoleName(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'Seller';
-      case 'DEALER': return 'Dealer';
-      case 'SPOTTER': return 'Partner';
-      default: return 'Buyer';
-    }
-  }
-
-  get dynamicTitle(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'Seller Login';
-      case 'DEALER': return 'Dealer Login';
-      case 'SPOTTER': return 'Partner Login';
-      default: return 'Buyer Login';
-    }
-  }
-
-  get dynamicSubtitle(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'Access your seller dashboard, manage Platinum properties & verify listings';
-      case 'DEALER': return 'Access your agency dashboard, property allocations & earn reward commissions';
-      case 'SPOTTER': return 'Sign in to upload TO-LET signboards, track points & redeem cash rewards';
-      default: return 'Access premium property details, legal records & dealer contacts';
-    }
-  }
-
-  get roleBadgeText(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'SELLER PORTAL';
-      case 'DEALER': return 'DEALER PORTAL';
-      case 'SPOTTER': return 'PARTNER PORTAL';
-      default: return 'BUYER PORTAL';
-    }
-  }
-
-  get roleBadgeClass(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'seller-badge';
-      case 'DEALER': return 'dealer-badge';
-      case 'SPOTTER': return 'spotter-badge';
-      default: return 'buyer-badge';
-    }
-  }
-
-  get roleIcon(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return '🏠';
-      case 'DEALER': return '🏢';
-      case 'SPOTTER': return '📸';
-      default: return '👤';
-    }
-  }
-
-  get emailLabel(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'Seller Email / Gmail Address';
-      case 'DEALER': return 'Dealer Email / Business Address';
-      case 'SPOTTER': return 'Partner Email / Gmail Address';
-      default: return 'Email / Gmail Address';
-    }
+    return this.selectedRole;
   }
 
   get emailPlaceholder(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'seller@example.com';
-      case 'DEALER': return 'dealer@agency.com';
-      case 'SPOTTER': return 'partner@example.com';
+    switch (this.selectedRole) {
+      case 'Seller': return 'seller@example.com';
+      case 'Dealer': return 'dealer@example.com';
+      case 'Partner': return 'partner@example.com';
       default: return 'buyer@example.com';
     }
   }
 
-  get submitButtonText(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return 'Login to Seller Portal';
-      case 'DEALER': return 'Login to Dealer Portal';
-      case 'SPOTTER': return 'Login & Start Snapping';
-      default: return 'Login to Buyer Portal';
-    }
-  }
-
   get registerLink(): string {
-    switch (this.currentRole) {
-      case 'SELLER': return '/seller/register';
-      case 'DEALER': return '/dealer/register';
-      case 'SPOTTER': return '/snap-property/register';
+    switch (this.selectedRole) {
+      case 'Seller': return '/seller/register';
+      case 'Dealer': return '/dealer/register';
+      case 'Partner': return '/snap-property/register';
       default: return '/register/buyer';
     }
   }
 
   get registerQueryParams(): any {
-    return { role: this.currentRole.toLowerCase() };
+    return { role: this.selectedRole.toLowerCase() };
   }
 
   // Unified Login Submission
   async handleLogin(): Promise<void> {
-    this.submitted = true;
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    if (!this.email || !this.password) {
+    const cleanEmail = this.email.trim().toLowerCase();
+    const cleanPassword = this.password;
+
+    if (!cleanEmail || !cleanPassword) {
       this.errorMessage.set('Please fill in both email and password.');
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      this.errorMessage.set('Please enter a valid email address.');
       return;
     }
 
     this.isSubmitting.set(true);
 
     try {
-      if (this.currentRole === 'BUYER') {
+      if (this.selectedRole === 'Buyer') {
         const result = await this.authService.login({
-          email: this.email,
-          password: this.password
+          email: cleanEmail,
+          password: cleanPassword
         });
         if (result.success) {
           this.successMessage.set('Login successful! Redirecting...');
@@ -771,36 +780,36 @@ export class CommonLoginComponent implements OnInit, OnChanges {
         } else {
           this.errorMessage.set(result.message);
         }
-      } else if (this.currentRole === 'SELLER') {
-        const result = await this.authService.loginSeller(this.email, this.password);
+      } else if (this.selectedRole === 'Seller') {
+        const result = await this.authService.loginSeller(cleanEmail, cleanPassword);
         if (result.success) {
           this.successMessage.set('Seller login successful! Opening Seller Portal...');
           setTimeout(() => this.router.navigate(['/seller/categories']), 600);
         } else {
           this.errorMessage.set(result.message);
         }
-      } else if (this.currentRole === 'DEALER') {
-        const result = await this.authService.loginDealer(this.email, this.password);
+      } else if (this.selectedRole === 'Dealer') {
+        const result = await this.authService.loginDealer(cleanEmail, cleanPassword);
         if (result.success) {
           this.successMessage.set('Dealer login successful! Opening Dealer Dashboard...');
           setTimeout(() => this.router.navigate(['/dealer/dashboard']), 600);
         } else {
           this.errorMessage.set(result.message);
         }
-      } else if (this.currentRole === 'SPOTTER') {
+      } else if (this.selectedRole === 'Partner') {
         this.http.post<any>(`${getApiBaseUrl()}/auth/login`, {
-          email: this.email.trim().toLowerCase(),
-          password: this.password
+          email: cleanEmail,
+          password: cleanPassword
         }).subscribe({
           next: (res) => {
             const userRole = (res.user?.role || '').toUpperCase();
             if (userRole === 'SELLER') {
-              this.errorMessage.set('This account is registered as a Seller. Please use Seller Login to access your Seller Dashboard.');
+              this.errorMessage.set('This account is registered as a Seller. Please select Seller in the Role dropdown.');
               this.isSubmitting.set(false);
               return;
             }
             if (userRole === 'DEALER') {
-              this.errorMessage.set('This account is registered as a Dealer. Please use Dealer Login.');
+              this.errorMessage.set('This account is registered as a Dealer. Please select Dealer in the Role dropdown.');
               this.isSubmitting.set(false);
               return;
             }
@@ -830,7 +839,7 @@ export class CommonLoginComponent implements OnInit, OnChanges {
     } catch (err: any) {
       this.errorMessage.set(err.message || 'An unexpected error occurred during login.');
     } finally {
-      if (this.currentRole !== 'SPOTTER') {
+      if (this.selectedRole !== 'Partner') {
         this.isSubmitting.set(false);
       }
     }
