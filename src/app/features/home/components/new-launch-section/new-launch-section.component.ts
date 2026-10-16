@@ -437,6 +437,8 @@ export class NewLaunchSectionComponent {
   newLaunches = this.propertyService.getNewLaunches();
 
   isUnlocked(item: Property): boolean {
+    // Visibility ON (Admin set to Public): Unlocked for all visitors without payment or plan (Rule 2 & 3)
+    if (item.detailsVisible !== false && !item.isDetailsLocked) return true;
     if (!this.authService.isAuthenticated()) return false;
     const active = this.authService.activeMembership() || this.navStateService.activeMembership();
     if (!active) return false;

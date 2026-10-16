@@ -50,7 +50,14 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
+    const headers = new Headers(options.headers || {});
+    if (typeof window !== 'undefined' && !headers.has('Authorization')) {
+      const token = localStorage.getItem('token') || localStorage.getItem('admin_token') || localStorage.getItem('buyer_token');
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+    }
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
     clearTimeout(id);
     return res;
   } catch (err) {

@@ -1572,12 +1572,12 @@ export class BuyerCategoryComponent implements OnInit, OnDestroy {
   }
 
   isPropertyUnlocked(prop: Property, tier: 'gold' | 'platinum'): boolean {
-    const hasPlanAccess = tier === 'gold' ? this.isGoldUnlocked : this.isPlatinumUnlocked;
-    if (prop.detailsVisible === false || prop.isDetailsLocked === true) {
-      // Locked by Admin: Users must follow the plan-selection and subscription flow to access locked details
-      return hasPlanAccess;
+    // Visibility ON (Admin set to Public): Unlocked for all visitors without payment or plan (Rule 2 & 3)
+    if (prop.detailsVisible !== false && !prop.isDetailsLocked) {
+      return true;
     }
-    return hasPlanAccess;
+    // Visibility OFF (Locked): Requires paid plan subscription (Rule 2 & 4)
+    return tier === 'gold' ? this.isGoldUnlocked : this.isPlatinumUnlocked;
   }
 
   get backButtonLabel(): string {
