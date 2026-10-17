@@ -190,7 +190,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                   </div>
                 </div>
 
-                <div class="add-more-photos-row" *ngIf="uploadedPhotos.length < 10">
+                <div class="add-more-photos-row" *ngIf="uploadedPhotos.length < 5">
                   <button type="button" class="btn-add-more" (click)="cameraInput.click()">
                     <span>📷 Snap Another Photo</span>
                   </button>
@@ -198,7 +198,7 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                     <span>🖼️ Add from Gallery</span>
                   </button>
                   <span class="photos-count-text">
-                    {{ uploadedPhotos.length }} of 10 photos attached (Photo #1 is Primary Cover)
+                    {{ uploadedPhotos.length }} of 5 photos attached (Photo #1 is Primary Cover)
                   </span>
                 </div>
               </div>
@@ -1104,11 +1104,11 @@ export class SnapPropertyUploadComponent implements OnInit {
     if (input.files && input.files.length > 0) {
       const files = Array.from(input.files);
       files.forEach(file => {
-        if (this.uploadedPhotos.length < 10) {
+        if (this.uploadedPhotos.length < 5) {
           const reader = new FileReader();
           reader.onload = (e) => {
             const dataUrl = e.target?.result as string;
-            if (dataUrl && this.uploadedPhotos.length < 10) {
+            if (dataUrl && this.uploadedPhotos.length < 5) {
               this.uploadedPhotos.push(dataUrl);
             }
           };
@@ -1162,6 +1162,11 @@ export class SnapPropertyUploadComponent implements OnInit {
 
     if (this.uploadedPhotos.length === 0) {
       this.errorMessage = 'Please snap or upload at least 1 photo of the TO-LET board.';
+      return;
+    }
+
+    if (this.uploadedPhotos.length > 5) {
+      this.errorMessage = 'Maximum 5 photos allowed per property.';
       return;
     }
 

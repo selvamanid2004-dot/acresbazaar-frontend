@@ -157,17 +157,17 @@ interface VideoUploadItem {
               <div class="section-badge">1</div>
               <div>
                 <h2>Upload Property Photos <span class="req">*</span></h2>
-                <p class="section-hint">Upload <strong>1 to 20 photos</strong>. The first photo will be used as the primary cover.</p>
+                <p class="section-hint">Upload <strong>1 to 5 photos</strong>. The first photo will be used as the primary cover.</p>
               </div>
               <div class="photo-counter" [class.valid]="uploadedImages().length >= 1">
-                {{ uploadedImages().length }} / 20 Photos
+                {{ uploadedImages().length }} / 5 Photos
                 <span class="counter-status" *ngIf="uploadedImages().length < 1">(Min 1 required)</span>
                 <span class="counter-status ready" *ngIf="uploadedImages().length >= 1">✓ Ready</span>
               </div>
             </div>
 
-            <!-- Upload Dropzone (if < 20 photos) -->
-            <div *ngIf="uploadedImages().length < 20" class="dropzone" (click)="fileInput.click()">
+            <!-- Upload Dropzone (if < 5 photos) -->
+            <div *ngIf="uploadedImages().length < 5" class="dropzone" (click)="fileInput.click()">
               <input
                 #fileInput
                 type="file"
@@ -178,13 +178,13 @@ interface VideoUploadItem {
               />
               <div class="dropzone-icon">📷</div>
               <h3>Click or drag to upload property photos</h3>
-              <p>Supports JPG, PNG, WEBP. Upload 1 to 20 photos for maximum buyer visibility.</p>
+              <p>Supports JPG, PNG, WEBP. Upload 1 to 5 photos for maximum buyer visibility.</p>
               <button type="button" class="btn-browse">+ Select Photos from Device</button>
             </div>
 
             <!-- Preset / Sample Images Helper for Convenience -->
             <div class="sample-btn-wrap" style="margin: 12px 0;">
-              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 20" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; background: rgba(212,175,55,0.15); border: 1px solid #D4AF37; color: #D4AF37; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 5" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; background: rgba(212,175,55,0.15); border: 1px solid #D4AF37; color: #D4AF37; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
                 + Load Curated Luxury Photos
               </button>
             </div>
@@ -269,7 +269,7 @@ interface VideoUploadItem {
               <div class="limits-icon">🎥</div>
               <div class="limits-text">
                 <strong>Video Upload Guidelines & Limits:</strong>
-                <span>• Maximum <strong>2 videos</strong> per property &nbsp;|&nbsp; • Maximum allowed file size: <strong>50 MB per video</strong> &nbsp;|&nbsp; • Supported formats: <strong>MP4, WebM, MOV</strong></span>
+                <span>• Maximum <strong>2 videos</strong> per property &nbsp;|&nbsp; • Maximum duration: <strong>1 min 30s (90 seconds)</strong> per video &nbsp;|&nbsp; • Maximum allowed file size: <strong>50 MB per video</strong> &nbsp;|&nbsp; • Supported formats: <strong>MP4, WebM, MOV</strong></span>
               </div>
             </div>
 
@@ -284,9 +284,9 @@ interface VideoUploadItem {
               />
               <div class="dropzone-icon">📹</div>
               <h3>Click to select video walkthrough from your device</h3>
-              <p>Maximum allowed file size: <strong>50 MB</strong> per video • Limit: <strong>2 videos</strong> per property</p>
+              <p>Maximum duration: <strong>1 min 30s (90 seconds)</strong> • Max file size: <strong>50 MB</strong> per video • Limit: <strong>2 videos</strong> per property</p>
               <button type="button" class="btn-browse btn-browse-video">
-                + Select Video File (Max 50 MB)
+                + Select Video File (Max 1m 30s / 50 MB)
               </button>
             </div>
 
@@ -772,7 +772,7 @@ interface VideoUploadItem {
           <div class="submit-action-area">
             <button
               type="submit"
-              [disabled]="isSubmitting() || uploadedImages().length < 4"
+              [disabled]="isSubmitting() || uploadedImages().length < 1"
               class="btn-submit-platinum"
             >
               <span *ngIf="!isSubmitting()">
@@ -1786,8 +1786,11 @@ export class SellerPropertyNewComponent implements OnInit {
     if (!input.files || input.files.length === 0) return;
 
     const files = Array.from(input.files);
-    const remainingSlots = 20 - this.uploadedImages().length;
-    if (remainingSlots <= 0) return;
+    const remainingSlots = 5 - this.uploadedImages().length;
+    if (remainingSlots <= 0) {
+      this.errorMessage.set('Maximum 5 photos allowed per property.');
+      return;
+    }
     const toProcess = files.slice(0, remainingSlots);
 
     toProcess.forEach(file => {
@@ -1822,7 +1825,7 @@ export class SellerPropertyNewComponent implements OnInit {
               size: compressedUrl.length
             };
             this.uploadedImages.update(imgs => {
-              if (imgs.length < 20) return [...imgs, item];
+              if (imgs.length < 5) return [...imgs, item];
               return imgs;
             });
             return;
@@ -1834,7 +1837,7 @@ export class SellerPropertyNewComponent implements OnInit {
             size: file.size
           };
           this.uploadedImages.update(imgs => {
-            if (imgs.length < 20) return [...imgs, item];
+            if (imgs.length < 5) return [...imgs, item];
             return imgs;
           });
         };
@@ -1881,7 +1884,7 @@ export class SellerPropertyNewComponent implements OnInit {
     ];
     const current = [...this.uploadedImages()];
     for (const s of samples) {
-      if (current.length < 20 && !current.some(c => c.dataUrl === s)) {
+      if (current.length < 5 && !current.some(c => c.dataUrl === s)) {
         current.push({
           id: Math.random().toString(36).substring(2, 9),
           dataUrl: s,
@@ -1918,28 +1921,50 @@ export class SellerPropertyNewComponent implements OnInit {
         return;
       }
 
-      const sizeDisplay = file.size > 1024 * 1024
-        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-        : `${Math.round(file.size / 1024)} KB`;
+      // Requirement: Maximum video duration 1 minute 30 seconds (90 seconds)
+      const videoEl = document.createElement('video');
+      videoEl.preload = 'metadata';
+      const objUrl = URL.createObjectURL(file);
+      videoEl.src = objUrl;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        const item: VideoUploadItem = {
-          id: Math.random().toString(36).substring(2, 9),
-          dataUrl,
-          name: file.name,
-          size: file.size,
-          sizeDisplay
+      videoEl.onloadedmetadata = () => {
+        URL.revokeObjectURL(objUrl);
+        const duration = videoEl.duration;
+        if (duration > 90.5) {
+          const mins = Math.floor(duration / 60);
+          const secs = Math.round(duration % 60);
+          this.errorMessage.set(`Video "${file.name}" exceeds the maximum allowed duration of 1 minute 30 seconds (${mins}m ${secs}s). Longer videos must not be allowed.`);
+          return;
+        }
+
+        const sizeDisplay = file.size > 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.round(file.size / 1024)} KB`;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          const item: VideoUploadItem = {
+            id: Math.random().toString(36).substring(2, 9),
+            dataUrl,
+            name: file.name,
+            size: file.size,
+            sizeDisplay
+          };
+          this.uploadedVideos.update(vids => {
+            if (vids.length < maxVideos) {
+              return [...vids, item];
+            }
+            return vids;
+          });
         };
-        this.uploadedVideos.update(vids => {
-          if (vids.length < maxVideos) {
-            return [...vids, item];
-          }
-          return vids;
-        });
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
+
+      videoEl.onerror = () => {
+        URL.revokeObjectURL(objUrl);
+        this.errorMessage.set(`Could not verify video "${file.name}". Please ensure it is a valid video format (MP4, WebM, MOV).`);
+      };
     });
 
     input.value = '';
@@ -1958,8 +1983,8 @@ export class SellerPropertyNewComponent implements OnInit {
       return;
     }
 
-    if (this.uploadedImages().length > 20) {
-      this.errorMessage.set('Maximum 20 photos allowed.');
+    if (this.uploadedImages().length > 5) {
+      this.errorMessage.set('Maximum 5 photos allowed.');
       return;
     }
 
@@ -2008,9 +2033,13 @@ export class SellerPropertyNewComponent implements OnInit {
 
       // 1. Live sync to NestJS REST API backend first
       try {
+        const token = localStorage.getItem('token') || localStorage.getItem('aura_auth_token') || '';
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         const response = await fetch(`${getApiBaseUrl()}/properties`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             title: this.formData.title.trim(),
             category: this.categoryName(),
@@ -2027,6 +2056,7 @@ export class SellerPropertyNewComponent implements OnInit {
             sellerName: sellerNameStr,
             sellerPhone: sellerPhoneStr,
             sellerEmail: sellerEmailStr,
+            sellerRole: 'SELLER',
             categorySpecs: {
               ...categorySpecs,
               videos: this.uploadedVideos().map(v => v.dataUrl)
@@ -2041,6 +2071,9 @@ export class SellerPropertyNewComponent implements OnInit {
           if (resData.property?.id) {
             backendPropertyId = resData.property.id;
           }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          console.warn('Backend sync response not ok:', response.status, errData);
         }
       } catch (e) {
         console.warn('Backend sync warning:', e);

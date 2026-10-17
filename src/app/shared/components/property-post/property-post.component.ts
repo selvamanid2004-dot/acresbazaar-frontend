@@ -144,7 +144,7 @@ interface CategoryOption {
             <!-- Preset / Sample Images Helper for Convenience -->
             <div class="preset-helper">
               <span>Or add luxury sample photos:</span>
-              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 20">
+              <button type="button" (click)="addSamplePhotos()" class="sample-btn" [disabled]="uploadedImages().length >= 5">
                 + Load Curated Luxury Photos
               </button>
             </div>
@@ -206,7 +206,7 @@ interface CategoryOption {
             </div>
 
             <div class="image-count-status" [class.valid]="uploadedImages().length >= 1">
-              <span>Uploaded: <strong>{{ uploadedImages().length }} of 20 photos</strong></span>
+              <span>Uploaded: <strong>{{ uploadedImages().length }} of 5 photos</strong></span>
               <span *ngIf="uploadedImages().length === 0" class="warn-text">(At least 1 photo is required)</span>
               <span *ngIf="uploadedImages().length > 0" class="success-text">✓ Photo #1 is your Main Cover Photo</span>
             </div>
@@ -1469,9 +1469,9 @@ export class PropertyPostComponent implements OnInit {
     }
 
     const currentCount = this.uploadedImages().length;
-    const remainingSlots = 20 - currentCount;
+    const remainingSlots = 5 - currentCount;
     if (remainingSlots <= 0) {
-      this.errorMessage.set('Maximum 20 images reached.');
+      this.errorMessage.set('Maximum 5 images allowed per property.');
       return;
     }
 
@@ -1483,7 +1483,7 @@ export class PropertyPostComponent implements OnInit {
         const result = e.target?.result as string;
         if (result) {
           this.uploadedImages.update(imgs => {
-            if (imgs.length < 20) {
+            if (imgs.length < 5) {
               return [...imgs, result];
             }
             return imgs;
@@ -1554,7 +1554,7 @@ export class PropertyPostComponent implements OnInit {
     this.uploadedImages.update(imgs => {
       const combined = [...imgs];
       for (const s of samples) {
-        if (combined.length < 20 && !combined.includes(s)) {
+        if (combined.length < 5 && !combined.includes(s)) {
           combined.push(s);
         }
       }
@@ -1565,14 +1565,14 @@ export class PropertyPostComponent implements OnInit {
   async submitProperty(): Promise<void> {
     this.errorMessage.set(null);
 
-    // Validate images (Minimum 1, Maximum 20)
+    // Validate images (Minimum 1, Maximum 5)
     const images = this.uploadedImages();
     if (images.length < 1) {
       this.errorMessage.set('Please upload at least 1 property photograph.');
       return;
     }
-    if (images.length > 20) {
-      this.errorMessage.set('Maximum 20 photographs allowed.');
+    if (images.length > 5) {
+      this.errorMessage.set('Maximum 5 photographs allowed.');
       return;
     }
 

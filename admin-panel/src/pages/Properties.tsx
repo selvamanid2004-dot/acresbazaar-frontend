@@ -89,6 +89,30 @@ export const Properties: React.FC = () => {
       return;
     }
 
+    // Requirement 2: Allow videos with a maximum duration of 1 minute and 30 seconds (90 seconds)
+    const videoDuration = await new Promise<number>((resolve, reject) => {
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      const u = URL.createObjectURL(file);
+      v.src = u;
+      v.onloadedmetadata = () => {
+        URL.revokeObjectURL(u);
+        resolve(v.duration);
+      };
+      v.onerror = () => {
+        URL.revokeObjectURL(u);
+        reject(new Error('Invalid video format'));
+      };
+    }).catch(() => null);
+
+    if (videoDuration !== null && videoDuration > 90.5) {
+      const mins = Math.floor(videoDuration / 60);
+      const secs = Math.round(videoDuration % 60);
+      alert(`Video duration (${mins}m ${secs}s) exceeds the maximum allowed duration of 1 minute and 30 seconds (90 seconds). Longer videos must not be allowed.`);
+      e.target.value = '';
+      return;
+    }
+
     setUploadingVideo(true);
     try {
       await api.uploadPropertyVideoFile(viewProperty.id, file);
@@ -1203,7 +1227,7 @@ export const Properties: React.FC = () => {
                         Add Property Video (Admin Upload)
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Upload property walkthrough or drone tour video. <strong>Maximum 50MB per video file</strong>. Supported: MP4, WebM, MOV.
+                        Upload property walkthrough or drone tour video. <strong>Maximum duration: 1 min 30s (90 seconds), max 50MB per video file</strong>. Supported: MP4, WebM, MOV.
                       </div>
                     </div>
                     <label style={{
@@ -1220,7 +1244,7 @@ export const Properties: React.FC = () => {
                       marginTop: '6px'
                     }}>
                       <Upload size={14} />
-                      <span>{uploadingVideo ? 'Uploading Video...' : '+ Select Video File (Max 50MB)'}</span>
+                      <span>{uploadingVideo ? 'Uploading Video...' : '+ Select Video File (Max 1m 30s / 50MB)'}</span>
                       <input 
                         type="file" 
                         accept="video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v"

@@ -299,7 +299,7 @@ export interface SellerPropertyItem {
                 <div class="limits-icon">🎥</div>
                 <div class="limits-text">
                   <strong>Video Upload Guidelines & Limits:</strong>
-                  <span>Maximum <strong>2 videos</strong> per property • Maximum allowed file size: <strong>50 MB per video</strong> • Formats: <strong>MP4, WebM, MOV</strong></span>
+                  <span>Maximum <strong>2 videos</strong> per property • Maximum duration: <strong>1 min 30s (90 seconds)</strong> per video • Maximum allowed file size: <strong>50 MB per video</strong> • Formats: <strong>MP4, WebM, MOV</strong></span>
                 </div>
               </div>
 
@@ -313,8 +313,8 @@ export interface SellerPropertyItem {
                   style="display: none;"
                 />
                 <span class="upload-icon">📹</span>
-                <span class="upload-title">Click to upload video (Max 50 MB)</span>
-                <span class="upload-sub">Allowed: MP4, WebM, MOV • Limit: 2 videos per property</span>
+                <span class="upload-title">Click to upload video (Max 1m 30s / 50 MB)</span>
+                <span class="upload-sub">Allowed: MP4, WebM, MOV • Limit: 2 videos, up to 1 min 30s each</span>
               </div>
 
               <div *ngIf="editVideos().length >= 2" class="edit-limit-reached">
@@ -1467,17 +1467,40 @@ export class SellerPropertiesComponent implements OnInit {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      this.editVideos.update(vids => {
-        if (vids.length < maxVideos) {
-          return [...vids, dataUrl];
-        }
-        return vids;
-      });
+    // Validate video duration: Maximum 1 minute 30 seconds (90 seconds)
+    const videoEl = document.createElement('video');
+    videoEl.preload = 'metadata';
+    const objUrl = URL.createObjectURL(file);
+    videoEl.src = objUrl;
+
+    videoEl.onloadedmetadata = () => {
+      URL.revokeObjectURL(objUrl);
+      const duration = videoEl.duration;
+      if (duration > 90.5) {
+        const mins = Math.floor(duration / 60);
+        const secs = Math.round(duration % 60);
+        this.editErrorMessage.set(`Video "${file.name}" exceeds the maximum allowed duration of 1 minute 30 seconds (${mins}m ${secs}s). Longer videos must not be allowed.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        this.editVideos.update(vids => {
+          if (vids.length < maxVideos) {
+            return [...vids, dataUrl];
+          }
+          return vids;
+        });
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
+
+    videoEl.onerror = () => {
+      URL.revokeObjectURL(objUrl);
+      this.editErrorMessage.set(`Could not verify video "${file.name}". Please ensure it is a valid video format (MP4, WebM, MOV).`);
+    };
+
     input.value = '';
   }
 
