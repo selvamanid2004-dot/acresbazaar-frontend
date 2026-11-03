@@ -291,7 +291,9 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
                       type="tel" 
                       [(ngModel)]="formData.boardContact" 
                       name="boardContact" 
-                      placeholder="e.g. 98401 23456 (as written on board)" 
+                      placeholder="10-digit mobile number" 
+                      maxlength="10"
+                      (input)="onPhoneInput($event)"
                       required 
                       class="form-control with-icon" />
                   </div>
@@ -1074,6 +1076,13 @@ export class SnapPropertyUploadComponent implements OnInit {
   submittedSuccessfully = false;
   errorMessage = '';
 
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/\D/g, '').slice(0, 10);
+    input.value = cleaned;
+    this.formData.boardContact = cleaned;
+  }
+
   ngOnInit(): void {
     // If active user is a Seller or Dealer, block access to Partner Upload immediately
     if (this.authService.isSellerAuthenticated()) {
@@ -1175,8 +1184,9 @@ export class SnapPropertyUploadComponent implements OnInit {
       return;
     }
 
-    if (!this.formData.boardContact.trim()) {
-      this.errorMessage = 'Please provide the contact phone number written on the signboard.';
+    const cleanContact = this.formData.boardContact.trim().replace(/\D/g, '');
+    if (!cleanContact || cleanContact.length !== 10) {
+      this.errorMessage = 'Please provide a valid 10-digit contact phone number written on the signboard (digits only).';
       return;
     }
 

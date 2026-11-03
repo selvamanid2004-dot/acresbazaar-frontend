@@ -59,7 +59,7 @@ import { PartnerRewardsWalletComponent } from '../../../shared/components/partne
             </div>
             <h1>Welcome, <span class="highlight-name">{{ spotterUser?.name || 'Partner' }}</span></h1>
             <p class="subtitle">
-              Upload TO-LET signboards and property boards across your locality. Receive <strong>+20 Points</strong> for every property approved by Admin and claim direct cash payouts to your bank account!
+              Upload TO-LET signboards and property boards across your locality. Receive <strong>+{{ partnerConfig.pointsPerProperty }} Points</strong> for every property approved by Admin and accumulate <strong>{{ partnerConfig.pointsPerReward }} Points</strong> to claim direct cash payouts to your bank account!
             </p>
           </div>
           <div class="banner-reward-preview">
@@ -70,6 +70,45 @@ import { PartnerRewardsWalletComponent } from '../../../shared/components/partne
               </svg>
               <span>+ Snap New Property</span>
             </a>
+          </div>
+        </div>
+
+        <!-- Partner Reward Points & Claim Eligibility Banner -->
+        <div class="reward-milestone-tracker-card">
+          <div class="tracker-left">
+            <div class="tracker-icon-badge">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="12 6 13.8 10.2 18.2 10.5 14.8 13.4 15.8 17.8 12 15.4 8.2 17.8 9.2 13.4 5.8 10.5 10.2 10.2 12 6"></polygon>
+              </svg>
+            </div>
+            <div class="tracker-details">
+              <div class="tracker-tag">
+                <span class="tag-title">REWARD POINTS & CLAIM ELIGIBILITY</span>
+                <span class="threshold-chip">Milestone: {{ partnerConfig.pointsPerReward }} Points = ₹{{ partnerConfig.rewardAmountInInr }} Cash</span>
+              </div>
+              <h3 class="tracker-title">
+                Available Points: <span class="points-highlight">{{ walletPoints }} Points</span>
+              </h3>
+              <p class="tracker-desc">
+                <span *ngIf="walletPoints >= partnerConfig.pointsPerReward" class="status-unlocked">
+                  🎉 <strong>Eligibility Milestone Reached!</strong> You have accumulated {{ walletPoints }} points and are eligible to claim a ₹{{ partnerConfig.rewardAmountInInr }} cash payout below.
+                </span>
+                <span *ngIf="walletPoints < partnerConfig.pointsPerReward" class="status-needed">
+                  You need <strong>{{ pointsNeeded }} more points</strong> to reach the {{ partnerConfig.pointsPerReward }} points threshold to claim ₹{{ partnerConfig.rewardAmountInInr }} cash payout. (Earn <strong>+{{ partnerConfig.pointsPerProperty }} Points</strong> for each property approved by Admin).
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div class="tracker-right">
+            <div class="progress-info-row">
+              <span class="progress-label">Eligibility Progress</span>
+              <span class="progress-val">{{ walletPoints }} / {{ partnerConfig.pointsPerReward }} pts ({{ progressPercent }}%)</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-indicator" [style.width.%]="progressPercent"></div>
+            </div>
           </div>
         </div>
 
@@ -428,6 +467,134 @@ import { PartnerRewardsWalletComponent } from '../../../shared/components/partne
       letter-spacing: 0.08em;
       color: #92400e;
       margin-top: 4px;
+    }
+
+    .reward-milestone-tracker-card {
+      background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+      border: 2px solid #fde68a;
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      box-shadow: 0 4px 16px rgba(217, 119, 6, 0.08);
+    }
+
+    @media (max-width: 860px) {
+      .reward-milestone-tracker-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    .tracker-left {
+      display: flex;
+      align-items: center;
+      gap: 1.15rem;
+      flex: 1;
+    }
+
+    .tracker-icon-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+    }
+
+    .tracker-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tracker-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #92400e;
+      text-transform: uppercase;
+    }
+
+    .threshold-chip {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    .tracker-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .points-highlight {
+      color: #d97706;
+    }
+
+    .tracker-desc {
+      font-size: 0.84rem;
+      color: #475569;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .status-unlocked {
+      color: #059669;
+      font-weight: 700;
+    }
+
+    .status-needed strong {
+      color: #d97706;
+    }
+
+    .tracker-right {
+      min-width: 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-indicator {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b 0%, #10b981 100%);
+      border-radius: 9999px;
+      transition: width 0.3s ease;
     }
 
     .stats-grid {
@@ -979,17 +1146,30 @@ export class SnapPropertyDashboardComponent implements OnInit {
 
   Math = Math;
   walletPoints: number = 0;
+  partnerConfig = {
+    pointsPerProperty: 20,
+    pointsPerReward: 500,
+    rewardAmountInInr: 500
+  };
+
+  get pointsRequiredToClaim(): number {
+    return this.partnerConfig.pointsPerReward || 500;
+  }
+
+  get pointsNeeded(): number {
+    return Math.max(0, this.pointsRequiredToClaim - this.walletPoints);
+  }
 
   get totalSnaps(): number {
     return this.snaps.length;
   }
 
   get totalPoints(): number {
-    return this.walletPoints || (this.approvedCount * 20);
+    return this.walletPoints || (this.approvedCount * (this.partnerConfig.pointsPerProperty || 20));
   }
 
   get progressPercent(): number {
-    return Math.min(100, Math.round((this.totalPoints / 500) * 100));
+    return Math.min(100, Math.round((this.walletPoints / (this.pointsRequiredToClaim || 1)) * 100));
   }
 
   get pendingCount(): number {
@@ -1062,6 +1242,13 @@ export class SnapPropertyDashboardComponent implements OnInit {
         next: (res) => {
           if (res.wallet) {
             this.walletPoints = res.wallet.availablePoints || 0;
+          }
+          if (res.config) {
+            this.partnerConfig = {
+              pointsPerProperty: res.config.pointsPerProperty || 20,
+              pointsPerReward: res.config.pointsPerReward || 500,
+              rewardAmountInInr: res.config.rewardAmountInInr || 500
+            };
           }
         },
         error: () => {}

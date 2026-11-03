@@ -68,10 +68,14 @@ export const Rewards: React.FC = () => {
   const [processingReject, setProcessingReject] = useState(false);
 
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [activeConfigTab, setActiveConfigTab] = useState<'PARTNER' | 'DEALER'>('PARTNER');
   const [editConfig, setEditConfig] = useState({
-    pointsPerReward: 500,
-    rewardAmountInInr: 500,
-    pointsPerProperty: 20
+    partnerPointsPerProperty: 20,
+    partnerPointsPerReward: 500,
+    partnerRewardAmountInInr: 500,
+    dealerPointsPerBooking: 500,
+    dealerPointsPerReward: 500,
+    dealerRewardAmountInInr: 500
   });
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -89,9 +93,12 @@ export const Rewards: React.FC = () => {
       if (data.config) {
         setConfig(data.config);
         setEditConfig({
-          pointsPerReward: data.config.pointsPerReward,
-          rewardAmountInInr: data.config.rewardAmountInInr,
-          pointsPerProperty: data.config.pointsPerProperty
+          partnerPointsPerProperty: data.config.partner?.pointsPerProperty ?? data.config.pointsPerProperty ?? 20,
+          partnerPointsPerReward: data.config.partner?.pointsPerReward ?? data.config.pointsPerReward ?? 500,
+          partnerRewardAmountInInr: data.config.partner?.rewardAmountInInr ?? data.config.rewardAmountInInr ?? 500,
+          dealerPointsPerBooking: data.config.dealer?.pointsPerBooking ?? 500,
+          dealerPointsPerReward: data.config.dealer?.pointsPerReward ?? 500,
+          dealerRewardAmountInInr: data.config.dealer?.rewardAmountInInr ?? 500
         });
       }
     } catch (err) {
@@ -125,7 +132,7 @@ export const Rewards: React.FC = () => {
       const res = await api.updateRewardConfig(editConfig);
       setConfig(res.config);
       setIsConfigOpen(false);
-      alert('Reward conversion configuration updated successfully!');
+      alert('Partner and Dealer reward configurations updated successfully!');
       fetchClaimsAndSummary();
     } catch (err: any) {
       alert(err.message || 'Failed to update reward configuration');
@@ -217,7 +224,7 @@ export const Rewards: React.FC = () => {
               onClick={() => setIsConfigOpen(true)}
             >
               <Settings size={16} />
-              <span>Reward Settings (500 pts = ₹{config.rewardAmountInInr})</span>
+              <span>Reward Settings (Partner & Dealer)</span>
             </button>
           )}
 
@@ -363,7 +370,7 @@ export const Rewards: React.FC = () => {
             Partner Reward Claims ({claims.length})
           </h3>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Active Rate: <strong>{config.conversionRateText}</strong> (₹{config.ratePerPoint} / pt) · Approval: +{config.pointsPerProperty} pts/property
+            Partner: <strong>{config.partner?.pointsPerReward ?? config.pointsPerReward} pts = ₹{config.partner?.rewardAmountInInr ?? config.rewardAmountInInr}</strong> (+{config.partner?.pointsPerProperty ?? config.pointsPerProperty} pts/property) · Dealer: <strong>{config.dealer?.pointsPerReward ?? 500} pts = ₹{config.dealer?.rewardAmountInInr ?? 500}</strong> (+{config.dealer?.pointsPerBooking ?? 500} pts/booking)
           </span>
         </div>
 
@@ -752,89 +759,207 @@ export const Rewards: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 3: CONFIGURABLE REWARD CONVERSION SETTINGS                          */}
+      {/* MODAL 3: CONFIGURABLE REWARD CONVERSION SETTINGS (PARTNER & DEALER)       */}
       {/* ========================================================================= */}
       {isConfigOpen && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '520px' }}>
+          <div className="modal-content" style={{ maxWidth: '640px' }}>
             <div className="modal-header">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Settings color="var(--gold-primary)" />
-                <span>Configure Reward Conversion Rates</span>
+                <span>Configure Reward Points & Claim Eligibility</span>
               </h3>
               <button className="close-btn" onClick={() => setIsConfigOpen(false)}>×</button>
             </div>
 
             <form onSubmit={handleSaveConfig}>
               <div className="modal-body">
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                  Configure the point threshold and monetary rupee value for partner reward redemptions.
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+                  Configure separate points earning rules, claim eligibility thresholds, and payout cash amounts for Partners and Dealers. Changes immediately reflect on their dashboards.
                 </p>
 
-                <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label className="form-label" style={{ fontWeight: 600 }}>
-                    Minimum Points Required For Milestone
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={100}
-                    step={50}
-                    value={editConfig.pointsPerReward}
-                    onChange={(e) => setEditConfig({ ...editConfig, pointsPerReward: Number(e.target.value) })}
-                    required
-                  />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                    Default standard: 500 Points.
-                  </small>
+                {/* Role Tabs */}
+                <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveConfigTab('PARTNER')}
+                    style={{
+                      padding: '10px 18px',
+                      background: activeConfigTab === 'PARTNER' ? 'rgba(217, 119, 6, 0.15)' : 'transparent',
+                      color: activeConfigTab === 'PARTNER' ? 'var(--gold-primary)' : 'var(--text-muted)',
+                      border: 'none',
+                      borderBottom: activeConfigTab === 'PARTNER' ? '2.5px solid var(--gold-primary)' : '2.5px solid transparent',
+                      fontWeight: 800,
+                      fontSize: '13.5px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>👥 Partner Reward Points</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveConfigTab('DEALER')}
+                    style={{
+                      padding: '10px 18px',
+                      background: activeConfigTab === 'DEALER' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                      color: activeConfigTab === 'DEALER' ? '#10b981' : 'var(--text-muted)',
+                      border: 'none',
+                      borderBottom: activeConfigTab === 'DEALER' ? '2.5px solid #10b981' : '2.5px solid transparent',
+                      fontWeight: 800,
+                      fontSize: '13.5px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>🏢 Dealer Reward Points</span>
+                  </button>
                 </div>
 
-                <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label className="form-label" style={{ fontWeight: 600 }}>
-                    Reward Cash Payout Amount (₹)
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={50}
-                    step={50}
-                    value={editConfig.rewardAmountInInr}
-                    onChange={(e) => setEditConfig({ ...editConfig, rewardAmountInInr: Number(e.target.value) })}
-                    required
-                  />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                    Monetary cash payout disbursed to partner per milestone.
-                  </small>
-                </div>
+                {/* 1. PARTNER CONFIGURATION TAB */}
+                {activeConfigTab === 'PARTNER' && (
+                  <div>
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        Points Awarded Per Approved Property
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={1}
+                        value={editConfig.partnerPointsPerProperty}
+                        onChange={(e) => setEditConfig({ ...editConfig, partnerPointsPerProperty: Number(e.target.value) })}
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                        Points credited to partner wallet when Admin approves their uploaded property signboard (Default: 20 Points).
+                      </small>
+                    </div>
 
-                <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label className="form-label" style={{ fontWeight: 600 }}>
-                    Points Awarded Per Approved Property
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={1}
-                    value={editConfig.pointsPerProperty}
-                    onChange={(e) => setEditConfig({ ...editConfig, pointsPerProperty: Number(e.target.value) })}
-                    required
-                  />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                    Points credited when Admin approves a partner's submitted property (Default: 20 Points).
-                  </small>
-                </div>
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        Claim Eligibility Threshold (Points Required To Claim Payout)
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={50}
+                        step={50}
+                        value={editConfig.partnerPointsPerReward}
+                        onChange={(e) => setEditConfig({ ...editConfig, partnerPointsPerReward: Number(e.target.value) })}
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                        Minimum points a partner must accumulate before claiming a cash reward payout (Default: 500 Points).
+                      </small>
+                    </div>
 
-                <div style={{ background: 'rgba(217, 119, 6, 0.08)', border: '1px solid rgba(217, 119, 6, 0.25)', padding: '12px', borderRadius: '8px' }}>
-                  <div style={{ fontWeight: 700, color: 'var(--gold-primary)', fontSize: '13px' }}>
-                    Conversion Formula Preview:
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        Partner Reward Cash Payout Amount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={50}
+                        step={50}
+                        value={editConfig.partnerRewardAmountInInr}
+                        onChange={(e) => setEditConfig({ ...editConfig, partnerRewardAmountInInr: Number(e.target.value) })}
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                        Direct rupee cash amount transferred to partner per milestone reward.
+                      </small>
+                    </div>
+
+                    <div style={{ background: 'rgba(217, 119, 6, 0.08)', border: '1px solid rgba(217, 119, 6, 0.25)', padding: '14px', borderRadius: '10px' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--gold-primary)', fontSize: '13px' }}>
+                        Partner Conversion & Eligibility Preview:
+                      </div>
+                      <div style={{ color: '#fff', fontSize: '14px', marginTop: '6px' }}>
+                        {editConfig.partnerPointsPerReward} Points Required = <strong>₹{editConfig.partnerRewardAmountInInr.toLocaleString('en-IN')} Cash</strong> (Rate: ₹{(editConfig.partnerRewardAmountInInr / (editConfig.partnerPointsPerReward || 1)).toFixed(2)} / pt)
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                        Approved Property Reward: +{editConfig.partnerPointsPerProperty} pts · E.g. {editConfig.partnerPointsPerReward * 2} Points = ₹{(editConfig.partnerRewardAmountInInr * 2).toLocaleString('en-IN')}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ color: '#fff', fontSize: '14px', marginTop: '4px' }}>
-                    {editConfig.pointsPerReward} Points = <strong>₹{editConfig.rewardAmountInInr.toLocaleString('en-IN')}</strong> (Rate: ₹{(editConfig.rewardAmountInInr / (editConfig.pointsPerReward || 1)).toFixed(2)} / point)
+                )}
+
+                {/* 2. DEALER CONFIGURATION TAB */}
+                {activeConfigTab === 'DEALER' && (
+                  <div>
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        Points Awarded Per Completed Booking
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={1}
+                        value={editConfig.dealerPointsPerBooking}
+                        onChange={(e) => setEditConfig({ ...editConfig, dealerPointsPerBooking: Number(e.target.value) })}
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                        Points automatically awarded to dealer when they book or acquire property inventory (Default: 500 Points).
+                      </small>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        Claim Eligibility Threshold (Points Required To Claim Payout)
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={50}
+                        step={50}
+                        value={editConfig.dealerPointsPerReward}
+                        onChange={(e) => setEditConfig({ ...editConfig, dealerPointsPerReward: Number(e.target.value) })}
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                        Minimum points a dealer must accumulate before claiming a cash reward payout (Default: 500 Points).
+                      </small>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        Dealer Reward Cash Payout Amount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={50}
+                        step={50}
+                        value={editConfig.dealerRewardAmountInInr}
+                        onChange={(e) => setEditConfig({ ...editConfig, dealerRewardAmountInInr: Number(e.target.value) })}
+                        required
+                      />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                        Direct rupee cash amount transferred to dealer per milestone reward.
+                      </small>
+                    </div>
+
+                    <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '14px', borderRadius: '10px' }}>
+                      <div style={{ fontWeight: 700, color: '#10b981', fontSize: '13px' }}>
+                        Dealer Conversion & Eligibility Preview:
+                      </div>
+                      <div style={{ color: '#fff', fontSize: '14px', marginTop: '6px' }}>
+                        {editConfig.dealerPointsPerReward} Points Required = <strong>₹{editConfig.dealerRewardAmountInInr.toLocaleString('en-IN')} Cash</strong> (Rate: ₹{(editConfig.dealerRewardAmountInInr / (editConfig.dealerPointsPerReward || 1)).toFixed(2)} / pt)
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                        Completed Booking Reward: +{editConfig.dealerPointsPerBooking} pts · E.g. {editConfig.dealerPointsPerReward * 2} Points = ₹{(editConfig.dealerRewardAmountInInr * 2).toLocaleString('en-IN')}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-                    E.g. 1,000 Points = ₹{((1000 / (editConfig.pointsPerReward || 1)) * editConfig.rewardAmountInInr).toLocaleString('en-IN')} | 1,500 Points = ₹{((1500 / (editConfig.pointsPerReward || 1)) * editConfig.rewardAmountInInr).toLocaleString('en-IN')}
-                  </div>
-                </div>
+                )}
               </div>
 
               <div className="modal-footer">

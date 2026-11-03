@@ -107,6 +107,7 @@ export type RoleOption = 'Buyer' | 'Seller' | 'Dealer' | 'Partner';
                     id="mobile" 
                     name="mobile" 
                     [(ngModel)]="mobile" 
+                    (input)="onMobileInput($event)"
                     required 
                     placeholder="Enter 10-digit mobile number" 
                     class="form-control" 
@@ -605,6 +606,13 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
     }
   }
 
+  onMobileInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/\D/g, '').slice(0, 10);
+    input.value = cleaned;
+    this.mobile = cleaned;
+  }
+
   // Registration Submission
   async onSubmit(): Promise<void> {
     this.errorMessage = '';
@@ -620,8 +628,8 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
       return;
     }
 
-    if (cleanMobile.length < 10) {
-      this.errorMessage = 'Please enter a valid 10-digit mobile number.';
+    if (cleanMobile.length !== 10) {
+      this.errorMessage = 'Please enter a valid 10-digit mobile number (digits only).';
       return;
     }
 

@@ -47,7 +47,7 @@ interface RewardClaimItem {
           </div>
           <h2 class="wallet-title">Points Wallet & Reward Claims</h2>
           <p class="wallet-sub">
-            Earn <strong>+{{ config().pointsPerProperty }} Points</strong> for every property approved by Admin. Accumulate <strong>500+ Points</strong> to claim direct cash payouts to your bank account!
+            Earn <strong>+{{ config().pointsPerProperty }} Points</strong> for every property approved by Admin. Accumulate <strong>{{ config().pointsPerReward }}+ Points</strong> to claim direct cash payouts to your bank account!
           </p>
         </div>
 
@@ -55,17 +55,17 @@ interface RewardClaimItem {
           <button 
             type="button"
             class="btn-claim-main"
-            [disabled]="wallet().availablePoints < 500"
+            [disabled]="wallet().availablePoints < config().pointsPerReward"
             (click)="openClaimModal()"
-            [class.btn-claim-enabled]="wallet().availablePoints >= 500"
+            [class.btn-claim-enabled]="wallet().availablePoints >= config().pointsPerReward"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
             </svg>
             <span>Claim Reward Payout</span>
           </button>
-          <div *ngIf="wallet().availablePoints < 500" class="claim-req-text">
-            ⚠️ You need at least 500 points to claim a reward ({{ 500 - wallet().availablePoints }} pts remaining).
+          <div *ngIf="wallet().availablePoints < config().pointsPerReward" class="claim-req-text">
+            ⚠️ You need at least {{ config().pointsPerReward }} points to claim a reward ({{ Math.max(0, config().pointsPerReward - wallet().availablePoints) }} pts remaining).
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ interface RewardClaimItem {
           <span>Reward Conversion Rate: <strong>{{ config().conversionRateText }}</strong></span>
         </div>
         <div class="rule-hint">
-          • Minimum claim threshold: <strong>500 Points</strong>
+          • Minimum claim threshold: <strong>{{ config().pointsPerReward }} Points</strong>
           • Admin property approval: <strong>+{{ config().pointsPerProperty }} Points / Property</strong>
         </div>
       </div>
@@ -300,7 +300,7 @@ interface RewardClaimItem {
             <button type="button" class="btn-close-x" (click)="closeClaimModal()">✕</button>
           </div>
 
-          <form (ngSubmit)="submitClaimForm()" novalidate>
+          <form (ngSubmit)="submitClaimForm()" novalidate class="claim-modal-form">
             <div class="modal-body-scroll">
               
               <!-- STEP 1: SELECT REDEMPTION OPTION -->
@@ -308,20 +308,20 @@ interface RewardClaimItem {
                 <label class="section-title-label">1. Select Points Redemption Option:</label>
                 
                 <div class="options-grid-2">
-                  <!-- Option A: 500 Points -->
+                  <!-- Option A: Milestone Points -->
                   <div 
                     class="option-card" 
-                    [class.selected]="selectedRedeemOption === '500'"
-                    (click)="selectedRedeemOption = '500'"
+                    [class.selected]="selectedRedeemOption === 'MILESTONE'"
+                    (click)="selectedRedeemOption = 'MILESTONE'"
                   >
                     <div class="opt-radio">
-                      <input type="radio" name="redeemOpt" [checked]="selectedRedeemOption === '500'" />
+                      <input type="radio" name="redeemOpt" [checked]="selectedRedeemOption === 'MILESTONE'" />
                     </div>
                     <div class="opt-content">
-                      <div class="opt-head">Redeem 500 Points</div>
-                      <div class="opt-reward">₹{{ calculateReward(500) | number }} Cash</div>
+                      <div class="opt-head">Redeem {{ config().pointsPerReward }} Points</div>
+                      <div class="opt-reward">₹{{ calculateReward(config().pointsPerReward) | number }} Cash</div>
                       <div class="opt-sub">
-                        Remaining <strong>{{ Math.max(0, wallet().availablePoints - 500) }} pts</strong> will stay safely in your wallet.
+                        Remaining <strong>{{ Math.max(0, wallet().availablePoints - config().pointsPerReward) }} pts</strong> will stay safely in your wallet.
                       </div>
                     </div>
                   </div>
@@ -378,7 +378,15 @@ interface RewardClaimItem {
 
                   <div class="form-group">
                     <label class="form-label">Mobile Number</label>
-                    <input type="text" [(ngModel)]="bankForm.mobileNumber" name="mobileNumber" class="form-control" placeholder="10-digit mobile number" />
+                    <input 
+                      type="tel" 
+                      [(ngModel)]="bankForm.mobileNumber" 
+                      name="mobileNumber" 
+                      class="form-control" 
+                      placeholder="10-digit mobile number"
+                      maxlength="10"
+                      (input)="onPhoneInput($event, 'mobileNumber')" 
+                    />
                   </div>
 
                   <div class="form-group">
@@ -825,14 +833,22 @@ interface RewardClaimItem {
 
     .claim-modal-content {
       background: #ffffff;
-      width: 100%;
+      width: 95%;
       max-width: 580px;
       border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      max-height: 90vh;
+      max-height: 88vh;
+    }
+
+    .claim-modal-form {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .modal-header-bar {
@@ -842,6 +858,7 @@ interface RewardClaimItem {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .modal-title-wrap {
@@ -868,8 +885,10 @@ interface RewardClaimItem {
     .btn-close-x:hover { color: #ffffff; }
 
     .modal-body-scroll {
-      padding: 1.5rem;
+      padding: 1.25rem 1.5rem;
       overflow-y: auto;
+      flex: 1 1 auto;
+      min-height: 0;
     }
 
     .section-title-label {
@@ -1004,6 +1023,7 @@ interface RewardClaimItem {
       display: flex;
       justify-content: flex-end;
       gap: 0.75rem;
+      flex-shrink: 0;
     }
 
     .btn-cancel {
@@ -1076,7 +1096,7 @@ export class PartnerRewardsWalletComponent implements OnInit, OnChanges {
 
   activeTab: 'LEDGER' | 'CLAIMS' = 'LEDGER';
   isClaimModalOpen = false;
-  selectedRedeemOption: '500' | 'ALL' = '500';
+  selectedRedeemOption: 'MILESTONE' | 'ALL' = 'MILESTONE';
 
   bankForm = {
     partnerName: '',
@@ -1091,6 +1111,13 @@ export class PartnerRewardsWalletComponent implements OnInit, OnChanges {
 
   submittingClaim = false;
   claimErrorMessage = '';
+
+  onPhoneInput(event: Event, field: 'mobileNumber'): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/\D/g, '').slice(0, 10);
+    input.value = cleaned;
+    this.bankForm[field] = cleaned;
+  }
 
   ngOnInit(): void {
     this.initData();
@@ -1179,12 +1206,13 @@ export class PartnerRewardsWalletComponent implements OnInit, OnChanges {
   }
 
   openClaimModal() {
-    if (this.wallet().availablePoints < 500) {
-      this.notificationService.show('Points Threshold Not Reached', 'You need at least 500 points to claim a reward payout.', 'info');
+    const minReq = this.config().pointsPerReward || 500;
+    if (this.wallet().availablePoints < minReq) {
+      this.notificationService.show('Points Threshold Not Reached', `You need at least ${minReq} points to claim a reward payout.`, 'info');
       return;
     }
     this.claimErrorMessage = '';
-    this.selectedRedeemOption = '500';
+    this.selectedRedeemOption = 'MILESTONE';
     this.isClaimModalOpen = true;
   }
 
@@ -1197,7 +1225,7 @@ export class PartnerRewardsWalletComponent implements OnInit, OnChanges {
     if (this.selectedRedeemOption === 'ALL') {
       return this.wallet().availablePoints;
     }
-    return 500;
+    return this.config().pointsPerReward || 500;
   }
 
   calculateReward(points: number): number {
@@ -1214,14 +1242,23 @@ export class PartnerRewardsWalletComponent implements OnInit, OnChanges {
       return;
     }
 
+    if (this.bankForm.mobileNumber) {
+      const cleanPhone = this.bankForm.mobileNumber.replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        this.claimErrorMessage = 'Please enter a valid 10-digit mobile number (digits only).';
+        return;
+      }
+    }
+
     if (this.bankForm.accountNumber.trim() !== this.bankForm.confirmAccountNumber.trim()) {
       this.claimErrorMessage = 'Account numbers do not match. Please verify.';
       return;
     }
 
+    const minReq = this.config().pointsPerReward || 500;
     const pointsToRedeem = this.getSelectedPoints();
-    if (pointsToRedeem < 500 || pointsToRedeem > this.wallet().availablePoints) {
-      this.claimErrorMessage = `Selected points (${pointsToRedeem}) exceed your available balance (${this.wallet().availablePoints}).`;
+    if (pointsToRedeem < minReq || pointsToRedeem > this.wallet().availablePoints) {
+      this.claimErrorMessage = `Selected points (${pointsToRedeem}) is below the required minimum (${minReq}) or exceeds your available balance (${this.wallet().availablePoints}).`;
       return;
     }
 

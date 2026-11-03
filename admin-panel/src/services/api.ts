@@ -927,7 +927,17 @@ export const api = {
     }
   },
 
-  async updateRewardConfig(data: { pointsPerReward?: number; rewardAmountInInr?: number; pointsPerProperty?: number }): Promise<{ config: RewardConfig; message: string }> {
+  async updateRewardConfig(data: {
+    partnerPointsPerProperty?: number;
+    partnerPointsPerReward?: number;
+    partnerRewardAmountInInr?: number;
+    dealerPointsPerBooking?: number;
+    dealerPointsPerReward?: number;
+    dealerRewardAmountInInr?: number;
+    pointsPerReward?: number;
+    rewardAmountInInr?: number;
+    pointsPerProperty?: number;
+  }): Promise<{ config: RewardConfig; message: string }> {
     const res: any = await request('/rewards/config', {
       method: 'PATCH',
       body: JSON.stringify(data),

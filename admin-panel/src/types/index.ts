@@ -166,6 +166,15 @@ export interface Reward {
   updatedAt?: string;
 }
 
+export interface RoleRewardConfig {
+  pointsPerReward: number;
+  rewardAmountInInr: number;
+  pointsPerProperty?: number;
+  pointsPerBooking?: number;
+  conversionRateText: string;
+  ratePerPoint: number;
+}
+
 export interface RewardConfig {
   id?: string;
   pointsPerReward: number;
@@ -173,6 +182,8 @@ export interface RewardConfig {
   pointsPerProperty: number;
   conversionRateText: string;
   ratePerPoint: number;
+  partner?: RoleRewardConfig;
+  dealer?: RoleRewardConfig;
 }
 
 export interface PartnerBankDetail {
