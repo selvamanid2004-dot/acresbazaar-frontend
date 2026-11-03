@@ -978,17 +978,18 @@ export class SnapPropertyDashboardComponent implements OnInit {
   };
 
   Math = Math;
+  walletPoints: number = 0;
 
   get totalSnaps(): number {
     return this.snaps.length;
   }
 
   get totalPoints(): number {
-    return this.snaps.length * 100;
+    return this.walletPoints || (this.approvedCount * 20);
   }
 
   get progressPercent(): number {
-    return Math.min(100, Math.round((this.totalPoints / 1000) * 100));
+    return Math.min(100, Math.round((this.totalPoints / 500) * 100));
   }
 
   get pendingCount(): number {
@@ -1032,7 +1033,39 @@ export class SnapPropertyDashboardComponent implements OnInit {
 
     this.bankData.holderName = this.spotterUser.name || '';
     this.loadMySnaps();
+    this.loadWallet();
     this.loadMyClaim();
+  }
+
+  private getAuthToken(): string | null {
+    let token = localStorage.getItem('token') || localStorage.getItem('access_token');
+    if (!token) {
+      try {
+        const raw = localStorage.getItem('aura_common_session');
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s?.token) token = s.token;
+        }
+      } catch {}
+    }
+    return token;
+  }
+
+  loadWallet() {
+    const email = this.spotterUser?.email?.trim().toLowerCase();
+    if (!email) return;
+    const token = this.getAuthToken();
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    this.http.get<any>(`${getApiBaseUrl()}/rewards/partner-wallet?email=${encodeURIComponent(email)}&role=PARTNER`, { headers })
+      .subscribe({
+        next: (res) => {
+          if (res.wallet) {
+            this.walletPoints = res.wallet.availablePoints || 0;
+          }
+        },
+        error: () => {}
+      });
   }
 
   loadMySnaps() {
@@ -1044,10 +1077,15 @@ export class SnapPropertyDashboardComponent implements OnInit {
       return;
     }
 
-    this.http.get<any>(`${getApiBaseUrl()}/properties/seller/listings?email=${encodeURIComponent(email)}&sellerId=${encodeURIComponent(sellerId)}&role=COMMON_PEOPLE`)
+    const token = this.getAuthToken();
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    this.http.get<any>(`${getApiBaseUrl()}/properties/seller/listings?email=${encodeURIComponent(email)}&sellerId=${encodeURIComponent(sellerId)}&role=COMMON_PEOPLE`, { headers })
       .subscribe({
         next: (res) => {
           this.snaps = res.properties || [];
+          this.loadWallet();
         },
         error: (err) => {
           console.error('Failed to load spotter snaps', err);
@@ -1059,7 +1097,11 @@ export class SnapPropertyDashboardComponent implements OnInit {
     const email = this.spotterUser?.email?.trim().toLowerCase();
     if (!email) return;
 
-    this.http.get<any>(`${getApiBaseUrl()}/rewards/my-claim?email=${encodeURIComponent(email)}`)
+    const token = this.getAuthToken();
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    this.http.get<any>(`${getApiBaseUrl()}/rewards/my-claim?email=${encodeURIComponent(email)}`, { headers })
       .subscribe({
         next: (res) => {
           this.existingClaim = res.claim || null;

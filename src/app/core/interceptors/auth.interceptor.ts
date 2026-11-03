@@ -8,7 +8,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
 
   // Retrieve token from localStorage
-  const token = localStorage.getItem('token') || localStorage.getItem('access_token') || localStorage.getItem('auth_token');
+  let token = localStorage.getItem('token') || localStorage.getItem('access_token') || localStorage.getItem('auth_token');
+
+  // Also extract token from partner session if not found in top-level storage
+  if (!token) {
+    try {
+      const rawCommon = localStorage.getItem('aura_common_session');
+      if (rawCommon) {
+        const session = JSON.parse(rawCommon);
+        if (session?.token) {
+          token = session.token;
+        }
+      }
+    } catch {}
+  }
 
   let authReq = req;
   if (token && !req.headers.has('Authorization')) {

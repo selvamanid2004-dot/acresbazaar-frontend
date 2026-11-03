@@ -827,6 +827,7 @@ export class CommonLoginComponent implements OnInit, OnChanges {
               expiresAt: Date.now() + 86400000 * 30
             };
             localStorage.setItem('aura_common_session', JSON.stringify(sessionData));
+            if (res.token) localStorage.setItem('token', res.token);
             this.notificationService.show('Welcome Back Partner!', `Logged in as ${res.user?.name}`, 'success');
             setTimeout(() => this.router.navigate(['/snap-property/dashboard']), 600);
           },

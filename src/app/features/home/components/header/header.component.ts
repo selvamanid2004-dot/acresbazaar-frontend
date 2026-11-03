@@ -274,7 +274,7 @@ import { getApiBaseUrl, resolveImageUrl, fetchWithTimeout } from '../../../../co
                 <a routerLink="/login" (click)="closeMenu()" class="drawer-link-btn">Buyer Login</a>
                 <a routerLink="/seller/login" (click)="closeMenu()" class="drawer-link-btn">Seller Login</a>
                 <a routerLink="/dealer/login" (click)="closeMenu()" class="drawer-link-btn">Dealer Login</a>
-                <a routerLink="/snap-property/login" (click)="closeMenu()" class="drawer-link-btn">Spotter Login</a>
+                <a routerLink="/snap-property/login" (click)="closeMenu()" class="drawer-link-btn">Partner Login</a>
               </div>
               <button type="button" class="btn btn-primary btn-full mb-2 mt-2" (click)="onAuth('Register')">Register</button>
             </ng-container>

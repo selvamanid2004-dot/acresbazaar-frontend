@@ -718,6 +718,7 @@ export class CommonRegisterComponent implements OnInit, OnChanges {
               expiresAt: Date.now() + 86400000 * 30
             };
             localStorage.setItem('aura_common_session', JSON.stringify(sessionData));
+            if (res.token) localStorage.setItem('token', res.token);
             this.notificationService.show('Welcome Partner!', 'Registration successful.', 'success');
             setTimeout(() => this.router.navigate(['/snap-property/upload']), 800);
           },

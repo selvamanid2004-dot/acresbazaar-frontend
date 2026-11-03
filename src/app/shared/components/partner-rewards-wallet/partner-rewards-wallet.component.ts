@@ -1113,12 +1113,30 @@ export class PartnerRewardsWalletComponent implements OnInit, OnChanges {
     this.loadWalletData();
   }
 
+  private getAuthToken(): string | null {
+    let token = localStorage.getItem('token') || localStorage.getItem('access_token');
+    if (!token) {
+      try {
+        const raw = localStorage.getItem('aura_common_session');
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s?.token) token = s.token;
+        }
+      } catch {}
+    }
+    return token;
+  }
+
   loadWalletData() {
     const email = this.userEmail?.trim().toLowerCase();
     if (!email) return;
 
+    const token = this.getAuthToken();
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const role = this.userRole || 'PARTNER';
-    this.http.get<any>(`${getApiBaseUrl()}/rewards/partner-wallet?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`)
+    this.http.get<any>(`${getApiBaseUrl()}/rewards/partner-wallet?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`, { headers })
       .subscribe({
         next: (res) => {
           if (res.wallet) {
@@ -1225,7 +1243,11 @@ export class PartnerRewardsWalletComponent implements OnInit, OnChanges {
       }
     };
 
-    this.http.post<any>(`${getApiBaseUrl()}/rewards/claim-reward`, payload).subscribe({
+    const token = this.getAuthToken();
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    this.http.post<any>(`${getApiBaseUrl()}/rewards/claim-reward`, payload, { headers }).subscribe({
       next: (res) => {
         this.submittingClaim = false;
         this.closeClaimModal();
