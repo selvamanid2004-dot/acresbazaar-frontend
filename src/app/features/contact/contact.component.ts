@@ -396,17 +396,44 @@ import { getApiBaseUrl, resolveImageUrl } from '../../core/services/api-config';
       }
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
+      .contact-hero {
+        min-height: 220px;
+        padding: 2.5rem 0;
+      }
+      .contact-main-title {
+        font-size: 1.75rem;
+      }
+      .contact-hero-sub {
+        font-size: 0.95rem;
+      }
       .info-cards-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 2.5rem;
       }
-
+      .contact-card {
+        padding: 1.35rem 1.15rem;
+      }
+      .card-title {
+        font-size: 1.05rem;
+      }
       .form-row-2 {
         grid-template-columns: 1fr;
       }
-
       .form-container-panel {
-        padding: 2rem 1.5rem;
+        padding: 1.5rem 1rem;
+      }
+      .form-main-heading {
+        font-size: 1.35rem;
+      }
+      .form-actions-row {
+        justify-content: stretch;
+      }
+      .submit-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1rem;
       }
     }
   `]

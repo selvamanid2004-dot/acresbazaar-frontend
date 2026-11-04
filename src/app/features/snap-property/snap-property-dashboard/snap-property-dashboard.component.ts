@@ -953,8 +953,30 @@ import { PartnerRewardsWalletComponent } from '../../../shared/components/partne
     }
 
     @media (max-width: 600px) {
+      .welcome-banner {
+        padding: 1.25rem 1rem;
+      }
+      .welcome-banner h1 {
+        font-size: 1.35rem;
+      }
+      .banner-reward-preview, .btn-primary-banner {
+        width: 100%;
+        justify-content: center;
+      }
       .snap-item-card {
         flex-direction: column;
+      }
+      .snap-thumb-box {
+        width: 100% !important;
+        height: 180px !important;
+      }
+      .snap-card-actions {
+        width: 100%;
+        display: flex;
+        gap: 0.5rem;
+      }
+      .snap-card-actions .btn {
+        flex: 1;
       }
     }
 

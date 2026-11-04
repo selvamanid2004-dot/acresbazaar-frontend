@@ -87,6 +87,28 @@ import { NotificationService } from '../../../../shared/services/notification.se
       border-radius: 50%;
       background: var(--gold-500);
     }
+
+    @media (max-width: 768px) {
+      .browsing-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.65rem 0.85rem;
+      }
+      .options-row {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+      }
+      .browse-chip {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.75rem;
+      }
+    }
   `]
 })
 export class ContinueBrowsingComponent {

@@ -484,6 +484,21 @@ import { Property } from '../../../core/models/property.model';
     .btn-browse-more:hover {
       background: #e2e8f0;
     }
+
+    @media (max-width: 480px) {
+      .wishlist-drawer {
+        max-width: 100%;
+      }
+      .drawer-header {
+        padding: 1rem 1.15rem;
+      }
+      .drawer-body {
+        padding: 1rem;
+      }
+      .card-image-box {
+        height: 150px;
+      }
+    }
   `]
 })
 export class WishlistDrawerComponent {

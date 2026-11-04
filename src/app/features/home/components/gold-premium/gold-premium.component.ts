@@ -204,6 +204,23 @@ import { NotificationService } from '../../../../shared/services/notification.se
     @media (max-width: 800px) {
       .two-column-grid {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .tier-box {
+        padding: 1.5rem 1.15rem;
+      }
+      .tier-title {
+        font-size: 1.25rem;
+      }
+      .tier-desc {
+        font-size: 0.88rem;
+      }
+      .btn-tier {
+        height: 44px;
+        font-size: 0.88rem;
       }
     }
   `]

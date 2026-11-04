@@ -312,9 +312,9 @@ import { getApiBaseUrl, resolveImageUrl, fetchWithTimeout } from '../../../../co
             <ng-container *ngIf="isSpotterAuthenticated()">
               <div class="drawer-user-info mb-2">
                 <strong>{{ getSpotterName() }}</strong>
-                <span class="drawer-tier-pill spotter-pill">SPOTTER DASHBOARD</span>
+                <span class="drawer-tier-pill spotter-pill">PARTNER DASHBOARD</span>
               </div>
-              <a routerLink="/snap-property/dashboard" (click)="closeMenu()" class="btn btn-outline btn-full mb-2">My Snaps & Rewards</a>
+              <a routerLink="/snap-property/dashboard" (click)="closeMenu()" class="btn btn-outline btn-full mb-2">Partner Dashboard & Rewards</a>
               <button type="button" class="btn btn-outline btn-full mb-2" (click)="onSpotterLogout()">Logout</button>
             </ng-container>
 
@@ -961,14 +961,17 @@ import { getApiBaseUrl, resolveImageUrl, fetchWithTimeout } from '../../../../co
       top: 0;
       left: 0;
       width: 290px;
+      max-width: 85vw;
       height: 100vh;
+      height: 100dvh;
       background: #FFFFFF;
-      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
       z-index: 1050;
       transform: translateX(-100%);
       transition: transform var(--transition-smooth);
       display: flex;
       flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
     }
 
     .mobile-drawer.open {

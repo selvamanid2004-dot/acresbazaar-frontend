@@ -2643,6 +2643,30 @@ import { PartnerRewardsWalletComponent } from '../../../shared/components/partne
         grid-template-columns: 1fr;
       }
     }
+
+    @media (max-width: 600px) {
+      .dashboard-page {
+        padding: 1rem 0.75rem;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .property-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .dashboard-header h1 {
+        font-size: 1.45rem;
+      }
+      .header-actions {
+        gap: 8px;
+      }
+      .nav-tab {
+        padding: 8px 12px;
+        font-size: 0.82rem;
+      }
+    }
   `]
 })
 export class DealerDashboardComponent implements OnInit {

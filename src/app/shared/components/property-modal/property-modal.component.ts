@@ -1451,40 +1451,69 @@ import { getApiBaseUrl } from '../../../core/services/api-config';
 
     @media (max-width: 640px) {
       .modal-backdrop {
-        padding: 0.5rem;
+        padding: 0;
+        align-items: flex-end;
       }
 
       .modal-dialog {
-        max-height: 94vh;
-        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        margin: 0;
       }
 
       .modal-media-header {
-        height: 200px;
+        height: 220px;
+      }
+
+      .btn-fullscreen-toggle span {
+        display: none;
+      }
+
+      .slider-nav-btn {
+        width: 32px;
+        height: 32px;
+      }
+
+      .slider-thumbnails-strip {
+        left: 0.75rem;
+        right: 0.75rem;
+        bottom: 0.5rem;
+      }
+
+      .modal-price-header {
+        left: 0.75rem;
+        bottom: 3.2rem;
       }
 
       .price-big {
-        font-size: 1.55rem;
+        font-size: 1.45rem;
       }
 
       .modal-title {
-        font-size: 1.3rem;
+        font-size: 1.25rem;
       }
 
       .modal-body-scroll {
-        padding: 1.25rem 1rem;
+        padding: 1.15rem 0.85rem;
       }
 
       .modal-specs-grid {
         grid-template-columns: 1fr;
-        gap: 0.6rem;
+        gap: 0.5rem;
+      }
+
+      .property-gallery-section {
+        padding: 1rem 0.85rem;
+        border-radius: 10px;
       }
 
       .contact-agent-card {
         flex-direction: column;
         align-items: stretch;
         text-align: center;
-        padding: 1.25rem 1rem;
+        padding: 1.25rem 0.85rem;
       }
 
       .agent-avatar {

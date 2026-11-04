@@ -208,6 +208,24 @@ import { NotificationService } from '../../../../shared/services/notification.se
         gap: 1.75rem;
       }
     }
+
+    @media (max-width: 540px) {
+      .scout-horizontal-card {
+        padding: 1.5rem 1.15rem;
+      }
+      .scout-title {
+        font-size: 1.5rem;
+      }
+      .scout-desc {
+        font-size: 0.9rem;
+        margin-bottom: 1.25rem;
+      }
+      .btn-scout {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem 1rem;
+      }
+    }
   `]
 })
 export class PropertyScoutComponent {

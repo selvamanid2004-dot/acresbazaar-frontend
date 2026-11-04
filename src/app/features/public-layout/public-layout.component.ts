@@ -94,7 +94,7 @@ import { AiChatbotComponent } from '../../shared/components/ai-chatbot/ai-chatbo
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <span>{{ authService.isAuthenticated() || authService.isSellerAuthenticated() || authService.isDealerAuthenticated() ? 'Account' : 'Login' }}</span>
+            <span>{{ authService.isAuthenticated() || authService.isSellerAuthenticated() || authService.isDealerAuthenticated() || isSpotterAuthenticated() ? 'Account' : 'Login' }}</span>
           </a>
         </div>
       </nav>
@@ -179,8 +179,14 @@ export class PublicLayoutComponent implements OnInit {
     });
   }
 
+  isSpotterAuthenticated(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    return !!localStorage.getItem('spotter_token');
+  }
+
   getAccountRoute(): string {
-    if (this.authService.isSellerAuthenticated()) return '/seller/properties';
+    if (this.isSpotterAuthenticated()) return '/snap-property/dashboard';
+    if (this.authService.isSellerAuthenticated()) return '/seller/dashboard';
     if (this.authService.isDealerAuthenticated()) return '/dealer/dashboard';
     if (this.authService.isAuthenticated()) return '/buyers';
     return '/login';

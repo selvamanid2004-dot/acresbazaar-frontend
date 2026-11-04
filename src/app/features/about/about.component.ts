@@ -461,9 +461,50 @@ import { getApiBaseUrl, resolveImageUrl } from '../../core/services/api-config';
       }
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
+      .about-hero {
+        min-height: 220px;
+        padding: 2.5rem 0;
+      }
+      .about-main-title {
+        font-size: 1.75rem;
+      }
+      .about-hero-sub {
+        font-size: 0.95rem;
+      }
+      .content-panel {
+        padding: 1.5rem 1rem;
+      }
+      .who-we-are-lead {
+        font-size: 1.05rem;
+      }
+      .who-we-are-body {
+        font-size: 0.92rem;
+      }
       .mission-vision-grid, .diff-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .mv-card {
+        padding: 1.5rem 1.25rem;
+      }
+      .diff-card {
+        padding: 1.25rem 1rem;
+      }
+      .difference-section {
+        padding: 3rem 0;
+      }
+      .difference-heading {
+        font-size: 1.45rem;
+      }
+      .cta-box {
+        padding: 2rem 1.25rem;
+      }
+      .cta-title {
+        font-size: 1.5rem;
+      }
+      .about-bottom-cta {
+        padding: 2.5rem 0;
       }
     }
   `]

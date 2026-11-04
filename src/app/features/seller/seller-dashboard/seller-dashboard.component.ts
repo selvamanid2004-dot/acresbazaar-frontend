@@ -753,6 +753,22 @@ import { PartnerRewardsWalletComponent } from '../../../shared/components/partne
         justify-content: center;
       }
     }
+
+    @media (max-width: 600px) {
+      .dashboard-page {
+        padding: 1.25rem 0.85rem;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .platinum-banner {
+        padding: 18px 16px;
+      }
+      .dashboard-header h1 {
+        font-size: 1.45rem;
+      }
+    }
   `]
 })
 export class SellerDashboardComponent implements OnInit {

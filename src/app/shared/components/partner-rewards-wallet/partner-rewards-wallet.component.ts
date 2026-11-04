@@ -1052,6 +1052,82 @@ interface RewardClaimItem {
     .btn-submit-claim:hover {
       background: #047857;
     }
+
+    @media (max-width: 768px) {
+      .rewards-wallet-container {
+        padding: 1.25rem 1rem;
+        border-radius: 12px;
+      }
+      .wallet-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+      .header-right {
+        align-items: stretch;
+        width: 100%;
+      }
+      .btn-claim-main {
+        width: 100%;
+        justify-content: center;
+        min-height: 46px;
+      }
+      .wallet-stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+      .stat-card {
+        padding: 0.85rem;
+      }
+      .stat-icon {
+        width: 38px;
+        height: 38px;
+      }
+      .stat-val {
+        font-size: 1.2rem;
+      }
+      .options-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+      .modal-backdrop {
+        padding: 0;
+        align-items: flex-end;
+      }
+      .claim-modal-content {
+        width: 100%;
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: 16px 16px 0 0;
+      }
+      .modal-footer-bar {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+        padding: 0.85rem 1rem;
+      }
+      .btn-cancel, .btn-submit-claim {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .wallet-stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .rate-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .wallet-title {
+        font-size: 1.2rem;
+      }
+    }
   `]
 })
 export class PartnerRewardsWalletComponent implements OnInit, OnChanges {

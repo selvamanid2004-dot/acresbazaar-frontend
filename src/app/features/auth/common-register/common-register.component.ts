@@ -532,6 +532,26 @@ export type RoleOption = 'Buyer' | 'Seller' | 'Dealer' | 'Partner';
         padding: 1.75rem 1.25rem;
       }
     }
+
+    @media (max-width: 480px) {
+      .auth-card-container {
+        padding: 1.5rem 1rem;
+        border-radius: 12px;
+      }
+      .auth-title {
+        font-size: 1.55rem;
+      }
+      .auth-sub {
+        font-size: 0.85rem;
+      }
+      .btn-auth-submit {
+        font-size: 0.9rem;
+        padding: 0.75rem;
+      }
+      .nav-bar-inner {
+        gap: 0.75rem;
+      }
+    }
   `]
 })
 export class CommonRegisterComponent implements OnInit, OnChanges {

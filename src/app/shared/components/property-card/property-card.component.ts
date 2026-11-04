@@ -530,6 +530,55 @@ import { Property } from '../../../core/models/property.model';
     .btn-details:hover svg {
       transform: translateX(3px);
     }
+
+    @media (max-width: 640px) {
+      .card-media {
+        height: 200px;
+      }
+      .card-body {
+        padding: 1rem;
+      }
+      .badge-row {
+        top: 0.65rem;
+        left: 0.65rem;
+        right: 3.25rem;
+        gap: 0.3rem;
+      }
+      .bookmark-btn {
+        top: 0.65rem;
+        right: 0.65rem;
+        width: 32px;
+        height: 32px;
+      }
+      .price-val {
+        font-size: 1.22rem;
+      }
+      .property-title {
+        font-size: 1.05rem;
+        margin-bottom: 0.35rem;
+      }
+      .property-desc {
+        font-size: 0.82rem;
+        margin-bottom: 0.75rem;
+        min-height: 2.3rem;
+      }
+      .specs-grid {
+        gap: 0.4rem;
+        padding-top: 0.65rem;
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+        min-height: 40px;
+      }
+      .spec-item {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+      }
+      .btn-details {
+        font-size: 0.8rem;
+        padding: 0.45rem 0.8rem;
+        min-height: 36px;
+      }
+    }
   `]
 })
 export class PropertyCardComponent {

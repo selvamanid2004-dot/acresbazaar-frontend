@@ -77,6 +77,16 @@ import { getApiBaseUrl, fetchJsonCached } from '../../../../core/services/api-co
     }
 
     @media (max-width: 600px) {
+      .cta-inner-card {
+        padding: 2.25rem 1.25rem;
+      }
+      .cta-heading {
+        font-size: 1.6rem;
+      }
+      .cta-sub {
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+      }
       .cta-btn-group {
         flex-direction: column;
         width: 100%;

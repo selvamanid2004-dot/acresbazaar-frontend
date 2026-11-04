@@ -388,9 +388,38 @@ import { getApiBaseUrl, resolveImageUrl } from '../../core/services/api-config';
       }
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
+      .services-hero {
+        min-height: 220px;
+        padding: 2.5rem 0;
+      }
+      .services-main-title {
+        font-size: 1.75rem;
+      }
+      .services-hero-sub {
+        font-size: 0.95rem;
+      }
       .services-grid {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+      .service-card {
+        padding: 1.5rem 1.25rem;
+      }
+      .service-title {
+        font-size: 1.15rem;
+      }
+      .service-desc {
+        font-size: 0.88rem;
+      }
+      .cta-banner {
+        padding: 2rem 1.25rem;
+      }
+      .cta-title {
+        font-size: 1.5rem;
+      }
+      .services-cta-section {
+        padding: 2.5rem 0;
       }
     }
   `]
