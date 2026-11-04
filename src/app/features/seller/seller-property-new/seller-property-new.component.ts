@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { getApiBaseUrl } from '../../../core/services/api-config';
+import { parseAndFormatIndianPrice } from '../../../core/models/property.model';
 
 interface ImageUploadItem {
   id: string;
@@ -348,7 +349,7 @@ interface VideoUploadItem {
                   [(ngModel)]="formData.price"
                   name="price"
                   required
-                  placeholder="e.g. ₹ 85 Lakhs / ₹ 2.4 Crores"
+                  placeholder="e.g. 1.5 Cr, 50 L, 25 K or ₹1,50,00,000"
                   class="form-control"
                 />
               </div>
@@ -2019,10 +2020,9 @@ export class SellerPropertyNewComponent implements OnInit {
         categorySpecs = { ...this.genericSpecs };
       }
 
-      const cleanPrice = parseFloat(String(this.formData.price).replace(/[^0-9.]/g, '')) || 0;
-      const priceDisplayStr = this.formData.price.startsWith('₹') || this.formData.price.startsWith('$')
-        ? this.formData.price
-        : `₹${cleanPrice.toLocaleString('en-IN')}`;
+      const parsedPrice = parseAndFormatIndianPrice(this.formData.price);
+      const cleanPrice = parsedPrice.numericPrice;
+      const priceDisplayStr = parsedPrice.priceDisplay;
 
       const sellerIdStr = (seller as any)?.seller_id || seller?.id || '';
       const sellerNameStr = this.formData.sellerName.trim() || seller?.fullName || 'Seller';

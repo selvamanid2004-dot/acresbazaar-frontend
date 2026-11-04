@@ -37,7 +37,7 @@ import { NavStateService } from '../../../../core/services/nav-state.service';
 
             <div class="cat-info">
               <span class="cat-name">{{ cat.name }}</span>
-              <span class="cat-count">{{ cat.count }}</span>
+              <span class="cat-count">{{ getCategoryCount(cat) }}</span>
             </div>
 
           </div>
@@ -186,6 +186,12 @@ export class PropertyCategoriesComponent {
   @Output() categoryChosen = new EventEmitter<Category>();
 
   categories = this.propertyService.getCategories();
+
+  getCategoryCount(cat: Category): string {
+    const props = this.propertyService.getPropertiesByCategory(cat.slug || cat.name);
+    const count = props.length;
+    return `${count} ${count === 1 ? 'Property' : 'Properties'}`;
+  }
 
   onCategoryClick(cat: Category) {
     this.notificationService.show(cat.name, `Opening dedicated ${cat.name} page...`, 'gold');

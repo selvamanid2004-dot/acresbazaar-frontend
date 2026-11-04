@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { PropertyService } from '../../../core/services/property.service';
-import { Property, PropertySpecs } from '../../../core/models/property.model';
+import { Property, PropertySpecs, parseAndFormatIndianPrice } from '../../../core/models/property.model';
 import { getApiBaseUrl } from '../../../core/services/api-config';
 
 interface CategoryOption {
@@ -1652,7 +1652,9 @@ export class PropertyPostComponent implements OnInit {
 
     // Live sync to NestJS REST API backend
     const categoryName = this.getCategoryName(cat);
-    const cleanPrice = parseFloat(String(this.formData.price).replace(/[^0-9.]/g, '')) || 0;
+    const parsedPrice = parseAndFormatIndianPrice(this.formData.price);
+    const cleanPrice = parsedPrice.numericPrice;
+    const priceDisplayStr = parsedPrice.priceDisplay;
     try {
       const res = await fetch(`${getApiBaseUrl()}/properties`, {
           method: 'POST',
@@ -1663,7 +1665,7 @@ export class PropertyPostComponent implements OnInit {
             location: `${this.formData.locality}, ${this.formData.city}`,
             city: this.formData.city.trim(),
             price: cleanPrice,
-            priceDisplay: this.formData.price.startsWith('₹') || this.formData.price.startsWith('$') ? this.formData.price : `₹${cleanPrice.toLocaleString('en-IN')}`,
+            priceDisplay: priceDisplayStr,
             description: this.formData.description.trim(),
             status: 'PENDING',
             planType: 'PLATINUM',
@@ -1706,7 +1708,7 @@ export class PropertyPostComponent implements OnInit {
           category: cat,
           plan: 'PLATINUM',
           price: cleanPrice,
-          priceDisplay: this.formData.price.startsWith('₹') || this.formData.price.startsWith('$') ? this.formData.price : `₹${cleanPrice.toLocaleString('en-IN')}`,
+          priceDisplay: priceDisplayStr,
           location: `${this.formData.locality}, ${this.formData.city}`,
           city: this.formData.city.trim(),
           locality: this.formData.locality.trim(),

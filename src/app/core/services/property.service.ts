@@ -201,7 +201,7 @@ export class PropertyService {
       titleHighlight: "Find a Property You'll Love",
       titleSuffix: '',
       description: 'Discover residential properties, premium plots, villas and apartments in the locations you prefer.',
-      priceStarting: 'Starting at $450,000',
+      priceStarting: 'Starting at ₹45,00,000',
       location: 'Miami Coastline & Austin Valley',
       imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80',
       ctaText: 'Explore Now',
@@ -215,7 +215,7 @@ export class PropertyService {
       titleHighlight: 'Prime Plotted Lands & Estates',
       titleSuffix: '',
       description: 'Clear-title gated township plots with wide road access, water infrastructure and high appreciation.',
-      priceStarting: 'Starting at $280,000',
+      priceStarting: 'Starting at ₹28,00,000',
       location: 'Greenfield Corridor & Dallas North',
       imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=80',
       ctaText: 'Explore Now',
@@ -229,7 +229,7 @@ export class PropertyService {
       titleHighlight: 'Bespoke Luxury Villas',
       titleSuffix: '',
       description: 'Independent 4 & 5 BHK designer villas with private pools, gardens, and 24/7 guarded security.',
-      priceStarting: 'Starting at $1,250,000',
+      priceStarting: 'Starting at ₹1,25,00,000',
       location: 'Palm Springs & Beverly Hills',
       imageUrl: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1600&q=80',
       ctaText: 'Explore Now',
@@ -243,7 +243,7 @@ export class PropertyService {
       titleHighlight: 'Modern Skyline Residences',
       titleSuffix: '',
       description: 'Spacious 2, 3 & 4 BHK apartments with panoramic balconies, rooftop amenities and transit connectivity.',
-      priceStarting: 'Starting at $390,000',
+      priceStarting: 'Starting at ₹39,00,000',
       location: 'Downtown Financial District',
       imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1600&q=80',
       ctaText: 'Explore Now',
@@ -257,7 +257,7 @@ export class PropertyService {
       id: 'all-res',
       name: 'All Residential',
       slug: 'all-residential',
-      count: '4,850+ Properties',
+      count: 'All Properties',
       iconName: 'home',
       description: 'Homes, apartments & townhouses',
       imageUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80'
@@ -266,7 +266,7 @@ export class PropertyService {
       id: 'plots',
       name: 'Plots',
       slug: 'plots',
-      count: '1,240+ Plots',
+      count: 'Plots Available',
       iconName: 'map',
       description: 'Gated & clear title plots',
       imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=80'
@@ -275,7 +275,7 @@ export class PropertyService {
       id: 'villas',
       name: 'Villas',
       slug: 'villas',
-      count: '890+ Villas',
+      count: 'Villas Available',
       iconName: 'castle',
       description: 'Independent luxury estates',
       imageUrl: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=400&q=80'
@@ -284,7 +284,7 @@ export class PropertyService {
       id: 'apartments',
       name: 'Apartments / Flats',
       slug: 'apartments',
-      count: '3,120+ Flats',
+      count: 'Flats Available',
       iconName: 'building',
       description: 'High-rise & studio apartments',
       imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80'
@@ -293,7 +293,7 @@ export class PropertyService {
       id: 'houses',
       name: 'Independent Houses',
       slug: 'independent-houses',
-      count: '960+ Houses',
+      count: 'Houses Available',
       iconName: 'warehouse',
       description: 'Standalone duplexes & homes',
       imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80'
@@ -302,7 +302,7 @@ export class PropertyService {
       id: 'commercial',
       name: 'Commercial Spaces',
       slug: 'commercial',
-      count: '780+ Spaces',
+      count: 'Spaces Available',
       iconName: 'briefcase',
       description: 'Office spaces & retail shops',
       imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80'
@@ -311,7 +311,7 @@ export class PropertyService {
       id: 'farm-land',
       name: 'Farm Lands',
       slug: 'farm-lands',
-      count: '420+ Acres',
+      count: 'Lands Available',
       iconName: 'trees',
       description: 'Agricultural & weekend farmlands',
       imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80'
@@ -444,6 +444,7 @@ export class PropertyService {
   private saveCustomProperties(props: Property[]): void {
     this.customProperties.set(props);
     this.distributeProperties(props);
+    this.refreshCategoryCounts();
     try {
       // Clean oversized data URLs to avoid QuotaExceededError in localStorage
       const safeProps = props.map(p => {
@@ -602,7 +603,7 @@ export class PropertyService {
             title: p.title,
             slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
             price: p.price,
-            priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
+            priceDisplay: (p.priceDisplay && !String(p.priceDisplay).startsWith('$')) ? p.priceDisplay : (p.price ? `₹${Number(p.price).toLocaleString('en-IN')}` : 'Price on Request'),
             location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
             city: p.city || '',
             address: p.address || p.location || '',
@@ -732,7 +733,7 @@ export class PropertyService {
               title: p.title,
               slug: p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
               price: p.price,
-              priceDisplay: p.priceDisplay || (p.price ? (String(p.price).startsWith('₹') || String(p.price).startsWith('$') ? String(p.price) : `₹${Number(p.price).toLocaleString('en-IN')}`) : 'Price on Request'),
+              priceDisplay: (p.priceDisplay && !String(p.priceDisplay).startsWith('$')) ? p.priceDisplay : (p.price ? `₹${Number(p.price).toLocaleString('en-IN')}` : 'Price on Request'),
               location: p.location || (p.city ? `${p.city}` : 'Prime Location'),
               city: p.city || '',
               address: p.address || p.location || '',
@@ -788,21 +789,38 @@ export class PropertyService {
     fetchJsonCached<any>(`${getApiBaseUrl()}/categories`, 60000)
       .then(data => {
         if (data && data.categories && Array.isArray(data.categories)) {
-          const apiCats: Category[] = data.categories.map((c: any) => ({
-            id: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
-            name: c.name,
-            slug: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
-            count: `${c.propertiesCount ?? 0}+ Properties`,
-            iconName: 'home',
-            description: c.description || 'Premium verified properties',
-            imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80'
-          }));
+          const apiCats: Category[] = data.categories.map((c: any) => {
+            const dynamicCount = this.getPropertiesByCategory(c.slug || c.name).length;
+            const countNum = (typeof c.propertiesCount === 'number') ? c.propertiesCount : dynamicCount;
+            return {
+              id: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
+              name: c.name,
+              slug: c.slug || c.name.toLowerCase().replace(/\s+/g, '-'),
+              count: `${countNum} ${countNum === 1 ? 'Property' : 'Properties'}`,
+              iconName: 'home',
+              description: c.description || 'Premium verified properties',
+              imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80'
+            };
+          });
           if (apiCats.length > 0) {
             this.categories.set(apiCats);
           }
         }
       })
       .catch(() => {});
+  }
+
+  refreshCategoryCounts(): void {
+    const currentCats = this.categories();
+    if (!currentCats || currentCats.length === 0) return;
+    const updated = currentCats.map(cat => {
+      const count = this.getPropertiesByCategory(cat.slug || cat.name).length;
+      return {
+        ...cat,
+        count: `${count} ${count === 1 ? 'Property' : 'Properties'}`
+      };
+    });
+    this.categories.set(updated);
   }
 
   syncHomeSettingsFromBackend(): void {

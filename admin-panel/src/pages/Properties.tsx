@@ -1,3 +1,64 @@
+// Smart Indian Real Estate Price Parser (Cr, L, K, and numeric commas)
+export function parseAndFormatIndianPrice(input: any): { numericPrice: number; priceDisplay: string } {
+  if (typeof input === 'number') {
+    const num = isNaN(input) ? 0 : Math.round(input);
+    return {
+      numericPrice: num,
+      priceDisplay: num > 0 ? `₹${num.toLocaleString('en-IN')}` : 'Price on Request'
+    };
+  }
+
+  const str = String(input || '').trim();
+  if (!str) {
+    return { numericPrice: 0, priceDisplay: 'Price on Request' };
+  }
+
+  // Check for Cr / Crore (e.g., 1.5 Cr, 1Cr, 2 Crore)
+  const crMatch = str.match(/([\d.]+)\s*(cr|crore|crores)\b/i);
+  if (crMatch) {
+    const val = Math.round(parseFloat(crMatch[1]) * 10000000);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  // Check for L / Lakh / Lac (e.g., 50 L, 50L, 50 Lakh, 50 Lac)
+  const lakhMatch = str.match(/([\d.]+)\s*(l|lakh|lakhs|lac|lacs)\b/i);
+  if (lakhMatch) {
+    const val = Math.round(parseFloat(lakhMatch[1]) * 100000);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  // Check for K / Thousand (e.g., 25 K, 25K, 25 Thousand)
+  const kMatch = str.match(/([\d.]+)\s*(k|thousand|thousands)\b/i);
+  if (kMatch) {
+    const val = Math.round(parseFloat(kMatch[1]) * 1000);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  // Direct numeric value (e.g. "15000000", "₹1,50,00,000", "$15,000,000")
+  const numOnly = parseFloat(str.replace(/[^0-9.]/g, ''));
+  if (!isNaN(numOnly) && numOnly > 0) {
+    const val = Math.round(numOnly);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  return {
+    numericPrice: 0,
+    priceDisplay: str.startsWith('₹') ? str : (str ? `₹${str}` : 'Price on Request')
+  };
+}
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -64,6 +125,25 @@ export const Properties: React.FC = () => {
   const [viewProperty, setViewProperty] = useState<Property | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [editProperty, setEditProperty] = useState<Property | null>(null);
+  const [editPriceInput, setEditPriceInput] = useState<string>('');
+
+  // Add Property State
+  const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
+  const [creatingProperty, setCreatingProperty] = useState(false);
+  const [newProperty, setNewProperty] = useState({
+    title: '',
+    category: 'Plots',
+    location: '',
+    city: '',
+    priceInput: '',
+    planType: 'PLATINUM',
+    description: '',
+    address: '',
+    sellerName: '',
+    sellerPhone: '',
+    sellerEmail: '',
+    imageUrl: ''
+  });
   const [approvalProperty, setApprovalProperty] = useState<Property | null>(null);
   const [selectedApprovalTier, setSelectedApprovalTier] = useState<'GOLD' | 'PLATINUM'>('GOLD');
   const [approving, setApproving] = useState<boolean>(false);
@@ -280,11 +360,13 @@ export const Properties: React.FC = () => {
     e.preventDefault();
     if (!editProperty) return;
     try {
+      const parsed = parseAndFormatIndianPrice(editPriceInput || editProperty.price);
       await api.updateProperty(editProperty.id, {
         title: editProperty.title,
         category: editProperty.category,
         location: editProperty.location,
-        price: Number(editProperty.price),
+        price: parsed.numericPrice,
+        priceDisplay: parsed.priceDisplay,
         planType: editProperty.planType,
         description: editProperty.description,
         address: editProperty.address,
@@ -295,6 +377,7 @@ export const Properties: React.FC = () => {
       });
       setEditProperty(null);
       fetchProperties();
+      alert('Property details and price updated successfully!');
     } catch (err: any) {
       alert(err.message || 'Update failed');
     }
@@ -302,9 +385,7 @@ export const Properties: React.FC = () => {
 
   const formatPrice = (p?: number) => {
     if (typeof p !== 'number' || isNaN(p) || p <= 0) return '₹0';
-    if (p >= 10000000) return `₹${(p / 10000000).toFixed(2)} Cr`;
-    if (p >= 100000) return `₹${(p / 100000).toFixed(2)} Lac`;
-    return `₹${p.toLocaleString('en-IN')}`;
+    return `₹${Math.round(p).toLocaleString('en-IN')}`;
   };
 
   return (
@@ -317,7 +398,15 @@ export const Properties: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button 
+            type="button" 
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => setIsAddPropertyOpen(true)}
+          >
+            <span>+ Add New Property</span>
+          </button>
           <select 
             className="form-control" 
             style={{ width: 'auto', minWidth: '160px' }}
@@ -558,7 +647,7 @@ export const Properties: React.FC = () => {
                           <button
                             className="btn btn-secondary btn-icon"
                             title="Edit Property"
-                            onClick={() => setEditProperty(p)}
+                            onClick={() => { setEditProperty(p); setEditPriceInput(p.priceDisplay || (p.price ? `₹${p.price.toLocaleString('en-IN')}` : '')); }}
                           >
                             <Edit3 size={14} />
                           </button>
@@ -862,7 +951,7 @@ export const Properties: React.FC = () => {
                 <div style={{ background: 'var(--bg-input)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Assigned Plan Category</div>
                   <div style={{ fontSize: '16px', fontWeight: 700, color: viewProperty.planType === 'GOLD' ? '#fbbf24' : '#c084fc', marginTop: '2px' }}>
-                    {viewProperty.planType === 'GOLD' ? 'Gold Plan ($49/mo)' : 'Platinum VIP ($129/mo)'}
+                    {viewProperty.planType === 'GOLD' ? 'Gold Plan (₹3,999/mo)' : 'Platinum VIP (₹9,999/mo)'}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                     Category Showcase Section
@@ -1293,7 +1382,7 @@ export const Properties: React.FC = () => {
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       >
                         <CheckCircle2 size={16} />
-                        <span>Approve as Gold ($49/mo)</span>
+                        <span>Approve as Gold (₹3,999/mo)</span>
                       </button>
                       <button 
                         className="btn btn-primary"
@@ -1304,7 +1393,7 @@ export const Properties: React.FC = () => {
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       >
                         <Layers size={16} />
-                        <span>Approve as Platinum ($129/mo)</span>
+                        <span>Approve as Platinum (₹9,999/mo)</span>
                       </button>
                     </>
                   ) : (
@@ -1353,7 +1442,7 @@ export const Properties: React.FC = () => {
                   <button 
                     className="btn btn-secondary"
                     onClick={() => {
-                      setEditProperty(viewProperty);
+                      setEditProperty(viewProperty); setEditPriceInput(viewProperty.priceDisplay || (viewProperty.price ? `₹${viewProperty.price.toLocaleString('en-IN')}` : ''));
                       setViewProperty(null);
                     }}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
@@ -1455,14 +1544,38 @@ export const Properties: React.FC = () => {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Price (₹ INR)</label>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Property Price (Cr, L, K or INR) <span style={{ color: '#ef4444' }}>*</span></span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Examples: 1.5 Cr, 50 L, 25 K</span>
+                    </label>
                     <input
-                      type="number"
+                      type="text"
                       className="form-control"
-                      value={editProperty.price}
-                      onChange={(e) => setEditProperty({ ...editProperty, price: Number(e.target.value) })}
+                      placeholder="e.g. 1.5 Cr, 50 L, 25 K or 15000000"
+                      value={editPriceInput}
+                      onChange={(e) => setEditPriceInput(e.target.value)}
                       required
                     />
+                    
+                    {/* Live Indian Price Preview & Quick Unit Buttons */}
+                    <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                      <div style={{ fontSize: '12.5px', color: '#10b981', fontWeight: 700, background: 'rgba(16, 185, 129, 0.1)', padding: '3px 8px', borderRadius: '6px' }}>
+                        Combined INR: {parseAndFormatIndianPrice(editPriceInput || editProperty.price).priceDisplay}
+                      </div>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {['25 K', '50 L', '1 Cr', '1.5 Cr'].map((chip) => (
+                          <button
+                            key={chip}
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '2px 6px', fontSize: '11px' }}
+                            onClick={() => setEditPriceInput(chip)}
+                          >
+                            {chip}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 

@@ -748,7 +748,7 @@ export const WebsiteSettings: React.FC = () => {
                       <input
                         type="text"
                         className="form-control"
-                        value={settings.hero_price_label || 'Starting at $450,000'}
+                        value={settings.hero_price_label || 'Starting at ₹45,00,000'}
                         onChange={(e) => handleFieldChange('hero_price_label', e.target.value)}
                       />
                     </div>

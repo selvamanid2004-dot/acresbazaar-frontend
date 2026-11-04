@@ -151,3 +151,72 @@ export interface WhyUsBenefit {
   badgeText: string;
   icon: string;
 }
+
+
+export function parseAndFormatIndianPrice(input: any): { numericPrice: number; priceDisplay: string } {
+  if (typeof input === 'number') {
+    const num = isNaN(input) ? 0 : Math.round(input);
+    return {
+      numericPrice: num,
+      priceDisplay: num > 0 ? `₹${num.toLocaleString('en-IN')}` : 'Price on Request'
+    };
+  }
+
+  const str = String(input || '').trim();
+  if (!str) {
+    return { numericPrice: 0, priceDisplay: 'Price on Request' };
+  }
+
+  // Check for Cr / Crore (e.g., 1.5 Cr, 1Cr, 2 Crore)
+  const crMatch = str.match(/([\d.]+)\s*(cr|crore|crores)\b/i);
+  if (crMatch) {
+    const val = Math.round(parseFloat(crMatch[1]) * 10000000);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  // Check for L / Lakh / Lac (e.g., 50 L, 50L, 50 Lakh, 50 Lac)
+  const lakhMatch = str.match(/([\d.]+)\s*(l|lakh|lakhs|lac|lacs)\b/i);
+  if (lakhMatch) {
+    const val = Math.round(parseFloat(lakhMatch[1]) * 100000);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  // Check for K / Thousand (e.g., 25 K, 25K, 25 Thousand)
+  const kMatch = str.match(/([\d.]+)\s*(k|thousand|thousands)\b/i);
+  if (kMatch) {
+    const val = Math.round(parseFloat(kMatch[1]) * 1000);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  // Direct numeric value (e.g. "15000000", "₹1,50,00,000", "$15,000,000")
+  const numOnly = parseFloat(str.replace(/[^0-9.]/g, ''));
+  if (!isNaN(numOnly) && numOnly > 0) {
+    const val = Math.round(numOnly);
+    return {
+      numericPrice: val,
+      priceDisplay: `₹${val.toLocaleString('en-IN')}`
+    };
+  }
+
+  return {
+    numericPrice: 0,
+    priceDisplay: str.startsWith('₹') ? str : (str ? `₹${str}` : 'Price on Request')
+  };
+}
+
+export function formatIndianPrice(price: number | string | undefined | null, priceDisplay?: string): string {
+  if (priceDisplay && priceDisplay.startsWith('₹') && !priceDisplay.includes('$')) {
+    return priceDisplay;
+  }
+  const parsed = parseAndFormatIndianPrice(price);
+  return parsed.priceDisplay;
+}

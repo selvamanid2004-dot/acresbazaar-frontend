@@ -404,7 +404,7 @@ import { AuthService } from '../../core/services/auth.service';
                       <span>Unlock Property Details</span>
                     </button>
                     
-                    <span class="locked-tier-pill plat-pill">Platinum VIP Plan • $129/mo</span>
+                    <span class="locked-tier-pill plat-pill">Platinum VIP Plan • ₹9,999/mo</span>
                   </div>
                 </ng-template>
 

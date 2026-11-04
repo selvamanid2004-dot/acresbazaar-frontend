@@ -218,11 +218,11 @@ export type DealerStep = 'intent' | 'buy-categories' | 'buy-listings' | 'sell-fo
 
               <!-- 4. Price -->
               <div class="form-group">
-                <label class="form-label">Price ($) *</label>
+                <label class="form-label">Price (₹ INR / Cr / L / K) *</label>
                 <input 
                   type="text" 
                   class="form-input" 
-                  placeholder="e.g. $1,450,000" 
+                  placeholder="e.g. 1.45 Cr, 50 L, 25 K or ₹1,45,00,000" 
                   [(ngModel)]="sellFormData.price" 
                   name="price" 
                   required />

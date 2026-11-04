@@ -97,12 +97,12 @@ import { NotificationService } from '../../services/notification.service';
             </div>
 
             <div class="form-group">
-              <label for="post-price" class="form-label">Expected Price ($)</label>
+              <label for="post-price" class="form-label">Expected Price (₹ INR / Cr / L / K)</label>
               <input 
                 id="post-price"
                 type="text" 
                 class="form-input" 
-                placeholder="e.g. $1,250,000" 
+                placeholder="e.g. 1.25 Cr, 50 L, 25 K or ₹1,25,00,000" 
                 [(ngModel)]="formData.price" 
                 name="price" 
                 required />
@@ -114,7 +114,7 @@ import { NotificationService } from '../../services/notification.service';
                 id="post-contact"
                 type="tel" 
                 class="form-input" 
-                placeholder="+1 (555) 019-2834" 
+                placeholder="+91 98401 23456" 
                 [(ngModel)]="formData.contact" 
                 name="contact" 
                 required />
