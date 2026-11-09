@@ -21,7 +21,12 @@ import {
   ChevronDown,
   Edit2,
   X,
-  Check
+  Check,
+  MessageSquare,
+  QrCode,
+  Smartphone,
+  Send,
+  RefreshCw
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Banner } from '../types';
@@ -45,6 +50,106 @@ export const WebsiteSettings: React.FC = () => {
   const [bannerSaving, setBannerSaving] = useState(false);
   const [bannerModalUploading, setBannerModalUploading] = useState(false);
   const bannerFileInputRef = useRef<HTMLInputElement>(null);
+
+  // WhatsApp Bot State
+  const [whatsappStatus, setWhatsappStatus] = useState<{
+    isConnected: boolean;
+    botPhoneNumber: string | null;
+    qrCodeDataUrl: string | null;
+    adminPhoneNumber: string | null;
+  } | null>(null);
+  const [adminPhoneInput, setAdminPhoneInput] = useState('');
+  const [savingAdminPhone, setSavingAdminPhone] = useState(false);
+  const [testPhoneInput, setTestPhoneInput] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
+  const [whatsappActionLoading, setWhatsappActionLoading] = useState(false);
+
+  const fetchWhatsappStatus = async () => {
+    try {
+      const res = await api.getWhatsappStatus();
+      setWhatsappStatus(res);
+      if (res.adminPhoneNumber && !adminPhoneInput) {
+        setAdminPhoneInput(res.adminPhoneNumber);
+      }
+    } catch (e) {
+      console.warn('Could not fetch whatsapp status', e);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'whatsapp') {
+      fetchWhatsappStatus();
+      const interval = setInterval(fetchWhatsappStatus, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
+
+  const handleSaveAdminPhone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminPhoneInput.trim()) return;
+    setSavingAdminPhone(true);
+    try {
+      await api.updateAdminWhatsappPhone(adminPhoneInput.trim());
+      setSuccessMsg('✅ Admin WhatsApp alert number saved successfully!');
+      setTimeout(() => setSuccessMsg(''), 4000);
+      fetchWhatsappStatus();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to save admin phone');
+    } finally {
+      setSavingAdminPhone(false);
+    }
+  };
+
+  const handleSendTestMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testPhoneInput.trim()) {
+      alert('Please enter a phone number to send test message');
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const res = await api.sendWhatsappTest(testPhoneInput.trim());
+      setSuccessMsg(`✅ ${res.message || 'Test message sent successfully!'}`);
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to send test message. Ensure WhatsApp bot is connected.');
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const handleRestartWhatsapp = async () => {
+    setWhatsappActionLoading(true);
+    try {
+      await api.restartWhatsapp();
+      setSuccessMsg('Restarting WhatsApp socket...');
+      setTimeout(() => {
+        fetchWhatsappStatus();
+        setSuccessMsg('');
+      }, 3000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to restart WhatsApp socket');
+    } finally {
+      setWhatsappActionLoading(false);
+    }
+  };
+
+  const handleResetWhatsapp = async () => {
+    if (!window.confirm('Are you sure you want to disconnect and clear WhatsApp credentials? You will need to scan a new QR code.')) return;
+    setWhatsappActionLoading(true);
+    try {
+      await api.resetWhatsapp();
+      setSuccessMsg('WhatsApp credentials cleared. Please scan the new QR code.');
+      setTimeout(() => {
+        fetchWhatsappStatus();
+        setSuccessMsg('');
+      }, 3000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to reset WhatsApp session');
+    } finally {
+      setWhatsappActionLoading(false);
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUploadTargetRef = useRef<{ key: string; group: string }>({ key: '', group: '' });
@@ -488,6 +593,18 @@ export const WebsiteSettings: React.FC = () => {
           <Sparkles size={15} />
           <span>Logo & Branding</span>
         </button>
+
+        <button
+          className={`tab-btn ${activeTab === 'whatsapp' ? 'active' : ''}`}
+          onClick={() => setSearchParams({ group: 'whatsapp' })}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          <MessageSquare size={15} />
+          <span>WhatsApp Bot (Baileys)</span>
+          {whatsappStatus?.isConnected && (
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+          )}
+        </button>
       </div>
 
       {/* Form Panel */}
@@ -500,13 +617,16 @@ export const WebsiteSettings: React.FC = () => {
               {activeTab === 'service' && 'Services Page CMS & Banner'}
               {activeTab === 'contact' && 'Contact Us Page CMS & Banner'}
               {activeTab === 'logo' && 'Website Logo & Identity CMS'}
+              {activeTab === 'whatsapp' && 'WhatsApp Multi-Device Notification Bot (Baileys)'}
             </span>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={saving || !!uploadingKey}>
-            <Save size={15} />
-            <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-          </button>
+          {activeTab !== 'whatsapp' && (
+            <button type="submit" className="btn btn-primary" disabled={saving || !!uploadingKey}>
+              <Save size={15} />
+              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+            </button>
+          )}
         </div>
 
         <div className="panel-body" style={{ padding: '24px' }}>
@@ -1437,16 +1557,306 @@ export const WebsiteSettings: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* ========================================================================= */}
+              {/* TAB 6: WHATSAPP BOT CMS */}
+              {/* ========================================================================= */}
+              {activeTab === 'whatsapp' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {/* Status Banner */}
+                  <div style={{
+                    padding: '24px',
+                    borderRadius: '12px',
+                    background: whatsappStatus?.isConnected
+                      ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 78, 59, 0.35))'
+                      : 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(120, 53, 15, 0.35))',
+                    border: `1.5px solid ${whatsappStatus?.isConnected ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{
+                        width: '54px',
+                        height: '54px',
+                        borderRadius: '14px',
+                        background: whatsappStatus?.isConnected ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: whatsappStatus?.isConnected ? '#34d399' : '#fbbf24',
+                        border: `1px solid ${whatsappStatus?.isConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+                      }}>
+                        <MessageSquare size={28} />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#fff' }}>
+                            {whatsappStatus?.isConnected ? 'WhatsApp Bot is Connected & Online' : 'WhatsApp Bot Disconnected — Scan QR to Connect'}
+                          </h3>
+                          <span style={{
+                            padding: '3px 10px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            letterSpacing: '0.5px',
+                            background: whatsappStatus?.isConnected ? '#059669' : '#d97706',
+                            color: '#fff'
+                          }}>
+                            {whatsappStatus?.isConnected ? 'ONLINE (MULTI-DEVICE)' : 'ACTION REQUIRED'}
+                          </span>
+                        </div>
+                        <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#cbd5e1' }}>
+                          {whatsappStatus?.isConnected
+                            ? `Active Bot Phone Number: +${whatsappStatus.botPhoneNumber || 'Linked'} | Automated notifications enabled.`
+                            : 'Scan the QR code below using your WhatsApp app on your smartphone to activate the bot.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={handleRestartWhatsapp}
+                        disabled={whatsappActionLoading}
+                        className="btn btn-outline"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px' }}
+                      >
+                        <RefreshCw size={14} className={whatsappActionLoading ? 'spin' : ''} />
+                        <span>Restart Socket</span>
+                      </button>
+                      {whatsappStatus?.isConnected && (
+                        <button
+                          type="button"
+                          onClick={handleResetWhatsapp}
+                          disabled={whatsappActionLoading}
+                          className="btn btn-outline"
+                          style={{ borderColor: 'rgba(239, 68, 68, 0.5)', color: '#f87171', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px' }}
+                        >
+                          <Trash2 size={14} />
+                          <span>Disconnect / Switch</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* QR Code Section (Visible when disconnected) */}
+                  {!whatsappStatus?.isConnected && (
+                    <div style={{
+                      padding: '24px',
+                      borderRadius: '12px',
+                      background: 'rgba(15, 23, 42, 0.65)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(260px, 320px) 1fr',
+                      gap: '24px',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#ffffff',
+                        padding: '20px',
+                        borderRadius: '14px',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                        minHeight: '290px'
+                      }}>
+                        {whatsappStatus?.qrCodeDataUrl ? (
+                          <>
+                            <img
+                              src={whatsappStatus.qrCodeDataUrl}
+                              alt="WhatsApp QR Code"
+                              style={{ width: '240px', height: '240px', objectFit: 'contain' }}
+                            />
+                            <span style={{ fontSize: '11px', color: '#64748b', marginTop: '8px', fontWeight: 600 }}>
+                              QR Code auto-refreshes every 20 seconds
+                            </span>
+                          </>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '40px 10px', color: '#64748b' }}>
+                            <RefreshCw size={32} className="spin" style={{ margin: '0 auto 12px', color: '#0ea5e9' }} />
+                            <div style={{ fontWeight: 600, color: '#334155' }}>Initializing WhatsApp Session...</div>
+                            <div style={{ fontSize: '12px', marginTop: '4px' }}>Generating fresh QR code</div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <QrCode size={18} style={{ color: 'var(--gold-primary)' }} />
+                          <span>How to Connect Your WhatsApp Number:</span>
+                        </h4>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.2)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>1</span>
+                            <span style={{ fontSize: '13.5px', color: '#cbd5e1' }}>Open <strong>WhatsApp</strong> on your mobile phone.</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.2)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>2</span>
+                            <span style={{ fontSize: '13.5px', color: '#cbd5e1' }}>Tap <strong>Menu (⋮)</strong> on Android or <strong>Settings</strong> on iPhone.</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.2)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>3</span>
+                            <span style={{ fontSize: '13.5px', color: '#cbd5e1' }}>Select <strong>Linked Devices</strong> &rarr; tap <strong>Link a Device</strong>.</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.2)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>4</span>
+                            <span style={{ fontSize: '13.5px', color: '#cbd5e1' }}>Scan the QR code on this screen. It connects immediately!</span>
+                          </div>
+                        </div>
+
+                        <div style={{
+                          marginTop: '8px',
+                          padding: '12px 14px',
+                          borderRadius: '8px',
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          border: '1px solid rgba(59, 130, 246, 0.2)',
+                          fontSize: '12px',
+                          color: '#93c5fd'
+                        }}>
+                          💡 <strong>One-time Setup:</strong> Your session credentials will be saved automatically. You do NOT need to re-scan every time the server restarts.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Admin WhatsApp Alert Number Configuration */}
+                  <div style={{
+                    padding: '24px',
+                    borderRadius: '12px',
+                    background: 'rgba(15, 23, 42, 0.65)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Smartphone size={18} style={{ color: 'var(--gold-primary)' }} />
+                      <span>Admin Alert WhatsApp Number</span>
+                    </h4>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+                      All admin notifications (New registrations, property listings awaiting review, and reward payout claims) will be instantly sent to this number.
+                    </p>
+
+                    <form onSubmit={handleSaveAdminPhone} style={{ display: 'flex', gap: '12px', maxWidth: '520px' }}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. 919876543210 (Country code + 10 digits)"
+                        value={adminPhoneInput}
+                        onChange={(e) => setAdminPhoneInput(e.target.value)}
+                        required
+                        style={{ fontSize: '14px', letterSpacing: '0.5px' }}
+                      />
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={savingAdminPhone}
+                        style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Save size={14} />
+                        <span>{savingAdminPhone ? 'Saving...' : 'Save Admin Number'}</span>
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Send Test WhatsApp Message Tool */}
+                  <div style={{
+                    padding: '24px',
+                    borderRadius: '12px',
+                    background: 'rgba(15, 23, 42, 0.65)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Send size={18} style={{ color: 'var(--gold-primary)' }} />
+                      <span>Live Test: Send Verification Message</span>
+                    </h4>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+                      Test your WhatsApp bot by sending an immediate verified test message to any phone number.
+                    </p>
+
+                    <form onSubmit={handleSendTestMessage} style={{ display: 'flex', gap: '12px', maxWidth: '520px' }}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Recipient Phone (e.g. 9876543210)"
+                        value={testPhoneInput}
+                        onChange={(e) => setTestPhoneInput(e.target.value)}
+                        required
+                        style={{ fontSize: '14px' }}
+                      />
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={sendingTest || !whatsappStatus?.isConnected}
+                        style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Send size={14} />
+                        <span>{sendingTest ? 'Sending...' : 'Send Test WhatsApp'}</span>
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Active Notification Flows Matrix */}
+                  <div style={{
+                    padding: '24px',
+                    borderRadius: '12px',
+                    background: 'rgba(15, 23, 42, 0.65)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckCircle2 size={18} style={{ color: '#10b981' }} />
+                      <span>Active Automated Notification Flows</span>
+                    </h4>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+                      <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '13.5px' }}>🔔 New User Registrations</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Sends instant alert to Admin whenever a Buyer, Seller, Dealer, or Partner signs up.</div>
+                      </div>
+
+                      <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '13.5px' }}>🏡 Property Upload Review</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Alerts Admin with property title, price, category, and direct review link.</div>
+                      </div>
+
+                      <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '13.5px' }}>🎉 Seller Property Approved</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Notifies the Seller that their property is now live on AcresBazaar with link.</div>
+                      </div>
+
+                      <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '13.5px' }}>🌟 Partner Reward Points (+20)</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Notifies Partner that points were credited and displays updated balance.</div>
+                      </div>
+
+                      <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '13.5px' }}>✅ Verified Partner/Dealer Approved</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Sends welcome notification when Admin verifies partner/dealer account.</div>
+                      </div>
+
+                      <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '13.5px' }}>🎁 Reward Claims & Cash Payouts</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Alerts Admin on claim submission; notifies Partner on UTR payment or rejection refund.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <div className="panel-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="submit" className="btn btn-primary" disabled={saving || !!uploadingKey}>
-            <Save size={15} />
-            <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-          </button>
-        </div>
+        {activeTab !== 'whatsapp' && (
+          <div className="panel-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+            <button type="submit" className="btn btn-primary" disabled={saving || !!uploadingKey}>
+              <Save size={15} />
+              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+            </button>
+          </div>
+        )}
       </form>
 
       {/* ADD / EDIT BANNER MODAL */}

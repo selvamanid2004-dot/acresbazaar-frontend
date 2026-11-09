@@ -1376,4 +1376,47 @@ export const api = {
     if (filter) q.set('filter', filter);
     return `${API_BASE}/export/${entity}?${q.toString()}`;
   },
+
+  // WhatsApp Bot Integration
+  async getWhatsappStatus(): Promise<{
+    isConnected: boolean;
+    botPhoneNumber: string | null;
+    qrCodeDataUrl: string | null;
+    adminPhoneNumber: string | null;
+    sessionDirExists: boolean;
+  }> {
+    try {
+      return await request('/whatsapp/status');
+    } catch {
+      return {
+        isConnected: false,
+        botPhoneNumber: null,
+        qrCodeDataUrl: null,
+        adminPhoneNumber: null,
+        sessionDirExists: false,
+      };
+    }
+  },
+
+  async sendWhatsappTest(phone: string, message?: string): Promise<{ success: boolean; message: string }> {
+    return request('/whatsapp/send-test', {
+      method: 'POST',
+      body: JSON.stringify({ phone, message }),
+    });
+  },
+
+  async restartWhatsapp(): Promise<{ success: boolean; message: string }> {
+    return request('/whatsapp/restart', { method: 'POST' });
+  },
+
+  async resetWhatsapp(): Promise<{ success: boolean; message: string }> {
+    return request('/whatsapp/reset', { method: 'POST' });
+  },
+
+  async updateAdminWhatsappPhone(phone: string): Promise<{ success: boolean; message: string; adminPhone: string }> {
+    return request('/whatsapp/admin-phone', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    });
+  },
 };
